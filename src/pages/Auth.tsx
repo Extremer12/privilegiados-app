@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Music, ArrowRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const GoogleIcon = () => (
@@ -41,110 +41,73 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary via-primary/95 to-primary/80 relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-secondary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen flex flex-col bg-[#0b0e11] relative overflow-hidden">
+      {/* Subtle ambient light */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-secondary/[0.04] rounded-full blur-[120px] pointer-events-none" />
 
-      <motion.div
-        className="w-full max-w-md relative z-10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Logo Section */}
-        <div className="text-center mb-10">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-secondary/20 rounded-full blur-xl scale-150 animate-pulse" />
-            <div className="relative w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-secondary/30 to-secondary/10 border-2 border-secondary/30 flex items-center justify-center shadow-2xl">
-              <Music className="w-14 h-14 text-secondary" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold text-foreground mt-6 mb-2">
-            Privilegiados App
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Ministerio de Alabanza
-          </p>
-        </div>
-
-        {/* Auth Card */}
+      {/* Main content — vertically centered */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
+        {/* Logo */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15, duration: 0.4 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="mb-10"
         >
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 via-transparent to-secondary/10 rounded-3xl blur-xl" />
-            <div className="relative bg-background/80 backdrop-blur-xl border border-secondary/20 rounded-3xl p-8 shadow-2xl">
-              {/* Welcome message */}
-              <div className="text-center mb-8">
-                <h2 className="text-xl font-semibold text-foreground mb-2">
-                  ¡Bienvenido!
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Inicia sesión con tu cuenta de Google para acceder a la plataforma
-                </p>
-              </div>
-
-              {/* Google Login Button */}
-              <button
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-3 h-14 px-6 rounded-2xl bg-white hover:bg-gray-50 text-gray-800 font-semibold text-base transition-all duration-300 hover:shadow-lg hover:shadow-white/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none border border-gray-200"
-              >
-                {loading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-gray-600" />
-                ) : (
-                  <>
-                    <GoogleIcon />
-                    Continuar con Google
-                    <ArrowRight className="w-4 h-4 ml-auto opacity-50" />
-                  </>
-                )}
-              </button>
-
-              {/* Divider */}
-              <div className="relative my-8">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border/50" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-background/80 px-4 text-xs text-muted-foreground uppercase tracking-widest">
-                    Acceso seguro
-                  </span>
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <span>Protegido por Google OAuth 2.0</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <span>Tus datos están encriptados y seguros</span>
-                </div>
-              </div>
-            </div>
+            <div className="absolute inset-0 bg-secondary/15 rounded-full blur-2xl scale-125" />
+            <img
+              src="https://res.cloudinary.com/dkl5uieu5/image/upload/v1762006758/PicRetouch_20240830_213021695_tyjvv9.png"
+              alt="Privilegiados App"
+              className="relative w-32 h-32 rounded-full object-cover ring-[3px] ring-white/10 shadow-2xl"
+            />
           </div>
         </motion.div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground/60 mt-6">
-          Privilegiados App © {new Date().getFullYear()}
+        {/* Text */}
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
+            Privilegiados
+          </h1>
+          <p className="text-[15px] text-white/40 font-light">
+            Ministerio de Alabanza
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Bottom section — Google button + footer */}
+      <motion.div
+        className="px-6 pb-10 pt-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+      >
+        {/* Google Login Button */}
+        <button
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-3 h-[56px] rounded-2xl bg-white text-[#1f1f1f] font-medium text-[15px] transition-all duration-200 active:scale-[0.98] hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-black/20"
+        >
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+          ) : (
+            <>
+              <GoogleIcon />
+              <span>Continuar con Google</span>
+            </>
+          )}
+        </button>
+
+        {/* Terms */}
+        <p className="text-center text-[11px] text-white/25 mt-6 leading-relaxed">
+          Al continuar, aceptas los términos de uso
+          <br />
+          y la política de privacidad.
         </p>
       </motion.div>
     </div>
