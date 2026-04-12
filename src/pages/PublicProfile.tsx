@@ -1,0 +1,159 @@
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, User, Music } from "lucide-react";
+
+interface Profile {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  role: string | null;
+  instrument: string | null;
+  bio: string | null;
+  created_at: string;
+}
+
+const PublicProfile = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (id && user) {
+      fetchProfile();
+    }
+  }, [id, user]);
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (authLoading || !user || loading) {
+    return null;
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
+        <Navigation />
+        <main className="flex-1 pt-24 pb-20 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <p className="text-muted-foreground">Perfil no encontrado</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const isOwnProfile = user.id === profile.id;
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
+      <Navigation />
+      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom">
+        <div className="max-w-2xl mx-auto">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/miembros")}
+            className="mb-4 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver
+          </Button>
+
+          <Card className="p-6 md:p-8 card-gradient border-secondary/20">
+            <div className="flex flex-col items-center mb-6">
+              <Avatar className="w-24 h-24 md:w-32 md:h-32 mb-4 ring-2 ring-secondary/20">
+                <AvatarImage src={profile.avatar_url || undefined} alt={profile.full_name} />
+                <AvatarFallback className="bg-secondary/20 text-secondary text-2xl md:text-4xl">
+                  {profile.full_name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2 text-center">
+                {profile.full_name}
+              </h1>
+
+              {isOwnProfile && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/perfil")}
+                  className="mt-2"
+                >
+                  Editar Perfil
+                </Button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-background/30 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Music className="w-4 h-4 text-secondary" />
+                  <h2 className="text-sm font-medium text-muted-foreground">
+                    Rol en el grupo
+                  </h2>
+                </div>
+                <p className="text-foreground capitalize">
+                  {profile.role || profile.instrument || "Miembro"}
+                </p>
+              </div>
+
+              {profile.bio && (
+                <div className="p-4 bg-background/30 rounded-lg">
+                  <h2 className="text-sm font-medium text-muted-foreground mb-1">
+                    Biografía
+                  </h2>
+                  <p className="text-foreground whitespace-pre-wrap">{profile.bio}</p>
+                </div>
+              )}
+
+              <div className="p-4 bg-background/30 rounded-lg">
+                <h2 className="text-sm font-medium text-muted-foreground mb-1">
+                  Miembro desde
+                </h2>
+                <p className="text-foreground">
+                  {new Date(profile.created_at).toLocaleDateString("es-ES", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default PublicProfile;
