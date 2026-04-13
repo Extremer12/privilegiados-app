@@ -1,132 +1,45 @@
 import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
-import { Sparkles, Calendar, Star } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 export const WelcomeCard = () => {
+  const today = new Date();
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent px-6 py-7 md:px-8 md:py-9"
     >
-      <Card variant="premium" className="relative p-6 md:p-8 overflow-hidden">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-secondary/20 to-secondary/5 rounded-full blur-3xl"
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
+      {/* Subtle ambient glow — single, no infinite loop */}
+      <div className="absolute -top-24 -right-24 w-56 h-56 bg-secondary/[0.06] rounded-full blur-[80px] pointer-events-none" />
+
+      <div className="relative z-10 flex items-center gap-5">
+        {/* Logo */}
+        <motion.div
+          className="flex-shrink-0"
+          whileHover={{ scale: 1.04 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <img
+            src="https://res.cloudinary.com/dkl5uieu5/image/upload/v1762006758/PicRetouch_20240830_213021695_tyjvv9.png"
+            alt="Privilegiados"
+            className="w-14 h-14 rounded-2xl object-cover ring-1 ring-white/10 shadow-lg"
+            loading="lazy"
           />
-          <motion.div
-            className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-purple-500/10 to-blue-500/10 rounded-full blur-2xl"
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          {/* Floating Stars */}
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute"
-              style={{
-                top: `${20 + i * 15}%`,
-                right: `${10 + i * 8}%`,
-              }}
-              animate={{
-                y: [0, -10, 0],
-                opacity: [0.3, 0.7, 0.3],
-                rotate: [0, 180, 360],
-              }}
-              transition={{
-                duration: 3 + i * 0.5,
-                repeat: Infinity,
-                delay: i * 0.3,
-              }}
-            >
-              <Star className="w-3 h-3 text-secondary/40" fill="currentColor" />
-            </motion.div>
-          ))}
+        </motion.div>
+
+        {/* Text */}
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground leading-tight">
+            Privilegiados
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground/70 font-medium capitalize">
+            {format(today, "EEEE, d 'de' MMMM", { locale: es })}
+          </p>
         </div>
-
-        <div className="relative z-10">
-          <motion.div
-            className="flex items-center gap-3 mb-4"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <motion.div
-              className="w-12 h-12 rounded-2xl bg-gradient-to-br from-secondary/30 to-secondary/10 flex items-center justify-center shadow-lg shadow-secondary/20"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-            >
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                }}
-              >
-                <Sparkles className="w-6 h-6 text-secondary" />
-              </motion.div>
-            </motion.div>
-            <motion.span
-              className="text-sm font-bold text-secondary tracking-widest uppercase"
-              animate={{
-                textShadow: ["0 0 0px #FFD700", "0 0 10px #FFD700", "0 0 0px #FFD700"],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-              }}
-            >
-              Bienvenido
-            </motion.span>
-          </motion.div>
-
-          <motion.h1
-            className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground via-foreground to-secondary/80 bg-clip-text text-transparent mb-4"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            Privilegiados App
-          </motion.h1>
-
-          <motion.div
-            className="flex items-center gap-3"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <motion.div
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 border border-secondary/20"
-              whileHover={{ scale: 1.02 }}
-            >
-              <Calendar className="w-4 h-4 text-secondary" />
-              <span className="text-sm font-medium text-muted-foreground capitalize">
-                {format(new Date(), "EEEE, d 'de' MMMM yyyy", { locale: es })}
-              </span>
-            </motion.div>
-          </motion.div>
-        </div>
-      </Card>
+      </div>
     </motion.div>
   );
 };
