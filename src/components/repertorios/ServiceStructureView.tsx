@@ -194,4 +194,3 @@ export function ServiceStructureView({
     </div>
   );
 }
-}
