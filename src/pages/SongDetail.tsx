@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // Navigation removed
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -40,10 +41,9 @@ interface Song {
 const SongDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin } = useUserRole();
-  const [song, setSong] = useState<Song | null>(null);
-  const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
@@ -56,14 +56,9 @@ const SongDetail = () => {
     }
   }, [user, authLoading, navigate]);
 
-  useEffect(() => {
-    if (id && user) {
-      fetchSong();
-    }
-  }, [id, user]);
-
-  const fetchSong = async () => {
-    try {
+  const { data: song, isLoading: loading } = useQuery({
+    queryKey: ['song', id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("songs")
         .select("*")
@@ -73,49 +68,50 @@ const SongDetail = () => {
       if (error) throw error;
       
       if (!data) {
-        toast({
-          title: "Error",
-          description: "Canción no encontrada",
-          variant: "destructive",
-        });
-        navigate("/canciones");
-        return;
+        throw new Error("Canción no encontrada");
       }
       
-      setSong(data);
-      setIsOwner(data.created_by === user?.id);
-    } catch (error) {
-      console.error("Error fetching song:", error);
-      navigate("/canciones");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data as Song;
+    },
+    enabled: !!id && !!user,
+  });
 
-  const handleDelete = async () => {
-    if (!song) return;
-    
-    try {
+  useEffect(() => {
+    if (song) {
+      setIsOwner(song.created_by === user?.id);
+    }
+  }, [song, user?.id]);
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!song) throw new Error("No hay canción seleccionada");
       const { error } = await supabase
         .from("songs")
         .delete()
         .eq("id", song.id);
 
       if (error) throw error;
-
+      return true;
+    },
+    onSuccess: () => {
       toast({
         title: "Canción eliminada",
         description: "La canción se ha eliminado correctamente",
       });
-
+      queryClient.invalidateQueries({ queryKey: ['songs'] });
       navigate("/canciones");
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
     }
+  });
+
+  const handleDelete = async () => {
+    deleteMutation.mutate();
   };
 
   const handlePrint = () => {
@@ -159,19 +155,19 @@ const SongDetail = () => {
               onClick={() => navigate("/canciones")}
               className="text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
               Volver
             </Button>
 
             {(isOwner || isAdmin) && (
               <div className="flex gap-2">
                 <AddSongDialog
-                  onSongAdded={fetchSong}
+                  onSongAdded={() => queryClient.invalidateQueries({ queryKey: ['song', id] })}
                   editMode
                   existingSong={song}
                   trigger={
                     <Button variant="outline" size="sm">
-                      <Edit className="w-4 h-4 mr-2" />
+                      <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
                       Editar
                     </Button>
                   }
@@ -181,7 +177,7 @@ const SongDetail = () => {
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
                   Eliminar
                 </Button>
               </div>
@@ -191,7 +187,7 @@ const SongDetail = () => {
           <Card className="p-6 md:p-8 card-gradient border-secondary/20 mb-6">
             <div className="flex items-start gap-4 mb-6">
               <div className="w-16 h-16 rounded-xl bg-secondary/20 flex items-center justify-center flex-shrink-0">
-                <Music className="w-8 h-8 text-secondary" />
+                <Music className="w-8 h-8 text-secondary" aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2 break-words">
@@ -214,7 +210,7 @@ const SongDetail = () => {
                   className="flex-1"
                   onClick={() => setShowPresentation(true)}
                 >
-                  <Maximize2 className="w-4 h-4 mr-2" />
+                  <Maximize2 className="w-4 h-4 mr-2" aria-hidden="true" />
                   Modo Presentación
                 </Button>
               )}
@@ -223,7 +219,7 @@ const SongDetail = () => {
                 onClick={handlePrint}
                 className="flex-1"
               >
-                <Printer className="w-4 h-4 mr-2" />
+                <Printer className="w-4 h-4 mr-2" aria-hidden="true" />
                 Imprimir
               </Button>
               {song.youtube_url && (
@@ -232,9 +228,9 @@ const SongDetail = () => {
                   className="flex-1"
                   onClick={() => window.open(song.youtube_url!, "_blank")}
                 >
-                  <Youtube className="w-4 h-4 mr-2" />
+                  <Youtube className="w-4 h-4 mr-2" aria-hidden="true" />
                   Abrir en YouTube
-                  <ExternalLink className="w-3 h-3 ml-1" />
+                  <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />
                 </Button>
               )}
             </div>
@@ -311,18 +307,20 @@ const SongDetail = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setTransposeSteps((prev) => prev - 1)}
+                      aria-label="Disminuir tono"
                     >
-                      <ChevronDown className="w-4 h-4" />
+                      <ChevronDown className="w-4 h-4" aria-hidden="true" />
                     </Button>
-                    <span className="text-sm font-medium min-w-[3rem] text-center text-foreground">
+                    <span className="text-sm font-medium min-w-[3rem] text-center text-foreground font-mono">
                       {transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setTransposeSteps((prev) => prev + 1)}
+                      aria-label="Aumentar tono"
                     >
-                      <ChevronUp className="w-4 h-4" />
+                      <ChevronUp className="w-4 h-4" aria-hidden="true" />
                     </Button>
                     {transposeSteps !== 0 && (
                       <Button

@@ -104,7 +104,7 @@ export const SongComments = ({ songId }: SongCommentsProps) => {
   return (
     <Card className="p-6 card-gradient border-secondary/20">
       <div className="flex items-center gap-2 mb-4">
-        <MessageCircle className="w-5 h-5 text-secondary" />
+        <MessageCircle className="w-5 h-5 text-secondary" aria-hidden="true" />
         <h3 className="text-lg font-semibold text-foreground">
           Comentarios ({comments.length})
         </h3>
@@ -118,14 +118,16 @@ export const SongComments = ({ songId }: SongCommentsProps) => {
             onChange={(e) => setNewComment(e.target.value)}
             className="mb-2"
             rows={3}
+            aria-label="Escribe tu comentario"
           />
           <Button
             onClick={handleAddComment}
             disabled={!newComment.trim()}
             variant="hero"
             size="sm"
+            aria-label="Publicar comentario"
           >
-            <Send className="w-4 h-4 mr-2" />
+            <Send className="w-4 h-4 mr-2" aria-hidden="true" />
             Publicar
           </Button>
         </div>

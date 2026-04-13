@@ -140,7 +140,7 @@ const Index = () => {
                 animate={{ scale: 1, boxShadow: "0 0 20px rgba(255,215,0,0.2)" }}
                 transition={{ duration: 0.5 }}
               >
-                <Music className="w-10 h-10 text-secondary" />
+                <Music className="w-10 h-10 text-secondary" aria-hidden="true" />
               </motion.div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground mb-2">
@@ -192,7 +192,7 @@ const Index = () => {
                   className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center shadow-lg"
                   whileHover={{ scale: 1.05 }}
                 >
-                  <Bell className="w-5 h-5 text-red-400" />
+                  <Bell className="w-5 h-5 text-red-400" aria-hidden="true" />
                 </motion.div>
                 <div>
                   <h3 className="text-lg font-bold text-foreground">Anuncios Importantes</h3>
@@ -221,13 +221,13 @@ const Index = () => {
                             animate={announcement.priority === 'urgent' ? { rotate: [0, -5, 5, 0] } : undefined }
                             transition={announcement.priority === 'urgent' ? { duration: 0.5, repeatDelay: 2 } : undefined }
                           >
-                            <IconComponent className={`w-6 h-6 ${config.color}`} />
+                            <IconComponent className={`w-6 h-6 ${config.color}`} aria-hidden="true" />
                           </motion.div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <h4 className="font-bold text-foreground line-clamp-1">{announcement.title}</h4>
                               {announcement.priority === 'urgent' && (
-                                <Badge variant="destructive" className="text-xs flex-shrink-0 animate-pulse">
+                                <Badge variant="destructive" className="text-xs flex-shrink-0 shadow-[0_0_10px_rgba(239,68,68,0.5)] border-red-400/50">
                                   Urgente
                                 </Badge>
                               )}
@@ -267,7 +267,7 @@ const Index = () => {
                     className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center shadow-lg"
                     whileHover={{ rotate: 5 }}
                   >
-                    <CalendarDays className="w-5 h-5 text-green-400" />
+                    <CalendarDays className="w-5 h-5 text-green-400" aria-hidden="true" />
                   </motion.div>
                   <div>
                     <h3 className="text-xl font-bold text-foreground">Próximos Eventos</h3>
@@ -282,7 +282,7 @@ const Index = () => {
                     onClick={() => navigate("/eventos")}
                   >
                     Ver todos
-                    <ChevronRight className="w-4 h-4 ml-1" />
+                    <ChevronRight className="w-4 h-4 ml-1" aria-hidden="true" />
                   </Button>
                 </motion.div>
               </div>
@@ -305,7 +305,7 @@ const Index = () => {
                       <Card 
                         className={`relative overflow-hidden cursor-pointer group transition-all duration-300 ${
                           isToday 
-                            ? 'bg-gradient-to-r from-secondary/20 via-secondary/10 to-transparent border-secondary/40 shadow-lg shadow-secondary/10' 
+                            ? 'bg-gradient-to-r from-secondary/20 via-secondary/10 to-transparent border-secondary/40 shadow-xl shadow-secondary/20' 
                             : isThisWeek
                               ? 'bg-gradient-to-r from-green-500/10 via-card to-card border-green-500/30'
                               : 'card-gradient border-secondary/20'
@@ -313,15 +313,8 @@ const Index = () => {
                         onClick={() => navigate("/eventos")}
                       >
                         {isToday && (
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-secondary/10 via-transparent to-transparent pointer-events-none"
-                            animate={{
-                              opacity: [0.3, 0.6, 0.3],
-                            }}
-                            transition={{
-                              duration: 2,
-
-                            }}
+                          <div
+                            className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-transparent pointer-events-none opacity-50"
                           />
                         )}
                         
@@ -339,11 +332,11 @@ const Index = () => {
                               whileHover={{ scale: 1.05 }}
                             >
                               {isToday && (
-                                <motion.span
+                                <span
                                   className="text-[10px] font-bold uppercase tracking-wider mb-1 text-secondary-foreground"
                                 >
                                   Hoy
-                                </motion.span>
+                                </span>
                               )}
                               <span className={`text-3xl sm:text-4xl font-bold ${isToday ? 'text-secondary-foreground' : 'text-secondary'}`}>
                                 {format(eventDate, "d")}
@@ -360,7 +353,7 @@ const Index = () => {
                                   {event.title}
                                 </h4>
                                 {isToday && (
-                                  <Badge className="bg-secondary text-secondary-foreground text-[10px] px-2 py-0.5 flex-shrink-0 animate-pulse">
+                                  <Badge className="bg-secondary text-secondary-foreground text-[10px] px-2 py-0.5 flex-shrink-0 shadow-[0_0_8px_rgba(255,215,0,0.4)]">
                                     HOY
                                   </Badge>
                                 )}
@@ -373,14 +366,14 @@ const Index = () => {
                               <div className="flex flex-wrap items-center gap-4 text-sm">
                                 <span className="flex items-center gap-2 text-muted-foreground">
                                   <div className="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
-                                    <Clock className="w-3.5 h-3.5 text-secondary" />
+                                    <Clock className="w-3.5 h-3.5 text-secondary" aria-hidden="true" />
                                   </div>
                                   <span className="font-medium">{format(eventDate, "HH:mm")} hrs</span>
                                 </span>
                                 {event.location && (
                                   <span className="flex items-center gap-2 text-muted-foreground">
                                     <div className="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
-                                      <MapPin className="w-3.5 h-3.5 text-secondary" />
+                                      <MapPin className="w-3.5 h-3.5 text-secondary" aria-hidden="true" />
                                     </div>
                                     <span className="font-medium truncate max-w-[150px]">{event.location}</span>
                                   </span>
@@ -394,7 +387,7 @@ const Index = () => {
                                 className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center"
                                 whileHover={{ x: 5, backgroundColor: "rgba(255, 215, 0, 0.2)" }}
                               >
-                                <ChevronRight className="w-5 h-5 text-secondary" />
+                                <ChevronRight className="w-5 h-5 text-secondary" aria-hidden="true" />
                               </motion.div>
                             </div>
                           </div>

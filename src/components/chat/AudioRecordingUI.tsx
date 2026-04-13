@@ -51,14 +51,14 @@ export const AudioRecordingUI = ({
         <div className="flex-1 flex items-center gap-3 px-4 py-2 bg-destructive/10 rounded-full">
           <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
           <span className="text-sm font-mono text-foreground">{formatTime(recordingTime)}</span>
-          <div className="flex-1 flex items-center gap-1">
-            {[...Array(20)].map((_, i) => (
+          <div className="flex-1 flex items-center gap-1.5 h-6">
+            {[...Array(12)].map((_, i) => (
               <div
                 key={i}
-                className="w-1 bg-secondary/60 rounded-full animate-pulse"
+                className="w-1 bg-secondary/50 rounded-full animate-pulse h-full"
                 style={{
-                  height: `${Math.random() * 16 + 4}px`,
-                  animationDelay: `${i * 50}ms`,
+                  height: `${(i % 3 + 1) * 30 + 20}%`,
+                  animationDelay: `${i * 100}ms`,
                 }}
               />
             ))}

@@ -74,6 +74,8 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
             variant="stats"
             className="relative p-4 text-center cursor-pointer group overflow-hidden"
             onClick={() => navigate(stat.path)}
+            role="button"
+            aria-label={`Ver estadísticas de ${stat.label}`}
           >
             {/* Background Gradient */}
             <motion.div
@@ -89,7 +91,7 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
               <div
                 className={`w-12 h-12 mx-auto rounded-xl bg-gradient-to-br ${stat.bgColor} flex items-center justify-center`}
               >
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                <stat.icon className={`w-6 h-6 ${stat.color}`} aria-hidden="true" />
               </div>
             </motion.div>
 
@@ -106,7 +108,7 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
             {/* Label */}
             <div className="relative z-10 text-xs text-muted-foreground font-medium flex items-center justify-center gap-1">
               {stat.label}
-              <TrendingUp className="w-3 h-3 text-green-400" />
+              <TrendingUp className="w-3 h-3 text-green-400" aria-hidden="true" />
             </div>
           </Card>
         </motion.div>

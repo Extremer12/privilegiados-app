@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { 
@@ -34,22 +35,14 @@ interface SetlistWithCount extends Setlist {
 const Repertorios = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [setlists, setSetlists] = useState<SetlistWithCount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
-  useEffect(() => {
-    if (user) {
-      fetchSetlists();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchSetlists = async () => {
-    try {
+  const { data: setlists = [], isLoading: loading } = useQuery({
+    queryKey: ['setlists'],
+    queryFn: async () => {
       const { data: setlistsData, error } = await supabase
         .from('setlists')
         .select(`
@@ -60,20 +53,14 @@ const Repertorios = () => {
 
       if (error) throw error;
 
-      const formattedSetlists: SetlistWithCount[] = (setlistsData || []).map(item => ({
+      return (setlistsData || []).map(item => ({
         ...item,
         status: (item.status as 'draft' | 'ready' | 'completed') || 'draft',
         songsCount: (item.setlist_songs as any)?.[0]?.count || 0,
-      }));
-
-      setSetlists(formattedSetlists);
-    } catch (error) {
-      console.error('Error fetching setlists:', error);
-      toast.error('Error al cargar los repertorios');
-    } finally {
-      setLoading(false);
-    }
-  };
+      })) as SetlistWithCount[];
+    },
+    enabled: !!user,
+  });
 
   const handleStartLive = async (setlist: Setlist) => {
     try {
@@ -112,23 +99,25 @@ const Repertorios = () => {
     }
   };
 
-  const handleDeleteSetlist = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este repertorio?')) return;
-    
-    try {
-      const { error } = await supabase
-        .from('setlists')
-        .delete()
-        .eq('id', id);
-
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('setlists').delete().eq('id', id);
       if (error) throw error;
-      
-      setSetlists(prev => prev.filter(s => s.id !== id));
+      return id;
+    },
+    onSuccess: () => {
       toast.success('Repertorio eliminado');
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['setlists'] });
+    },
+    onError: (error) => {
       console.error('Error deleting setlist:', error);
       toast.error('Error al eliminar el repertorio');
     }
+  });
+
+  const handleDeleteSetlist = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este repertorio?')) return;
+    deleteMutation.mutate(id);
   };
 
   const filteredSetlists = setlists.filter(setlist => {
@@ -314,7 +303,7 @@ const Repertorios = () => {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onCreated={(id) => {
-          fetchSetlists();
+          queryClient.invalidateQueries({ queryKey: ['setlists'] });
           navigate(`/repertorios/${id}`);
         }}
         userId={user?.id || ''}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,52 +14,42 @@ import { toast } from "sonner";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
+  
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    try {
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user!.id)
         .single();
-
       if (error) throw error;
-      if (data) {
-        setFullName(data.full_name || "");
-        setRole(data.role || data.instrument || "");
-        setBio(data.bio || "");
-        setAvatarUrl(data.avatar_url || "");
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "");
+      setRole(profile.role || profile.instrument || "");
+      setBio(profile.bio || "");
+      setAvatarUrl(profile.avatar_url || "");
     }
-  };
+  }, [profile]);
 
-  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true);
-
-      if (!event.target.files || event.target.files.length === 0) {
-        return;
-      }
-
-      const file = event.target.files[0];
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
       const fileExt = file.name.split(".").pop();
       const filePath = `${user!.id}/${Math.random()}.${fileExt}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file);
 
@@ -68,19 +59,25 @@ const Profile = () => {
         .from("avatars")
         .getPublicUrl(filePath);
 
+      return publicUrl;
+    },
+    onSuccess: (publicUrl) => {
       setAvatarUrl(publicUrl);
       toast.success("Foto subida exitosamente");
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+    },
+    onError: (error: any) => {
       toast.error("Error al subir la foto: " + error.message);
-    } finally {
-      setUploading(false);
     }
+  });
+
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    uploadMutation.mutate(event.target.files[0]);
   };
 
-  const saveProfile = async () => {
-    try {
-      setSaving(true);
-
+  const saveMutation = useMutation({
+    mutationFn: async () => {
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -92,12 +89,20 @@ const Profile = () => {
         .eq("id", user!.id);
 
       if (error) throw error;
+      return true;
+    },
+    onSuccess: () => {
       toast.success("Perfil actualizado exitosamente");
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] }); // Invalidate global members cache too
+    },
+    onError: (error: any) => {
       toast.error("Error al actualizar perfil: " + error.message);
-    } finally {
-      setSaving(false);
     }
+  });
+
+  const saveProfile = async () => {
+    saveMutation.mutate();
   };
 
   if (!user) {
@@ -127,7 +132,7 @@ const Profile = () => {
                     type="file"
                     accept="image/*"
                     onChange={uploadAvatar}
-                    disabled={uploading}
+                    disabled={uploadMutation.isPending}
                     className="hidden"
                   />
                 </label>
@@ -194,10 +199,10 @@ const Profile = () => {
                 variant="hero"
                 className="w-full"
                 onClick={saveProfile}
-                disabled={saving}
+                disabled={saveMutation.isPending}
               >
                 <Save className="w-4 h-4 mr-2" />
-                {saving ? "Guardando..." : "Guardar Cambios"}
+                {saveMutation.isPending ? "Guardando..." : "Guardar Cambios"}
               </Button>
 
               <Button

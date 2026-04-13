@@ -12,7 +12,7 @@ export const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
-                <Music className="w-5 h-5 text-secondary" />
+                <Music className="w-5 h-5 text-secondary" aria-hidden="true" />
               </div>
               <span className="text-lg font-bold text-secondary">
                 Privilegiados App

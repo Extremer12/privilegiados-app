@@ -117,6 +117,8 @@ export const QuickActions = ({ stats }: QuickActionsProps) => {
               variant="action"
               className="relative p-4 cursor-pointer group overflow-hidden"
               onClick={() => navigate(action.path)}
+              role="button"
+              aria-label={`Ir a ${action.title}`}
             >
               {/* Hover Gradient Effect */}
               <motion.div
@@ -142,7 +144,7 @@ export const QuickActions = ({ stats }: QuickActionsProps) => {
                   <motion.div
                     className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-30 transition-opacity duration-300`}
                   />
-                  <action.icon className="w-7 h-7 text-foreground" />
+                  <action.icon className="w-7 h-7 text-foreground" aria-hidden="true" />
                 </motion.div>
 
                 <div className="flex-1 min-w-0">
@@ -169,7 +171,7 @@ export const QuickActions = ({ stats }: QuickActionsProps) => {
                   className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center"
                   whileHover={{ x: 5, backgroundColor: "rgba(255, 215, 0, 0.2)" }}
                 >
-                  <ChevronRight className="w-5 h-5 text-secondary" />
+                  <ChevronRight className="w-5 h-5 text-secondary" aria-hidden="true" />
                 </motion.div>
               </div>
 

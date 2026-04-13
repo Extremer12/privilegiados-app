@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion } from 'framer-motion';
@@ -32,11 +33,8 @@ const RepertorioDetalle = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
-  const [setlist, setSetlist] = useState<Setlist | null>(null);
-  const [songs, setSongs] = useState<SetlistSong[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [addSongDialogOpen, setAddSongDialogOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState<SectionType>('alabanza');
@@ -50,37 +48,21 @@ const RepertorioDetalle = () => {
     status: 'draft' as 'draft' | 'ready' | 'completed',
   });
 
-  useEffect(() => {
-    if (id && user) {
-      fetchData();
-    }
-  }, [id, user]);
-
-  const fetchData = async () => {
-    try {
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['setlist_detail', id],
+    queryFn: async () => {
       // Fetch setlist
       const { data: setlistData, error: setlistError } = await supabase
         .from('setlists')
         .select('*')
         .eq('id', id)
         .single();
-
       if (setlistError) throw setlistError;
       
       const formattedSetlist: Setlist = {
         ...setlistData,
         status: (setlistData.status as 'draft' | 'ready' | 'completed') || 'draft',
       };
-      
-      setSetlist(formattedSetlist);
-      setEditForm({
-        title: formattedSetlist.title,
-        description: formattedSetlist.description || '',
-        theme_verse: formattedSetlist.theme_verse || '',
-        service_director: formattedSetlist.service_director || '',
-        preacher: formattedSetlist.preacher || '',
-        status: formattedSetlist.status,
-      });
 
       // Fetch songs with song details
       const { data: songsData, error: songsError } = await supabase
@@ -91,26 +73,36 @@ const RepertorioDetalle = () => {
         `)
         .eq('setlist_id', id)
         .order('position');
-
       if (songsError) throw songsError;
       
-      setSongs((songsData || []).map(s => ({
+      const formattedSongs = (songsData || []).map(s => ({
         ...s,
         section: s.section || 'alabanza',
-      })));
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Error al cargar el repertorio');
-    } finally {
-      setLoading(false);
-    }
-  };
+      })) as SetlistSong[];
 
-  const handleSave = async () => {
-    if (!setlist) return;
-    
-    setSaving(true);
-    try {
+      return { setlist: formattedSetlist, songs: formattedSongs };
+    },
+    enabled: !!id && !!user,
+  });
+
+  const setlist = data?.setlist || null;
+  const songs = data?.songs || [];
+
+  useEffect(() => {
+    if (setlist) {
+      setEditForm({
+        title: setlist.title,
+        description: setlist.description || '',
+        theme_verse: setlist.theme_verse || '',
+        service_director: setlist.service_director || '',
+        preacher: setlist.preacher || '',
+        status: setlist.status,
+      });
+    }
+  }, [setlist]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
       const { error } = await supabase
         .from('setlists')
         .update({
@@ -121,36 +113,50 @@ const RepertorioDetalle = () => {
           preacher: editForm.preacher || null,
           status: editForm.status,
         })
-        .eq('id', setlist.id);
+        .eq('id', setlist!.id);
 
       if (error) throw error;
-      
-      setSetlist(prev => prev ? { ...prev, ...editForm } : null);
+      return true;
+    },
+    onSuccess: () => {
       setIsEditing(false);
       toast.success('Repertorio actualizado');
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] });
+      queryClient.invalidateQueries({ queryKey: ['setlists'] });
+    },
+    onError: (error) => {
       console.error('Error saving:', error);
       toast.error('Error al guardar');
-    } finally {
-      setSaving(false);
     }
+  });
+
+  const handleSave = async () => {
+    if (!setlist) return;
+    saveMutation.mutate();
   };
 
-  const handleRemoveSong = async (songId: string) => {
-    try {
+  const removeSongMutation = useMutation({
+    mutationFn: async (songId: string) => {
       const { error } = await supabase
         .from('setlist_songs')
         .delete()
         .eq('id', songId);
 
       if (error) throw error;
-      
-      setSongs(prev => prev.filter(s => s.id !== songId));
+      return songId;
+    },
+    onSuccess: () => {
       toast.success('Canción removida');
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] });
+    },
+    onError: (error) => {
       console.error('Error removing song:', error);
       toast.error('Error al remover la canción');
     }
+  });
+
+  const handleRemoveSong = async (songId: string) => {
+    removeSongMutation.mutate(songId);
   };
 
   const handleStartLive = async () => {
@@ -288,9 +294,9 @@ const RepertorioDetalle = () => {
                         <Button variant="outline" onClick={() => setIsEditing(false)} className="border-secondary/30 hover:bg-secondary/20">
                           Cancelar
                         </Button>
-                        <Button onClick={handleSave} disabled={saving} className="gap-2 bg-secondary text-primary-foreground hover:bg-secondary/90">
+                        <Button onClick={handleSave} disabled={saveMutation.isPending} className="gap-2 bg-secondary text-primary-foreground hover:bg-secondary/90">
                           <Save className="h-4 w-4" />
-                          {saving ? 'Guardando...' : 'Guardar'}
+                          {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
                         </Button>
                       </>
                     ) : (
@@ -448,7 +454,7 @@ const RepertorioDetalle = () => {
         section={selectedSection}
         setlistId={id || ''}
         currentPosition={getPositionForSection(selectedSection)}
-        onSongAdded={fetchData}
+        onSongAdded={() => queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] })}
       />
     </>
   );

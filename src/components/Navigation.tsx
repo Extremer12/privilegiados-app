@@ -116,7 +116,7 @@ export const Navigation = () => {
                     size="default"
                     className="flex items-center gap-2 shadow-lg shadow-secondary/20"
                   >
-                    <User className="w-4 h-4" />
+                    <User className="w-4 h-4" aria-hidden="true" />
                     Mi Perfil
                   </Button>
                 </motion.div>
@@ -149,7 +149,7 @@ export const Navigation = () => {
                   exit={{ rotate: 90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <X size={24} className="text-secondary" />
+                  <X size={24} className="text-secondary" aria-hidden="true" />
                 </motion.div>
               ) : (
                 <motion.div
@@ -159,7 +159,7 @@ export const Navigation = () => {
                   exit={{ rotate: -90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Menu size={24} />
+                  <Menu size={24} aria-hidden="true" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -200,13 +200,14 @@ export const Navigation = () => {
                         }`}
                         whileHover={{ scale: 1.1, rotate: 5 }}
                       >
-                        <link.icon className="w-6 h-6" />
+                        <link.icon className="w-6 h-6" aria-hidden="true" />
                       </motion.div>
                       <span className="text-lg font-semibold flex-1">{link.name}</span>
                       <ChevronRight
                         className={`w-5 h-5 transition-transform ${
                           isActive(link.path) ? "text-secondary" : "text-muted-foreground"
                         }`}
+                        aria-hidden="true"
                       />
                     </Link>
                   </motion.div>

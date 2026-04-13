@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
@@ -45,23 +46,21 @@ interface UserPresence {
 }
 
 const QUICK_REACTIONS = ["👍", "❤️", "🙏", "🎵", "🔥", "✨"];
+const MESSAGES_LIMIT = 50;
 
 const Foro = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<ChatMessageType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [showEmojis, setShowEmojis] = useState(false);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const MESSAGES_LIMIT = 50;
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,6 +71,56 @@ const Foro = () => {
   const { isRecording, recordingTime, startRecording, stopRecording, cancelRecording } =
     useAudioRecorder();
 
+  // Profiles query
+  const { data: profilesData } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url");
+      if (error) throw error;
+      const profilesMap: Record<string, Profile> = {};
+      data?.forEach((profile) => {
+        profilesMap[profile.id] = profile;
+      });
+      return profilesMap;
+    },
+    enabled: !!user,
+  });
+
+  const profiles = profilesData || {};
+
+  // Messages infinite query
+  const {
+    data: infiniteMessages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: messagesLoading,
+  } = useInfiniteQuery({
+    queryKey: ['chat_messages'],
+    queryFn: async ({ pageParam = 0 }) => {
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(pageParam * MESSAGES_LIMIT, (pageParam + 1) * MESSAGES_LIMIT - 1);
+
+      if (error) throw error;
+      return data as ChatMessageType[];
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === MESSAGES_LIMIT ? allPages.length : undefined;
+    },
+    enabled: !!user,
+  });
+
+  // Flatten messages and reverse for display (oldest first)
+  const messages = useMemo(() => {
+    if (!infiniteMessages) return [];
+    return [...infiniteMessages.pages].reverse().flatMap(page => [...page].reverse());
+  }, [infiniteMessages]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
@@ -80,8 +129,6 @@ const Foro = () => {
 
   useEffect(() => {
     if (user) {
-      fetchMessages();
-      fetchProfiles();
       setupRealtimeChannel();
     }
 
@@ -97,11 +144,11 @@ const Foro = () => {
     if (container) {
       const isNearBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-      if (isNearBottom || messages.length === 1) {
+      if (isNearBottom || messages.length > 0) {
         scrollToBottom();
       }
     }
-  }, [messages]);
+  }, [messages.length]); // Only on new messages
 
   // Handle scroll to show/hide scroll button
   useEffect(() => {
@@ -122,57 +169,9 @@ const Foro = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const fetchMessages = async (pageIndex = 0) => {
-    try {
-      const { data, error } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .range(pageIndex * MESSAGES_LIMIT, (pageIndex + 1) * MESSAGES_LIMIT - 1);
-
-      if (error) throw error;
-      
-      if (data) {
-        const reversedData = data.reverse();
-        if (pageIndex === 0) {
-          setMessages(reversedData);
-        } else {
-          setMessages(prev => [...reversedData, ...prev]);
-        }
-        setHasMore(data.length === MESSAGES_LIMIT);
-      }
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchMessages(nextPage);
-  };
-
-  const fetchProfiles = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url");
-
-      if (error) throw error;
-
-      const profilesMap: Record<string, Profile> = {};
-      data?.forEach((profile) => {
-        profilesMap[profile.id] = {
-          id: profile.id,
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
-        };
-      });
-      setProfiles(profilesMap);
-    } catch (error) {
-      console.error("Error fetching profiles:", error);
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
   };
 
@@ -201,38 +200,32 @@ const Foro = () => {
         });
         setTypingUsers(typing);
       })
-      .on("presence", { event: "join" }, () => {})
-      .on("presence", { event: "leave" }, () => {});
-
-    channel.on(
-      "postgres_changes",
-      {
+      .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
         table: "chat_messages",
-      },
-      (payload) => {
+      }, (payload) => {
         const newMessage = payload.new as ChatMessageType;
-
-        setMessages((current) => {
-          const filtered = current.filter((m) => m.id !== "temp-" + newMessage.author_id);
-
-          if (filtered.find((m) => m.id === newMessage.id)) {
-            return current;
-          }
-
-          if (newMessage.author_id !== user?.id) {
-            const author = profiles[newMessage.author_id];
-            toast({
-              title: `${author?.full_name || "Un usuario"}`,
-              description: newMessage.content || "Archivo compartido",
-            });
-          }
-
-          return [...filtered, { ...newMessage, status: "sent" }];
+        
+        // Update React Query cache
+        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any, i: number) => 
+              i === 0 ? [newMessage, ...page] : page
+            )
+          };
         });
-      }
-    );
+
+        if (newMessage.author_id !== user?.id) {
+          const author = profiles[newMessage.author_id];
+          toast({
+            title: `${author?.full_name || "Un usuario"}`,
+            description: newMessage.content || "Archivo compartido",
+          });
+        }
+      });
 
     channel.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
@@ -254,6 +247,71 @@ const Foro = () => {
 
     channelRef.current = channel;
   };
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const { error } = await supabase.from("chat_messages").insert({
+        content: content,
+        author_id: user!.id
+      });
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: () => {
+      setMessage("");
+      setShowEmojis(false);
+      if (channelRef.current) {
+        channelRef.current.track({
+          user_id: user!.id,
+          online_at: new Date().toISOString(),
+          typing: false,
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al enviar mensaje",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const sendFileMutation = useMutation({
+    mutationFn: async ({ file, fileName }: { file: File | Blob, fileName: string }) => {
+      setUploading(true);
+      const fileExt = fileName.split(".").pop() || "webm";
+      const uploadName = `${user!.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("chat-files")
+        .upload(uploadName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from("chat-files").getPublicUrl(uploadName);
+
+      const fileType = fileName.includes("audio_") ? "audio" : (file instanceof File && file.type.startsWith("image/") ? "image" : "file");
+
+      const { error } = await supabase.from("chat_messages").insert({
+        content: fileName.includes("audio_") ? "Mensaje de voz" : fileName,
+        file_url: fileUrl,
+        file_type: fileType,
+        author_id: user!.id
+      });
+
+      if (error) throw error;
+      return true;
+    },
+    onSettled: () => setUploading(false),
+    onError: (error: any) => {
+      toast({
+        title: "Error al subir archivo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   const handleTyping = useCallback(() => {
     if (!user || !channelRef.current) return;
@@ -277,35 +335,7 @@ const Foro = () => {
     }, 2000);
   }, [user]);
 
-  const uploadFile = async (file: File | Blob, fileName: string): Promise<string | null> => {
-    if (!user) return null;
-
-    try {
-      const fileExt = fileName.split(".").pop() || "webm";
-      const uploadName = `${user.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("chat-files")
-        .upload(uploadName, file);
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("chat-files").getPublicUrl(uploadName);
-
-      return publicUrl;
-    } catch (error: any) {
-      toast({
-        title: "Error al subir archivo",
-        description: error.message,
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>, isImage = false) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
@@ -318,23 +348,21 @@ const Foro = () => {
       return;
     }
 
-    setUploading(true);
-    const fileUrl = await uploadFile(file, file.name);
-
-    if (fileUrl) {
-      const fileType = file.type.startsWith("image/") ? "image" : "file";
-
-      await supabase.from("chat_messages").insert({
-        content: file.name,
-        file_url: fileUrl,
-        file_type: fileType,
-        author_id: user.id
-      });
-    }
-
-    setUploading(false);
+    sendFileMutation.mutate({ file, fileName: file.name });
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
+  const handleStopRecording = async () => {
+    const audioBlob = await stopRecording();
+    if (!audioBlob || !user) return;
+    sendFileMutation.mutate({ file: audioBlob, fileName: `audio_${Date.now()}.webm` });
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim() || !user) return;
+    sendMessageMutation.mutate(message);
   };
 
   const handleStartRecording = async () => {
@@ -344,78 +372,6 @@ const Foro = () => {
       toast({
         title: "Error",
         description: "No se pudo acceder al micrófono",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStopRecording = async () => {
-    const audioBlob = await stopRecording();
-    if (!audioBlob || !user) return;
-
-    setUploading(true);
-    const fileUrl = await uploadFile(audioBlob, `audio_${Date.now()}.webm`);
-
-    if (fileUrl) {
-      await supabase.from("chat_messages").insert({
-        content: "Mensaje de voz",
-        file_url: fileUrl,
-        file_type: "audio",
-        author_id: user.id
-      });
-    }
-
-    setUploading(false);
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() || !user) return;
-
-    const messageContent = message;
-    const tempId = "temp-" + user.id + "-" + Date.now();
-
-    const optimisticMessage: ChatMessageType = {
-      id: tempId,
-      content: messageContent,
-      file_url: null,
-      file_type: null,
-      created_at: new Date().toISOString(),
-      author_id: user.id,
-      status: "sending",
-    };
-
-    setMessages((current) => [...current, optimisticMessage]);
-    setMessage("");
-    setShowEmojis(false);
-
-    if (channelRef.current) {
-      channelRef.current.track({
-        user_id: user.id,
-        online_at: new Date().toISOString(),
-        typing: false,
-      });
-    }
-
-    try {
-      const { error } = await supabase.from("chat_messages").insert({
-        content: messageContent,
-        author_id: user.id
-      });
-
-      if (error) throw error;
-
-      setMessages((current) =>
-        current.map((m) => (m.id === tempId ? { ...m, status: "sent" as const } : m))
-      );
-    } catch (error: any) {
-      setMessages((current) =>
-        current.map((m) => (m.id === tempId ? { ...m, status: "error" as const } : m))
-      );
-
-      toast({
-        title: "Error al enviar mensaje",
-        description: error.message,
         variant: "destructive",
       });
     }
@@ -545,7 +501,7 @@ const Foro = () => {
             className="flex-1 flex flex-col overflow-hidden"
           >
             <Card className="flex-1 flex flex-col bg-gradient-to-b from-card/95 to-card/80 backdrop-blur-xl border-secondary/20 overflow-hidden shadow-2xl">
-              {loading ? (
+              {messagesLoading ? (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="flex flex-col items-center gap-4">
                     <div className="loader" />
@@ -584,6 +540,7 @@ const Foro = () => {
                               whileHover={{ scale: 1.2 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => addEmoji(emoji)}
+                              aria-label={`Reaccionar con ${emoji}`}
                             >
                               {emoji}
                             </motion.button>
@@ -592,10 +549,17 @@ const Foro = () => {
                       </motion.div>
                     ) : (
                       <>
-                        {hasMore && (
+                        {hasNextPage && (
                           <div className="flex justify-center py-4">
-                            <Button variant="outline" size="sm" onClick={loadMore} className="bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20">
-                              Cargar mensajes anteriores
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={loadMore} 
+                              disabled={isFetchingNextPage}
+                              className="bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20"
+                              aria-label="Cargar mensajes anteriores"
+                            >
+                              {isFetchingNextPage ? "Cargando..." : "Cargar mensajes anteriores"}
                             </Button>
                           </div>
                         )}
@@ -625,8 +589,9 @@ const Foro = () => {
                         onClick={scrollToBottom}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        aria-label="Desplazarse hacia abajo"
                       >
-                        <ArrowDown className="w-5 h-5" />
+                        <ArrowDown className="w-5 h-5" aria-hidden="true" />
                       </motion.button>
                     )}
                   </AnimatePresence>
@@ -649,6 +614,7 @@ const Foro = () => {
                               whileHover={{ scale: 1.2 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => addEmoji(emoji)}
+                              aria-label={`Añadir emoji ${emoji}`}
                             >
                               {emoji}
                             </motion.button>
@@ -658,20 +624,24 @@ const Foro = () => {
                     </AnimatePresence>
 
                     <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                      {/* Hidden File Inputs */}
-                      <input
+                       {/* Hidden File Inputs */}
+                       <input
                         ref={fileInputRef}
                         type="file"
                         onChange={(e) => handleFileSelect(e)}
                         className="hidden"
                         accept=".pdf,.doc,.docx,.txt,.zip,.rar"
+                        aria-hidden="true"
+                        tabIndex={-1}
                       />
                       <input
                         ref={imageInputRef}
                         type="file"
-                        onChange={(e) => handleFileSelect(e, true)}
+                        onChange={(e) => handleFileSelect(e)}
                         className="hidden"
                         accept="image/*"
+                        aria-hidden="true"
+                        tabIndex={-1}
                       />
 
                       {!isRecording && (
@@ -686,8 +656,9 @@ const Foro = () => {
                               className={`h-11 w-11 rounded-full transition-all ${
                                 showEmojis ? "bg-secondary/20 text-secondary" : "hover:bg-secondary/20 hover:text-secondary"
                               }`}
+                              aria-label="Abrir panel de emojis"
                             >
-                              <Smile className="w-5 h-5" />
+                              <Smile className="w-5 h-5" aria-hidden="true" />
                             </Button>
                           </motion.div>
 
@@ -700,8 +671,9 @@ const Foro = () => {
                               onClick={() => imageInputRef.current?.click()}
                               disabled={uploading}
                               className="h-11 w-11 rounded-full hover:bg-secondary/20 hover:text-secondary transition-all"
+                              aria-label="Adjuntar imagen"
                             >
-                              <ImageIcon className="w-5 h-5" />
+                              <ImageIcon className="w-5 h-5" aria-hidden="true" />
                             </Button>
                           </motion.div>
 
@@ -714,11 +686,12 @@ const Foro = () => {
                               onClick={() => fileInputRef.current?.click()}
                               disabled={uploading}
                               className="h-11 w-11 rounded-full hover:bg-secondary/20 hover:text-secondary transition-all"
+                              aria-label="Adjuntar archivo"
                             >
                               {uploading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
                               ) : (
-                                <Paperclip className="w-5 h-5" />
+                                <Paperclip className="w-5 h-5" aria-hidden="true" />
                               )}
                             </Button>
                           </motion.div>
@@ -734,6 +707,7 @@ const Foro = () => {
                               placeholder="Escribe un mensaje..."
                               className="h-12 bg-background/60 backdrop-blur-sm border-border/50 focus:border-secondary/50 rounded-2xl px-5 pr-12 transition-all text-base"
                               disabled={uploading}
+                              aria-label="Campo de mensaje"
                             />
                           </div>
 
@@ -747,10 +721,15 @@ const Foro = () => {
                                 type="submit"
                                 variant="hero"
                                 size="icon"
-                                disabled={uploading}
+                                disabled={uploading || sendMessageMutation.isPending}
                                 className="h-12 w-12 rounded-full shadow-lg shadow-secondary/30"
+                                aria-label="Enviar mensaje"
                               >
-                                <Send className="w-5 h-5" />
+                                {sendMessageMutation.isPending ? (
+                                  <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                                ) : (
+                                  <Send className="w-5 h-5" aria-hidden="true" />
+                                )}
                               </Button>
                             </motion.div>
                           ) : (
@@ -781,7 +760,7 @@ const Foro = () => {
                 </>
               )}
             </Card>
-          </motion.div>
+          </div>
         </div>
       </main>
     </>

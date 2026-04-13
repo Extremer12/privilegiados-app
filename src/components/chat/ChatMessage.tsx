@@ -41,10 +41,10 @@ export const ChatMessage = ({
   };
 
   const getStatusIcon = (msgStatus?: "sending" | "sent" | "error") => {
-    if (msgStatus === "sending") return <Loader2 className="w-3 h-3 animate-spin" />;
-    if (msgStatus === "sent") return <CheckCheck className="w-3 h-3" />;
-    if (msgStatus === "error") return <span className="text-destructive text-xs">Error</span>;
-    return <Check className="w-3 h-3" />;
+    if (msgStatus === "sending") return <Loader2 className="w-3 h-3 animate-spin" aria-label="Enviando..." />;
+    if (msgStatus === "sent") return <CheckCheck className="w-3 h-3 text-secondary" aria-label="Leído" />;
+    if (msgStatus === "error") return <span className="text-destructive text-xs font-semibold" role="alert">Error</span>;
+    return <Check className="w-3 h-3 text-muted-foreground" aria-label="Enviado" />;
   };
 
   const isAudioFile = (url: string | null, type: string | null) => {

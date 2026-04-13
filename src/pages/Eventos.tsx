@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -57,9 +58,23 @@ const EVENT_TYPE_COLORS = {
 const Eventos = () => {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  const { data: events = [], isLoading: loading } = useQuery({
+    queryKey: ['events'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .order("event_date", { ascending: true });
+
+      if (error) throw error;
+      return data as Event[];
+    },
+    enabled: !!user,
+  });
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<string>("todos");
   const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
@@ -73,7 +88,6 @@ const Eventos = () => {
 
   useEffect(() => {
     if (user) {
-      fetchEvents();
       requestNotificationPermission();
       checkUpcomingEvents();
     }
@@ -104,29 +118,43 @@ const Eventos = () => {
     }
   };
 
-  const fetchEvents = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .order("event_date", { ascending: true });
-
+  const createMutation = useMutation({
+    mutationFn: async (eventData: any) => {
+      const { data, error } = await supabase.from("events").insert(eventData).select('id').single();
       if (error) throw error;
-      setEvents(data || []);
-    } catch (error) {
-      console.error("Error fetching events:", error);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Evento creado",
+        description: "El evento se ha creado exitosamente",
+      });
+
+      // Send push notification about the new event
+      if (data) {
+        const eventDateStr = format(newEvent.event_date, "d 'de' MMMM 'a las' HH:mm", { locale: es });
+        notificationService.notifyEventReminder(newEvent.title, eventDateStr, data.id);
+      }
+
+      setIsDialogOpen(false);
+      setNewEvent({
+        title: "",
+        description: "",
+        location: "",
+        event_date: new Date(),
+        event_type: "otro",
+      });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: (error) => {
+      console.error("Error creating event:", error);
       toast({
         title: "Error",
-        description: "No se pudieron cargar los eventos",
+        description: "No se pudo crear el evento",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  });
 
   const handleCreateEvent = async () => {
     if (!user || !newEvent.title) {
@@ -138,70 +166,31 @@ const Eventos = () => {
       return;
     }
 
-    try {
-      const { data: newEventData, error } = await supabase.from("events").insert({
-        title: newEvent.title,
-        description: newEvent.description || null,
-        location: newEvent.location || null,
-        event_date: newEvent.event_date.toISOString(),
-        event_type: newEvent.event_type,
-        created_by: user.id,
-      }).select('id').single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Evento creado",
-        description: "El evento se ha creado exitosamente",
-      });
-
-      // Send push notification about the new event
-      if (newEventData) {
-        const eventDateStr = format(newEvent.event_date, "d 'de' MMMM 'a las' HH:mm", { locale: es });
-        notificationService.notifyEventReminder(newEvent.title, eventDateStr, newEventData.id);
-      }
-
-      setIsDialogOpen(false);
-      setNewEvent({
-        title: "",
-        description: "",
-        location: "",
-        event_date: new Date(),
-        event_type: "otro",
-      });
-      fetchEvents();
-    } catch (error) {
-      console.error("Error creating event:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo crear el evento",
-        variant: "destructive",
-      });
-    }
+    createMutation.mutate({
+      title: newEvent.title,
+      description: newEvent.description || null,
+      location: newEvent.location || null,
+      event_date: newEvent.event_date.toISOString(),
+      event_type: newEvent.event_type,
+      created_by: user.id,
+    });
   };
 
-  const handleDeleteEvent = async () => {
-    if (!deleteEventId || !user) return;
-    
-    try {
-      const { error } = await supabase
-        .from("events")
-        .delete()
-        .eq("id", deleteEventId);
-
-      if (error) {
-        console.error("Supabase delete error:", error);
-        throw error;
-      }
-
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("events").delete().eq("id", id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
       toast({
         title: "Evento eliminado",
         description: "El evento se ha eliminado exitosamente",
       });
-
       setDeleteEventId(null);
-      fetchEvents();
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: (error: any) => {
       console.error("Error deleting event:", error);
       toast({
         title: "Error",
@@ -209,6 +198,11 @@ const Eventos = () => {
         variant: "destructive",
       });
     }
+  });
+
+  const handleDeleteEvent = async () => {
+    if (!deleteEventId || !user) return;
+    deleteMutation.mutate(deleteEventId);
   };
 
   // Unused function - kept for potential future use
@@ -268,8 +262,8 @@ const Eventos = () => {
 
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="hero" size="lg" className="flex items-center gap-2">
-                    <Plus className="w-5 h-5" />
+                  <Button variant="hero" size="lg" className="flex items-center gap-2" aria-label="Crear un nuevo evento">
+                    <Plus className="w-5 h-5" aria-hidden="true" />
                     Crear Evento
                   </Button>
                 </DialogTrigger>
@@ -356,6 +350,7 @@ const Eventos = () => {
                 variant={filterType === "todos" ? "hero" : "outline"}
                 size="default"
                 onClick={() => setFilterType("todos")}
+                aria-label="Mostrar todos los eventos"
               >
                 Todos
               </Button>
@@ -365,6 +360,7 @@ const Eventos = () => {
                   variant={filterType === value ? "hero" : "outline"}
                   size="default"
                   onClick={() => setFilterType(value)}
+                  aria-label={`Filtrar por ${label}`}
                 >
                   {label}
                 </Button>
@@ -403,15 +399,15 @@ const Eventos = () => {
                 </div>
                 <div className="mt-6 flex items-center justify-center gap-6 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-secondary/20 border-2 border-secondary/40"></div>
+                    <div className="w-4 h-4 rounded bg-secondary/20 border-2 border-secondary/40" aria-hidden="true"></div>
                     <span className="text-muted-foreground">Hoy</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-secondary"></div>
+                    <div className="w-4 h-4 rounded bg-secondary" aria-hidden="true"></div>
                     <span className="text-muted-foreground">Seleccionado</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-secondary/20"></div>
+                    <div className="w-4 h-4 rounded bg-secondary/20" aria-hidden="true"></div>
                     <span className="text-muted-foreground">Con eventos</span>
                   </div>
                 </div>
@@ -428,7 +424,7 @@ const Eventos = () => {
                 {selectedDateEvents.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-secondary/10 flex items-center justify-center">
-                      <CalendarIcon className="w-10 h-10 text-secondary/50" />
+                      <CalendarIcon className="w-10 h-10 text-secondary/50" aria-hidden="true" />
                     </div>
                     <p className="text-lg text-muted-foreground">
                       No hay eventos para esta fecha
@@ -463,12 +459,12 @@ const Eventos = () => {
                             <div className="flex flex-wrap gap-4">
                               {event.location && (
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <MapPin className="w-4 h-4 text-secondary/70" />
+                                  <MapPin className="w-4 h-4 text-secondary/70" aria-hidden="true" />
                                   {event.location}
                                 </div>
                               )}
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Clock className="w-4 h-4 text-secondary/70" />
+                                <Clock className="w-4 h-4 text-secondary/70" aria-hidden="true" />
                                 {format(parseISO(event.event_date), "HH:mm", { locale: es })}
                               </div>
                             </div>
@@ -479,8 +475,9 @@ const Eventos = () => {
                               size="icon"
                               onClick={() => setDeleteEventId(event.id)}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10 h-10 w-10"
+                              aria-label="Eliminar evento"
                             >
-                              <Trash2 className="w-5 h-5" />
+                              <Trash2 className="w-5 h-5" aria-hidden="true" />
                             </Button>
                           )}
                         </div>
@@ -498,7 +495,7 @@ const Eventos = () => {
                 {events.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-secondary/10 flex items-center justify-center">
-                      <CalendarIcon className="w-10 h-10 text-secondary/50" />
+                      <CalendarIcon className="w-10 h-10 text-secondary/50" aria-hidden="true" />
                     </div>
                     <p className="text-lg text-muted-foreground">
                       No hay eventos programados
@@ -515,8 +512,10 @@ const Eventos = () => {
                         <div 
                           className="flex gap-4 cursor-pointer"
                           onClick={() => setSelectedDate(parseISO(event.event_date))}
+                          role="button"
+                          aria-label={`Ver detalles del evento ${event.title}`}
                         >
-                          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-secondary/30 to-secondary/10 flex flex-col items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-secondary/30 to-secondary/10 flex flex-col items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform" aria-hidden="true">
                             <span className="text-xs text-secondary font-semibold uppercase">
                               {format(parseISO(event.event_date), "MMM", { locale: es })}
                             </span>
@@ -535,12 +534,12 @@ const Eventos = () => {
                             </span>
                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
-                                <Clock className="w-4 h-4 text-secondary/60" />
+                                <Clock className="w-4 h-4 text-secondary/60" aria-hidden="true" />
                                 {format(parseISO(event.event_date), "HH:mm")}
                               </div>
                               {event.location && (
                                 <div className="flex items-center gap-1 truncate">
-                                  <MapPin className="w-4 h-4 text-secondary/60 flex-shrink-0" />
+                                  <MapPin className="w-4 h-4 text-secondary/60 flex-shrink-0" aria-hidden="true" />
                                   <span className="truncate">{event.location}</span>
                                 </div>
                               )}
@@ -557,8 +556,9 @@ const Eventos = () => {
                               setDeleteEventId(event.id);
                             }}
                             className="absolute top-3 right-3 text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                            aria-label="Eliminar evento"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" aria-hidden="true" />
                           </Button>
                         )}
                       </Card>

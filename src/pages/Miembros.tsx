@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -43,10 +44,36 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
 const Miembros = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, promoteToAdmin, demoteFromAdmin } = useUserRole();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  const { data: members = [], isLoading: loadingMembers } = useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as Member[];
+    },
+    enabled: !!user,
+  });
+
+  const { data: userRoles = [], isLoading: loadingRoles } = useQuery({
+    queryKey: ['user_roles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+      if (error) throw error;
+      return data as UserRole[];
+    },
+    enabled: !!user,
+  });
+
+  const loading = loadingMembers || loadingRoles;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [roleActionMember, setRoleActionMember] = useState<{ id: string; name: string; action: 'promote' | 'demote' } | null>(null);
 
@@ -56,84 +83,43 @@ const Miembros = () => {
     }
   }, [user, authLoading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      fetchMembers();
-      fetchUserRoles();
-    }
-  }, [user]);
-
-  const fetchMembers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-      setMembers(data || []);
-    } catch (error) {
-      console.error("Error fetching members:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserRoles = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-
-      if (error) throw error;
-      setUserRoles(data || []);
-    } catch (error) {
-      console.error("Error fetching user roles:", error);
-    }
-  };
-
   const isUserAdmin = (userId: string) => {
     return userRoles.some(role => role.user_id === userId && role.role === 'admin');
   };
 
+  const roleActionMutation = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: 'promote' | 'demote' }) => {
+      if (action === 'promote') {
+        const result = await promoteToAdmin(id);
+        if (!result.success) throw new Error(result.error || "No se pudo asignar el rol");
+        return { success: true, isPromote: true };
+      } else {
+        const result = await demoteFromAdmin(id);
+        if (!result.success) throw new Error(result.error || "No se pudo remover el rol");
+        return { success: true, isPromote: false };
+      }
+    },
+    onSuccess: (data) => {
+      toast({
+        title: data.isPromote ? "Administrador asignado" : "Rol removido",
+        description: data.isPromote ? "El usuario ahora es administrador" : "El usuario ya no es administrador",
+      });
+      queryClient.invalidateQueries({ queryKey: ['user_roles'] });
+      setRoleActionMember(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Ocurrió un error con la operación",
+        variant: "destructive",
+      });
+      setRoleActionMember(null);
+    }
+  });
+
   const handleRoleAction = async () => {
     if (!roleActionMember) return;
-
-    const { id, action } = roleActionMember;
-    
-    if (action === 'promote') {
-      const result = await promoteToAdmin(id);
-      if (result.success) {
-        toast({
-          title: "Administrador asignado",
-          description: "El usuario ahora es administrador",
-        });
-        fetchUserRoles();
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "No se pudo asignar el rol",
-          variant: "destructive",
-        });
-      }
-    } else {
-      const result = await demoteFromAdmin(id);
-      if (result.success) {
-        toast({
-          title: "Rol removido",
-          description: "El usuario ya no es administrador",
-        });
-        fetchUserRoles();
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "No se pudo remover el rol",
-          variant: "destructive",
-        });
-      }
-    }
-    
-    setRoleActionMember(null);
+    roleActionMutation.mutate({ id: roleActionMember.id, action: roleActionMember.action });
   };
 
   const filteredMembers = members.filter((member) =>
@@ -155,7 +141,7 @@ const Miembros = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary/30 to-secondary/10 flex items-center justify-center">
-                  <Users className="w-7 h-7 text-secondary" />
+                  <Users className="w-7 h-7 text-secondary" aria-hidden="true" />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-foreground">Miembros</h1>
@@ -166,7 +152,7 @@ const Miembros = () => {
               </div>
               {isAdmin && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/20 border border-secondary/30">
-                  <Shield className="w-4 h-4 text-secondary" />
+                  <Shield className="w-4 h-4 text-secondary" aria-hidden="true" />
                   <span className="text-sm text-secondary font-medium">Administrador</span>
                 </div>
               )}
@@ -174,13 +160,14 @@ const Miembros = () => {
 
             {/* Search Bar */}
             <div className="relative mt-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
               <Input
                 type="text"
                 placeholder="Buscar por nombre, rol o instrumento..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-12 bg-muted/50 border-border/50 rounded-xl text-base"
+                aria-label="Buscar miembros del grupo"
               />
             </div>
           </Card>
@@ -193,7 +180,7 @@ const Miembros = () => {
           ) : filteredMembers.length === 0 ? (
             <Card className="p-12 text-center card-gradient border-secondary/20 animate-fade-in">
               <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-secondary/10 flex items-center justify-center">
-                <User className="w-10 h-10 text-secondary/50" />
+                <User className="w-10 h-10 text-secondary/50" aria-hidden="true" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 {searchQuery ? "No se encontraron miembros" : "No hay miembros registrados"}
@@ -216,6 +203,8 @@ const Miembros = () => {
                       perspective: "1000px",
                     }}
                     onClick={() => navigate(`/perfil/${member.id}`)}
+                    role="button"
+                    aria-label={`Ver perfil de ${member.full_name}`}
                     onMouseMove={(e) => {
                       const card = e.currentTarget;
                       const rect = card.getBoundingClientRect();
@@ -234,7 +223,7 @@ const Miembros = () => {
                     {/* Admin badge */}
                     {memberIsAdmin && (
                       <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-full bg-secondary/30 border border-secondary/50">
-                        <Shield className="w-3 h-3 text-secondary" />
+                        <Shield className="w-3 h-3 text-secondary" aria-hidden="true" />
                         <span className="text-xs text-secondary font-medium">Admin</span>
                       </div>
                     )}
@@ -264,7 +253,7 @@ const Miembros = () => {
                         
                         {/* Status indicator */}
                         <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background border-2 border-secondary/30 flex items-center justify-center">
-                          {ROLE_ICONS[member.role?.toLowerCase() || "default"] || ROLE_ICONS.default}
+                          <span aria-hidden="true">{ROLE_ICONS[member.role?.toLowerCase() || "default"] || ROLE_ICONS.default}</span>
                         </div>
                       </div>
                       
@@ -291,6 +280,7 @@ const Miembros = () => {
                               action: memberIsAdmin ? 'demote' : 'promote'
                             });
                           }}
+                          aria-label={memberIsAdmin ? "Quitar rol de administrador" : "Asignar rol de administrador"}
                           className={`w-full mt-2 text-xs gap-1.5 ${
                             memberIsAdmin 
                               ? 'border-destructive/50 text-destructive hover:bg-destructive/10' 
@@ -299,12 +289,12 @@ const Miembros = () => {
                         >
                           {memberIsAdmin ? (
                             <>
-                              <ShieldOff className="w-3.5 h-3.5" />
+                              <ShieldOff className="w-3.5 h-3.5" aria-hidden="true" />
                               Quitar Admin
                             </>
                           ) : (
                             <>
-                              <Shield className="w-3.5 h-3.5" />
+                              <Shield className="w-3.5 h-3.5" aria-hidden="true" />
                               Hacer Admin
                             </>
                           )}

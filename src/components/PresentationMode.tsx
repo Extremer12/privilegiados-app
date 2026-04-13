@@ -30,10 +30,11 @@ export const PresentationMode = ({ lyrics, title, onClose }: PresentationModePro
             size="icon"
             onClick={decreaseFontSize}
             className="text-current"
+            aria-label="Reducir tamaño de letra"
           >
-            <ZoomOut className="w-5 h-5" />
+            <ZoomOut className="w-5 h-5" aria-hidden="true" />
           </Button>
-          <span className="text-sm font-medium min-w-[3rem] text-center">
+          <span className="text-sm font-medium min-w-[3rem] text-center" aria-live="polite">
             {fontSize}px
           </span>
           <Button
@@ -41,24 +42,27 @@ export const PresentationMode = ({ lyrics, title, onClose }: PresentationModePro
             size="icon"
             onClick={increaseFontSize}
             className="text-current"
+            aria-label="Aumentar tamaño de letra"
           >
-            <ZoomIn className="w-5 h-5" />
+            <ZoomIn className="w-5 h-5" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setDarkMode(!darkMode)}
             className="text-current"
+            aria-label={darkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
           >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            {darkMode ? <Sun className="w-5 h-5" aria-hidden="true" /> : <Moon className="w-5 h-5" aria-hidden="true" />}
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
             className="text-current"
+            aria-label="Cerrar modo presentación"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </Button>
         </div>
       </div>

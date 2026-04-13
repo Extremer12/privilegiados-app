@@ -40,6 +40,7 @@ export function NotificationBell() {
           variant="ghost"
           size="icon"
           className="relative"
+          aria-label="Abrir notificaciones"
         >
           {isSubscribed ? (
             <BellRing className="h-5 w-5 text-secondary" />

@@ -270,24 +270,50 @@ All colors MUST be HSL.
     border-color: hsl(48 100% 50% / 0.3);
   }
 
-  /* Matrix Loader Animation */
+  /* Matrix Loader Animation - Optimized with transforms */
   .loader {
-    width: 45px;
-    height: 40px;
-    background: linear-gradient(#0000 calc(1*100%/6), hsl(var(--secondary)) 0 calc(3*100%/6), #0000 0),
-              linear-gradient(#0000 calc(2*100%/6), hsl(var(--secondary)) 0 calc(4*100%/6), #0000 0),
-              linear-gradient(#0000 calc(3*100%/6), hsl(var(--secondary)) 0 calc(5*100%/6), #0000 0);
-    background-size: 10px 400%;
-    background-repeat: no-repeat;
-    animation: matrix 1s infinite linear;
+    display: flex;
+    gap: 4px;
+    height: 24px;
+    align-items: center;
   }
 
-  @keyframes matrix {
-    0% {
-      background-position: 0% 100%, 50% 100%, 100% 100%;
-    }
-    100% {
-      background-position: 0% 0%, 50% 0%, 100% 0%;
+  .loader::before,
+  .loader::after,
+  .loader {
+    content: '';
+  }
+
+  .loader::before,
+  .loader::after,
+  .loader-dot {
+    width: 8px;
+    height: 8px;
+    background-color: hsl(var(--secondary));
+    border-radius: 50%;
+  }
+
+  .loader-dot {
+    animation: loader-bounce 1s infinite ease-in-out;
+  }
+
+  .loader::before {
+    animation: loader-bounce 1s infinite ease-in-out -0.32s;
+  }
+
+  .loader::after {
+    animation: loader-bounce 1s infinite ease-in-out -0.16s;
+  }
+
+  @keyframes loader-bounce {
+    0%, 80%, 100% { 
+      transform: scale(0);
+      opacity: 0.3;
+    } 
+    40% { 
+      transform: scale(1);
+      opacity: 1;
     }
   }
 }
+
