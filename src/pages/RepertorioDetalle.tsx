@@ -222,16 +222,14 @@ const RepertorioDetalle = () => {
 
   if (!setlist) {
     return (
-      <>
-        <div className="flex-1 flex items-center justify-center px-4">
-          <Card className="max-w-md w-full p-8 card-gradient border-secondary/20 text-center">
-            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-            <h1 className="text-2xl font-bold mb-2 text-foreground">Repertorio no encontrado</h1>
-            <Button onClick={() => navigate('/repertorios')} className="mt-4 bg-secondary text-primary-foreground">
-              Volver a Repertorios
-            </Button>
-          </Card>
-        </div>
+      <div className="flex-1 flex items-center justify-center px-4 pt-20">
+        <Card className="max-w-md w-full p-8 card-gradient border-secondary/20 text-center">
+          <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2 text-foreground">Repertorio no encontrado</h1>
+          <Button onClick={() => navigate('/repertorios')} className="mt-4 bg-secondary text-primary-foreground hover:bg-secondary/90">
+            Volver a Repertorios
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -452,7 +450,7 @@ const RepertorioDetalle = () => {
         currentPosition={getPositionForSection(selectedSection)}
         onSongAdded={fetchData}
       />
-    </div>
+    </>
   );
 };
 

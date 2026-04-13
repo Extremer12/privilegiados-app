@@ -376,7 +376,7 @@ const Repertorios = () => {
           </Button>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 

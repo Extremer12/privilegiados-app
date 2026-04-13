@@ -481,7 +481,7 @@ const Foro = () => {
                     <span className={`text-xs font-medium ${isConnected ? "text-green-400" : "text-red-400"}`}>
                       {isConnected ? "Conectado" : "Reconectando..."}
                     </span>
-                  </motion.div>
+                  </div>
 
                   {/* Online Users */}
                   <Badge
@@ -569,7 +569,7 @@ const Foro = () => {
                           className="w-24 h-24 rounded-full bg-gradient-to-br from-secondary/20 to-purple-500/10 flex items-center justify-center mb-6 shadow-xl"
                         >
                           <MessageCircle className="w-12 h-12 text-secondary" />
-                        </motion.div>
+                        </div>
                         <h3 className="text-2xl font-bold text-foreground mb-3">
                           ¡Inicia la conversación!
                         </h3>
@@ -591,6 +591,7 @@ const Foro = () => {
                         </div>
                       </motion.div>
                     ) : (
+                      <>
                         {hasMore && (
                           <div className="flex justify-center py-4">
                             <Button variant="outline" size="sm" onClick={loadMore} className="bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20">
