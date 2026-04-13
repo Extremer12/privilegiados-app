@@ -28,6 +28,8 @@ interface Song {
 const Canciones = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const { data: songs = [], isLoading: loading, refetch: fetchSongs } = useQuery({
     queryKey: ['songs'],
     queryFn: async () => {
