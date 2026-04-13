@@ -155,11 +155,6 @@ const Index = () => {
                     Iniciar Sesión
                   </Button>
                 </Link>
-                <Link to="/auth" className="block">
-                  <Button variant="outline" size="lg" className="w-full">
-                    Crear Cuenta
-                  </Button>
-                </Link>
               </div>
             </Card>
           </motion.div>
@@ -223,7 +218,7 @@ const Index = () => {
                           <motion.div
                             className={`w-12 h-12 rounded-xl ${config.bg} flex items-center justify-center flex-shrink-0`}
                             animate={announcement.priority === 'urgent' ? { rotate: [0, -5, 5, 0] } : undefined }
-                            transition={announcement.priority === 'urgent' ? { duration: 0.5, repeat: Infinity, repeatDelay: 2 } : undefined }
+                            transition={announcement.priority === 'urgent' ? { duration: 0.5, repeatDelay: 2 } : undefined }
                           >
                             <IconComponent className={`w-6 h-6 ${config.color}`} />
                           </motion.div>
@@ -324,7 +319,7 @@ const Index = () => {
                             }}
                             transition={{
                               duration: 2,
-                              repeat: Infinity,
+
                             }}
                           />
                         )}

@@ -396,22 +396,14 @@ const EnVivo = () => {
             style={{
               background: "radial-gradient(circle, hsl(48 100% 50% / 0.1) 0%, transparent 70%)",
             }}
-            animate={{
-              x: [0, 50, 0],
-              y: [0, 30, 0],
-            }}
-            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 20, ease: "easeInOut" }}
           />
           <motion.div
             className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 rounded-full opacity-20"
             style={{
               background: "radial-gradient(circle, hsl(48 100% 50% / 0.15) 0%, transparent 70%)",
             }}
-            animate={{
-              x: [0, -30, 0],
-              y: [0, -50, 0],
-            }}
-            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 15, ease: "easeInOut" }}
           />
         </div>
 

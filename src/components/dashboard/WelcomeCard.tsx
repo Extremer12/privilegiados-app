@@ -23,9 +23,9 @@ export const WelcomeCard = () => {
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           <img
-            src="https://res.cloudinary.com/dkl5uieu5/image/upload/v1762006758/PicRetouch_20240830_213021695_tyjvv9.png"
+            src="/logo.jpg"
             alt="Privilegiados"
-            className="w-14 h-14 rounded-2xl object-cover ring-1 ring-white/10 shadow-lg"
+            className="w-14 h-14 rounded-2xl object-cover ring-1 ring-white/10 shadow-lg border border-white/5"
             loading="lazy"
           />
         </motion.div>

@@ -34,14 +34,6 @@ export const ProfileCard = ({ profile, email }: ProfileCardProps) => {
         {/* Animated Background */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-          animate={{
-            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "linear",
-          }}
         />
 
         {/* Glow Effect */}
@@ -50,18 +42,10 @@ export const ProfileCard = ({ profile, email }: ProfileCardProps) => {
         />
 
         <div className="relative z-10 flex items-center gap-4">
-          {/* Avatar with Ring Animation */}
+          {/* Avatar Ring */}
           <div className="relative">
-            <motion.div
+            <div
               className="absolute inset-0 rounded-full bg-gradient-to-r from-secondary via-amber-400 to-secondary"
-              animate={{
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "linear",
-              }}
               style={{
                 padding: "3px",
               }}
@@ -74,18 +58,11 @@ export const ProfileCard = ({ profile, email }: ProfileCardProps) => {
             </Avatar>
             
             {/* Online Indicator */}
-            <motion.div
+            <div
               className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-3 border-card z-20"
-              animate={{
-                scale: [1, 1.2, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-              }}
             >
               <Activity className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            </motion.div>
+            </div>
           </div>
 
           <div className="flex-1 min-w-0">

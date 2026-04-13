@@ -94,12 +94,9 @@ export const EndSessionDialog = ({
                     className="w-full h-12 rounded-xl bg-destructive hover:bg-destructive/90"
                   >
                     {isEnding ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      >
+                      <div className="animate-spin">
                         <StopCircle className="w-5 h-5" />
-                      </motion.div>
+                      </div>
                     ) : (
                       <>
                         <StopCircle className="w-5 h-5 mr-2" />

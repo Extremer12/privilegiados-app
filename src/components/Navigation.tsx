@@ -59,21 +59,13 @@ export const Navigation = () => {
               whileTap={{ scale: 0.95 }}
               className="relative"
             >
-              <motion.div
+              <div
                 className="absolute inset-0 bg-secondary/30 rounded-full blur-xl"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.3, 0.5, 0.3],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                }}
               />
               <img
-                src="https://res.cloudinary.com/dkl5uieu5/image/upload/v1762006758/PicRetouch_20240830_213021695_tyjvv9.png"
+                src="/logo.jpg"
                 alt="Privilegiados App"
-                className="h-14 w-14 object-contain relative z-10"
+                className="h-14 w-14 object-contain relative z-10 rounded-full"
               />
             </motion.div>
           </Link>

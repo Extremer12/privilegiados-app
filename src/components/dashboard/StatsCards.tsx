@@ -86,23 +86,11 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
               whileHover={{ rotate: [0, -10, 10, 0] }}
               transition={{ duration: 0.5 }}
             >
-              <motion.div
+              <div
                 className={`w-12 h-12 mx-auto rounded-xl bg-gradient-to-br ${stat.bgColor} flex items-center justify-center`}
-                animate={{
-                  boxShadow: [
-                    "0 0 0px rgba(0,0,0,0)",
-                    "0 0 20px rgba(255,215,0,0.2)",
-                    "0 0 0px rgba(0,0,0,0)",
-                  ],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  delay: index * 0.3,
-                }}
               >
                 <stat.icon className={`w-6 h-6 ${stat.color}`} />
-              </motion.div>
+              </div>
             </motion.div>
 
             {/* Value with Counter Animation */}
@@ -120,18 +108,6 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
               {stat.label}
               <TrendingUp className="w-3 h-3 text-green-400" />
             </div>
-
-            {/* Shine Effect */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12"
-              initial={{ x: "-200%" }}
-              animate={{ x: "200%" }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                delay: index * 0.5,
-              }}
-            />
           </Card>
         </motion.div>
       ))}
