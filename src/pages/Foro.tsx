@@ -759,11 +759,11 @@ const Foro = () => {
                   </div>
                 </>
               )}
-            </Card>
+              </Card>
+            </motion.div>
           </div>
-        </div>
-      </main>
-    </>
+        </main>
+      </>
   );
 };
 
