@@ -50,81 +50,72 @@ export function SetlistCard({
   const isToday = format(new Date(), 'yyyy-MM-dd') === format(serviceDate, 'yyyy-MM-dd');
 
   return (
-    <Card className="card-gradient border-secondary/20 group overflow-hidden hover:border-secondary/40 hover:shadow-xl transition-all duration-300">
-      <CardHeader className="pb-2">
+    <Card className="squircle border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.05] hover:border-secondary/20 group transition-all duration-500 overflow-hidden shadow-2xl shadow-black/30">
+      <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
-          <div className="space-y-1 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              {isToday && (
-                <Badge variant="default" className="bg-secondary text-primary-foreground animate-pulse">
-                  ¡HOY!
-                </Badge>
-              )}
-              <Badge className={status.className}>
-                <StatusIcon className="h-3 w-3 mr-1" />
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center gap-3 flex-wrap mb-2">
+              <Badge className="bg-white/[0.03] text-muted-foreground/60 border-none px-2 py-0.5 text-[9px] uppercase tracking-widest font-bold">
                 {status.label}
               </Badge>
+              {isToday && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary/10 border border-secondary/20">
+                  <div className="w-1 h-1 rounded-full bg-secondary" />
+                  <span className="text-[9px] uppercase tracking-widest text-secondary font-bold">Hoy</span>
+                </div>
+              )}
             </div>
-            <h3 className="font-bold text-lg text-foreground group-hover:text-secondary transition-colors line-clamp-1">
+            
+            <h3 className="text-2xl font-light tracking-tight text-foreground group-hover:text-secondary transition-colors line-clamp-1">
               {setlist.title}
             </h3>
-            {setlist.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {setlist.description}
-              </p>
-            )}
+            
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/30 font-medium">
+              {format(serviceDate, "EEEE d 'de' MMMM", { locale: es })}
+            </p>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Versículo temático */}
+      <CardContent className="space-y-6">
         {setlist.theme_verse && (
-          <div className="bg-secondary/20 rounded-lg p-3 border-l-4 border-secondary">
-            <p className="text-sm italic text-muted-foreground">
+          <div className="relative py-2">
+            <p className="text-sm italic text-muted-foreground/60 font-light leading-relaxed border-l border-secondary/30 pl-4">
               "{setlist.theme_verse}"
             </p>
           </div>
         )}
 
-        {/* Info del servicio */}
-        <div className="grid grid-cols-2 gap-3 text-foreground">
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="h-4 w-4 text-secondary" />
-            <span className="capitalize">
-              {format(serviceDate, "EEEE d 'de' MMMM", { locale: es })}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Music2 className="h-4 w-4 text-secondary" />
-            <span>{songsCount} {songsCount === 1 ? 'canción' : 'canciones'}</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">{songsCount}</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-medium">Canciones</span>
           </div>
           {setlist.service_director && (
-            <div className="flex items-center gap-2 text-sm col-span-2">
-              <Users className="h-4 w-4 text-secondary" />
-              <span>Dirección: <strong>{setlist.service_director}</strong></span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-medium truncate">
+                Dir. <span className="text-foreground/60">{setlist.service_director}</span>
+              </p>
             </div>
           )}
         </div>
 
-        {/* Acciones */}
-        <div className="flex items-center gap-2 pt-2 border-t border-secondary/20">
+        {/* Acciones - Minimalist */}
+        <div className="flex items-center gap-3 pt-4 border-t border-white/[0.03]">
           <Button
             onClick={onView}
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="flex-1 gap-2 border-secondary/30 hover:bg-secondary/20 text-foreground"
+            className="flex-1 h-10 squircle-sm bg-white/[0.03] hover:bg-white/[0.08] text-foreground/70 text-xs font-light tracking-wide transition-all"
           >
-            <Settings className="h-4 w-4" />
-            Editar
+            Detalles
           </Button>
           
           <Button
             onClick={onStartLive}
             size="sm"
-            className="flex-1 gap-2 bg-gradient-to-r from-secondary to-accent text-primary-foreground hover:opacity-90"
+            className="flex-1 h-10 squircle-sm bg-secondary text-primary-foreground hover:opacity-90 font-medium text-xs tracking-wide"
           >
-            <Play className="h-4 w-4" />
             En Vivo
           </Button>
 
@@ -134,9 +125,9 @@ export function SetlistCard({
                 e.stopPropagation();
                 onDelete();
               }}
-              variant="destructive"
+              variant="ghost"
               size="icon"
-              className="shrink-0"
+              className="h-10 w-10 squircle-sm text-destructive/40 hover:text-destructive hover:bg-destructive/10 transition-all"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

@@ -246,185 +246,153 @@ const RepertorioDetalle = () => {
     <>
       <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
+          {/* Header Editorial */}
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
+            className="mb-12 px-2"
           >
             <Button
               variant="ghost"
               onClick={() => navigate('/repertorios')}
-              className="mb-4 gap-2 text-foreground hover:bg-secondary/20"
+              className="mb-8 -ml-3 gap-2 text-muted-foreground/50 hover:text-secondary hover:bg-secondary/5 transition-all"
             >
               <ArrowLeft className="h-4 w-4" />
-              Volver a Repertorios
+              <span className="text-[10px] uppercase tracking-widest font-bold">Volver</span>
             </Button>
 
-            <Card className="card-gradient border-secondary/20">
-              <CardHeader className="pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                  <div className="flex-1">
-                    {isEditing ? (
-                      <Input
-                        value={editForm.title}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                        className="text-2xl font-bold mb-2 bg-secondary/20 border-secondary/30"
-                      />
-                    ) : (
-                      <h1 className="text-2xl font-bold mb-2 text-foreground">{setlist.title}</h1>
-                    )}
-                    
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                      <Badge className={status.className}>{status.label}</Badge>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {format(new Date(setlist.service_date), "EEEE d 'de' MMMM, yyyy", { locale: es })}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Music2 className="h-4 w-4" />
-                        {songs.length} canciones
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 flex-wrap">
-                    {isEditing ? (
-                      <>
-                        <Button variant="outline" onClick={() => setIsEditing(false)} className="border-secondary/30 hover:bg-secondary/20">
-                          Cancelar
-                        </Button>
-                        <Button onClick={handleSave} disabled={saveMutation.isPending} className="gap-2 bg-secondary text-primary-foreground hover:bg-secondary/90">
-                          <Save className="h-4 w-4" />
-                          {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button variant="outline" onClick={handleExportPDF} className="gap-2 border-secondary/30 hover:bg-secondary/20">
-                          <FileDown className="h-4 w-4" />
-                          PDF
-                        </Button>
-                        <Button variant="outline" onClick={() => setIsEditing(true)} className="gap-2 border-secondary/30 hover:bg-secondary/20">
-                          <Edit3 className="h-4 w-4" />
-                          Editar
-                        </Button>
-                        <Button 
-                          onClick={handleStartLive}
-                          className="gap-2 bg-gradient-to-r from-secondary to-accent text-primary-foreground"
-                        >
-                          <Play className="h-4 w-4" />
-                          En Vivo
-                        </Button>
-                      </>
-                    )}
-                  </div>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className="bg-secondary/10 text-secondary border-none px-2 py-0.5 text-[9px] uppercase tracking-widest font-bold">
+                    {status.label}
+                  </Badge>
+                  <div className="w-1 h-1 rounded-full bg-muted-foreground/20" />
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-medium">
+                    {songs.length} canciones
+                  </span>
                 </div>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                {/* Versículo temático */}
-                {(isEditing || setlist.theme_verse) && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-secondary" />
-                      <span className="font-medium text-sm text-foreground">Versículo Temático</span>
-                      {isEditing && (
-                        <HelpTooltip
-                          title="Versículo Temático"
-                          description="El pasaje bíblico que guía el tema del servicio."
-                        />
-                      )}
-                    </div>
-                    {isEditing ? (
-                      <Textarea
-                        value={editForm.theme_verse}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, theme_verse: e.target.value }))}
-                        placeholder="Ej: Hechos 3:6 - Mas Pedro dijo..."
-                        rows={2}
-                        className="bg-secondary/20 border-secondary/30"
-                      />
-                    ) : (
-                      <div className="bg-secondary/20 rounded-lg p-4 border-l-4 border-secondary">
-                        <p className="italic text-muted-foreground">"{setlist.theme_verse}"</p>
-                      </div>
-                    )}
-                  </div>
+                
+                {isEditing ? (
+                  <Input
+                    value={editForm.title}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="text-4xl md:text-5xl font-extralight tracking-tight bg-white/[0.02] border-white/[0.05] focus:border-secondary/30 h-auto py-2"
+                  />
+                ) : (
+                  <h1 className="text-4xl md:text-6xl font-extralight tracking-tight text-foreground leading-tight">
+                    {setlist.title}
+                  </h1>
                 )}
+                
+                <p className="mt-4 text-[10px] uppercase tracking-[0.2em] text-secondary font-bold">
+                  {format(new Date(setlist.service_date), "EEEE d 'de' MMMM, yyyy", { locale: es })}
+                </p>
+              </div>
 
-                {/* Info del servicio */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {/* Director */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-secondary" />
-                      <span className="font-medium text-sm text-foreground">Dirección de Culto</span>
-                    </div>
-                    {isEditing ? (
-                      <Input
-                        value={editForm.service_director}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, service_director: e.target.value }))}
-                        placeholder="Ej: Pastora Karina Andrada"
-                        className="bg-secondary/20 border-secondary/30"
-                      />
-                    ) : (
-                      <p className="text-muted-foreground">
-                        {setlist.service_director || 'No asignado'}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Predicador */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-secondary" />
-                      <span className="font-medium text-sm text-foreground">Comparte la Palabra</span>
-                    </div>
-                    {isEditing ? (
-                      <Input
-                        value={editForm.preacher}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, preacher: e.target.value }))}
-                        placeholder="Ej: Pastor Juan Benegas"
-                        className="bg-secondary/20 border-secondary/30"
-                      />
-                    ) : (
-                      <p className="text-muted-foreground">
-                        {setlist.preacher || 'No asignado'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Estado */}
-                {isEditing && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-secondary" />
-                      <span className="font-medium text-sm text-foreground">Estado del Repertorio</span>
-                      <HelpTooltip
-                        title="Estado del Repertorio"
-                        description="Indica si el repertorio está en preparación, listo para el servicio, o ya fue completado."
-                      />
-                    </div>
-                    <Select 
-                      value={editForm.status}
-                      onValueChange={(value: 'draft' | 'ready' | 'completed') => 
-                        setEditForm(prev => ({ ...prev, status: value }))
-                      }
+              <div className="flex gap-3 h-fit">
+                {isEditing ? (
+                  <>
+                    <Button variant="ghost" onClick={() => setIsEditing(false)} className="text-xs font-light tracking-wide hover:bg-white/5">
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleSave} disabled={saveMutation.isPending} className="squircle-sm bg-secondary text-primary-foreground hover:opacity-90 px-6 font-medium text-xs tracking-wide">
+                      {saveMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" onClick={() => setIsEditing(true)} className="w-12 h-12 squircle-sm bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all">
+                      <Edit3 className="h-5 w-5 text-muted-foreground/60" />
+                    </Button>
+                    <Button 
+                      onClick={handleStartLive}
+                      className="h-12 px-8 squircle-sm bg-secondary text-primary-foreground hover:opacity-90 font-medium text-xs tracking-widest uppercase shadow-xl shadow-secondary/20"
                     >
-                      <SelectTrigger className="bg-secondary/20 border-secondary/30">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Borrador</SelectItem>
-                        <SelectItem value="ready">Listo para el servicio</SelectItem>
-                        <SelectItem value="completed">Servicio completado</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <Play className="h-4 w-4 mr-2" />
+                      En Vivo
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Info del servicio - Clean Blocks */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="grid gap-8 mb-16 px-2"
+          >
+            {/* Versículo */}
+            {(isEditing || setlist.theme_verse) && (
+              <div className="space-y-4">
+                <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/30">
+                  Concepto Espiritual
+                </h3>
+                {isEditing ? (
+                  <Textarea
+                    value={editForm.theme_verse}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, theme_verse: e.target.value }))}
+                    placeholder="Escribe el versículo temático..."
+                    className="bg-white/[0.02] border-white/[0.05] focus:border-secondary/30 min-h-[100px] font-light text-lg italic"
+                  />
+                ) : (
+                  <p className="text-2xl font-extralight italic text-foreground/80 leading-relaxed border-l-2 border-secondary/20 pl-8 py-2">
+                    "{setlist.theme_verse}"
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="grid sm:grid-cols-2 gap-12">
+              <div className="space-y-4">
+                <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/30">
+                  Liderazgo
+                </h3>
+                {isEditing ? (
+                  <Input
+                    value={editForm.service_director}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, service_director: e.target.value }))}
+                    placeholder="Director del servicio"
+                    className="bg-white/[0.02] border-white/[0.05] focus:border-secondary/30"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 squircle-sm bg-secondary/10 flex items-center justify-center">
+                      <Users className="h-4 w-4 text-secondary/60" />
+                    </div>
+                    <p className="text-lg font-light text-foreground/70">
+                      {setlist.service_director || '—'}
+                    </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/30">
+                  Palabra
+                </h3>
+                {isEditing ? (
+                  <Input
+                    value={editForm.preacher}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, preacher: e.target.value }))}
+                    placeholder="Persona que predica"
+                    className="bg-white/[0.02] border-white/[0.05] focus:border-secondary/30"
+                  />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 squircle-sm bg-secondary/10 flex items-center justify-center">
+                      <MessageSquare className="h-4 w-4 text-secondary/60" />
+                    </div>
+                    <p className="text-lg font-light text-foreground/70">
+                      {setlist.preacher || '—'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </motion.div>
 
           {/* Estructura del servicio */}

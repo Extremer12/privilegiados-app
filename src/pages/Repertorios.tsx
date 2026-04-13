@@ -152,65 +152,69 @@ const Repertorios = () => {
     <>
       <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
+          {/* Header Editorial */}
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
+            className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12 px-2"
           >
             <div>
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-secondary/20">
-                  <ListMusic className="h-6 w-6 text-secondary" />
-                </div>
-                <h1 className="text-3xl font-bold text-foreground">Repertorios</h1>
+                <h1 className="text-4xl md:text-5xl font-extralight tracking-elegant text-foreground">
+                  REPERTORIOS
+                </h1>
                 <button
                   onClick={() => setHelpDialogOpen(true)}
-                  className="text-muted-foreground hover:text-secondary transition-colors"
+                  className="text-muted-foreground/30 hover:text-secondary transition-colors"
                 >
                   <HelpCircle className="h-5 w-5" />
                 </button>
               </div>
-              <p className="text-muted-foreground mt-1">
-                Organiza y gestiona los repertorios para tus servicios
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 font-medium mt-3">
+                Gestión y organización de servicios musicales
               </p>
             </div>
             
             <Button
               onClick={() => setCreateDialogOpen(true)}
-              className="gap-2 bg-gradient-to-r from-secondary to-accent hover:opacity-90 text-primary-foreground"
+              variant="outline"
               size="lg"
+              className="squircle-sm border-white/[0.05] bg-white/[0.02] hover:bg-secondary hover:text-primary-foreground hover:border-secondary transition-all duration-300 gap-2"
             >
               <Plus className="h-5 w-5" />
               Nuevo Repertorio
             </Button>
           </motion.div>
 
-          {/* Próximos servicios */}
+          {/* Próximos servicios - Squircle Cards */}
           {upcomingSetlists.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="mb-8"
+              className="mb-12"
             >
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2 text-foreground">
-                <Calendar className="h-5 w-5 text-secondary" />
+              <h2 className="text-[10px] uppercase tracking-widest font-bold mb-4 text-muted-foreground/40 flex items-center gap-2 px-2">
                 Próximos Servicios
               </h2>
-              <div className="flex gap-3 overflow-x-auto pb-2">
+              <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
                 {upcomingSetlists.map(setlist => (
                   <Card 
                     key={setlist.id}
-                    className="shrink-0 w-64 cursor-pointer card-gradient border-secondary/20 hover:border-secondary/40 transition-colors"
+                    className="shrink-0 w-64 cursor-pointer squircle border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.05] hover:border-secondary/20 transition-all duration-500 shadow-2xl shadow-black/20"
                     onClick={() => navigate(`/repertorios/${setlist.id}`)}
                   >
-                    <CardContent className="p-4">
-                      <Badge className="mb-2 bg-secondary/20 text-secondary">
-                        {format(new Date(setlist.service_date), "EEEE d", { locale: es })}
-                      </Badge>
-                      <p className="font-semibold truncate text-foreground">{setlist.title}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
+                        <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">
+                          {format(new Date(setlist.service_date), "EEEE d", { locale: es })}
+                        </span>
+                      </div>
+                      <p className="font-light text-xl tracking-tight text-foreground truncate mb-1">
+                        {setlist.title}
+                      </p>
+                      <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 font-medium">
                         {setlist.songsCount} canciones
                       </p>
                     </CardContent>

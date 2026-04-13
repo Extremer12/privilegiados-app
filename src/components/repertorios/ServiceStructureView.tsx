@@ -52,10 +52,10 @@ export function ServiceStructureView({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold text-foreground">Estructura del Servicio</h2>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between mb-8 px-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-extralight tracking-tight text-foreground">Estructura del Servicio</h2>
           <HelpTooltip
             title="Estructura del Servicio"
             description="Organiza las canciones por secciones según el flujo típico de un culto. Cada sección representa un momento diferente del servicio."
@@ -64,7 +64,7 @@ export function ServiceStructureView({
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-6">
         {SECTION_TYPES.map((section) => {
           const Icon = iconMap[section.icon];
           const songs = songsBySection[section.id] || [];
@@ -77,87 +77,97 @@ export function ServiceStructureView({
               onOpenChange={() => toggleSection(section.id)}
             >
               <Card className={`
-                card-gradient border-secondary/20 border-l-4 transition-all duration-200
-                ${songs.length > 0 ? 'border-l-secondary' : 'border-l-muted'}
+                squircle border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.02] transition-all duration-300 overflow-hidden
+                ${songs.length > 0 ? 'border-l-2 border-l-secondary/40' : 'border-l-transparent'}
               `}>
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-secondary/10 transition-colors py-3">
+                  <CardHeader className="cursor-pointer py-6 px-8">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg bg-secondary/20 ${section.color}`}>
-                          <Icon className="h-5 w-5" />
+                      <div className="flex items-center gap-6">
+                        <div className={`w-10 h-10 squircle-sm flex items-center justify-center bg-white/[0.03] ${section.color}`}>
+                          <Icon className="h-5 w-5 opacity-60" />
                         </div>
                         <div>
-                          <CardTitle className="text-base font-semibold text-foreground">
+                          <CardTitle className="text-lg font-light tracking-wide text-foreground/90">
                             {section.name}
                           </CardTitle>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground/30 mt-1">
                             {section.description}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="font-mono">
+                      <div className="flex items-center gap-4">
+                        <span className="text-[10px] font-bold text-secondary tracking-widest bg-secondary/10 px-2 py-0.5 rounded-full">
                           {songs.length}
-                        </Badge>
+                        </span>
                         {isExpanded ? (
-                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          <ChevronUp className="h-4 w-4 text-muted-foreground/30" />
                         ) : (
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          <ChevronDown className="h-4 w-4 text-muted-foreground/30" />
                         )}
                       </div>
                     </div>
                   </CardHeader>
                 </CollapsibleTrigger>
-
+                
                 <CollapsibleContent>
-                  <CardContent className="pt-0 pb-4">
+                  <CardContent className="px-8 pb-8 pt-2">
                     {songs.length === 0 ? (
-                      <div className="text-center py-4 text-muted-foreground">
-                        <p className="text-sm">No hay canciones en esta sección</p>
+                      <div className="py-8 border-t border-white/[0.02] text-center">
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground/20 font-medium">
+                          Sin canciones asignadas
+                        </p>
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-4 border-t border-white/[0.02] pt-6">
                         {songs.map((song, index) => (
                           <div
                             key={song.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-secondary/10 hover:bg-secondary/20 transition-colors group"
+                            className="flex items-center gap-6 p-6 squircle-sm bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.03] transition-all group"
                           >
                             {isEditing && (
-                              <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                              <GripVertical className="h-4 w-4 text-muted-foreground/20 cursor-grab group-hover:text-secondary/40" />
                             )}
-                            <span className="text-sm font-mono text-muted-foreground w-6">
-                              {index + 1}.
-                            </span>
+                            <div className="w-8 h-8 rounded-full bg-secondary/5 flex items-center justify-center">
+                              <span className="text-[10px] font-bold text-secondary/40">
+                                {index + 1}
+                              </span>
+                            </div>
                             <div 
                               className="flex-1 cursor-pointer"
                               onClick={() => onSongClick(song)}
                             >
-                              <p className="font-medium text-sm text-foreground group-hover:text-secondary transition-colors">
+                              <p className="text-xl font-light tracking-tight text-foreground/90 group-hover:text-secondary transition-colors">
                                 {song.songs?.title || 'Sin título'}
                               </p>
                               {(song.special_instructions || song.notes) && (
-                                <p className="text-xs text-muted-foreground italic mt-0.5">
+                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground/40 mt-2 italic font-medium">
                                   {song.special_instructions || song.notes}
                                 </p>
                               )}
                             </div>
-                            {song.assigned_to && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <User className="h-3 w-3" />
-                                {song.assigned_to}
-                              </div>
-                            )}
-                            {isEditing && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => onRemoveSong(song.id)}
-                              >
-                                <X className="h-4 w-4 text-destructive" />
-                              </Button>
-                            )}
+                            
+                            <div className="flex items-center gap-6">
+                              {song.assigned_to && (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-secondary/40" />
+                                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-bold">
+                                    {song.assigned_to}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {isEditing && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10 squircle-sm hover:bg-destructive/10 text-muted-foreground/20 hover:text-destructive transition-all"
+                                  onClick={() => onRemoveSong(song.id)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -165,13 +175,13 @@ export function ServiceStructureView({
 
                     {isEditing && (
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="w-full mt-3 gap-2 border-secondary/30 hover:bg-secondary/20 text-foreground"
+                        className="w-full mt-6 h-12 squircle-sm border border-dashed border-white/[0.1] hover:border-secondary/30 hover:bg-secondary/5 text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/40 hover:text-secondary transition-all"
                         onClick={() => onAddSong(section.id)}
                       >
-                        <Plus className="h-4 w-4" />
-                        Agregar canción a {section.name}
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar canción
                       </Button>
                     )}
                   </CardContent>
@@ -183,4 +193,5 @@ export function ServiceStructureView({
       </div>
     </div>
   );
+}
 }
