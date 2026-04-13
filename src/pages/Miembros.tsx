@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -148,9 +147,8 @@ const Miembros = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <Card variant="premium" className="p-6 mb-6 animate-fade-in">

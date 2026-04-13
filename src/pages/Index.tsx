@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +18,7 @@ import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { StatsCards } from "@/components/dashboard/StatsCards";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Event {
   id: string;
@@ -39,76 +39,56 @@ interface Announcement {
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [stats, setStats] = useState({
-    totalSongs: 0,
-    totalMembers: 0,
-    totalPosts: 0,
-  });
-
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchStats();
-      fetchUpcomingEvents();
-      fetchAnnouncements();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    if (!user) return;
-    
-    try {
-      const { data } = await supabase
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", user!.id)
         .single();
-      
-      if (data) setProfile(data);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  };
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
 
-  const fetchStats = async () => {
-    try {
+  const { data: stats = { totalSongs: 0, totalMembers: 0, totalPosts: 0 } } = useQuery({
+    queryKey: ['stats'],
+    queryFn: async () => {
       const [songsResult, membersResult, postsResult] = await Promise.all([
         supabase.from("songs").select("id", { count: "exact" }),
         supabase.from("profiles").select("id", { count: "exact" }),
         supabase.from("forum_posts").select("id", { count: "exact" }),
       ]);
-
-      setStats({
+      return {
         totalSongs: songsResult.count || 0,
         totalMembers: membersResult.count || 0,
         totalPosts: postsResult.count || 0,
-      });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
-  };
+      };
+    },
+    enabled: !!user
+  });
 
-  const fetchUpcomingEvents = async () => {
-    try {
-      const { data } = await supabase
+  const { data: upcomingEvents = [], isLoading: loadingEvents } = useQuery({
+    queryKey: ['upcomingEvents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("events")
         .select("id, title, event_date, location, event_type")
         .gte("event_date", new Date().toISOString())
         .order("event_date", { ascending: true })
         .limit(3);
-      
-      if (data) setUpcomingEvents(data);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-    }
-  };
+      if (error) throw error;
+      return data as Event[];
+    },
+    enabled: !!user
+  });
 
-  const fetchAnnouncements = async () => {
-    try {
-      const { data } = await supabase
+  const { data: announcements = [], isLoading: loadingAnnouncements } = useQuery({
+    queryKey: ['announcements'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("announcements")
         .select("id, title, content, priority, created_at")
         .eq("is_active", true)
@@ -116,12 +96,11 @@ const Index = () => {
         .order("priority", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(3);
-      
-      if (data) setAnnouncements(data);
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
-    }
-  };
+      if (error) throw error;
+      return data as Announcement[];
+    },
+    enabled: !!user
+  });
 
   const getPriorityConfig = (priority: string) => {
     switch (priority) {
@@ -146,10 +125,8 @@ const Index = () => {
   };
 
   if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-        <Navigation />
-        <main className="flex-1 flex items-center justify-center px-4 pt-20 pb-20">
+      <>
+        <main className="flex-1 flex items-center justify-center px-4 pt-20 pb-20 w-full min-h-screen">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -158,11 +135,9 @@ const Index = () => {
             <Card className="max-w-md w-full p-8 card-gradient border-secondary/20 text-center space-y-6">
               <motion.div
                 className="w-20 h-20 mx-auto rounded-full bg-secondary/20 flex items-center justify-center mb-4"
-                animate={{
-                  scale: [1, 1.1, 1],
-                  boxShadow: ["0 0 0px rgba(255,215,0,0)", "0 0 30px rgba(255,215,0,0.3)", "0 0 0px rgba(255,215,0,0)"],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1, boxShadow: "0 0 20px rgba(255,215,0,0.2)" }}
+                transition={{ duration: 0.5 }}
               >
                 <Music className="w-10 h-10 text-secondary" />
               </motion.div>
@@ -189,22 +164,27 @@ const Index = () => {
             </Card>
           </motion.div>
         </main>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      
-      <main className="flex-1 pt-20 pb-24 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-24 px-4 safe-top safe-bottom w-full">
         <div className="max-w-4xl mx-auto space-y-6">
           
           {/* Welcome Banner */}
           <WelcomeCard />
 
           {/* Announcements Section */}
-          {announcements.length > 0 && (
+          {loadingAnnouncements ? (
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-48 bg-secondary/10" />
+              {[1, 2].map((i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl bg-secondary/10" />
+              ))}
+            </div>
+          ) : announcements.length > 0 && (
             <motion.div
               className="space-y-3"
               initial={{ opacity: 0, y: 20 }}
@@ -214,13 +194,7 @@ const Index = () => {
               <div className="flex items-center gap-3">
                 <motion.div
                   className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center shadow-lg"
-                  animate={{
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                  }}
+                  whileHover={{ scale: 1.05 }}
                 >
                   <Bell className="w-5 h-5 text-red-400" />
                 </motion.div>
@@ -248,14 +222,8 @@ const Index = () => {
                         <div className="flex gap-3">
                           <motion.div
                             className={`w-12 h-12 rounded-xl ${config.bg} flex items-center justify-center flex-shrink-0`}
-                            animate={{
-                              rotate: announcement.priority === 'urgent' ? [0, -5, 5, 0] : 0,
-                            }}
-                            transition={{
-                              duration: 0.5,
-                              repeat: announcement.priority === 'urgent' ? Infinity : 0,
-                              repeatDelay: 2,
-                            }}
+                            animate={announcement.priority === 'urgent' ? { rotate: [0, -5, 5, 0] } : undefined }
+                            transition={announcement.priority === 'urgent' ? { duration: 0.5, repeat: Infinity, repeatDelay: 2 } : undefined }
                           >
                             <IconComponent className={`w-6 h-6 ${config.color}`} />
                           </motion.div>
@@ -283,7 +251,14 @@ const Index = () => {
           )}
 
           {/* Upcoming Events */}
-          {upcomingEvents.length > 0 && (
+          {loadingEvents ? (
+            <div className="space-y-4 pt-4">
+              <Skeleton className="h-8 w-48 bg-secondary/10" />
+              {[1, 2].map((i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-2xl bg-secondary/10" />
+              ))}
+            </div>
+          ) : upcomingEvents.length > 0 && (
             <motion.div
               className="space-y-4"
               initial={{ opacity: 0, y: 20 }}
@@ -369,9 +344,7 @@ const Index = () => {
                             >
                               {isToday && (
                                 <motion.span
-                                  className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                                  animate={{ opacity: [1, 0.5, 1] }}
-                                  transition={{ duration: 1.5, repeat: Infinity }}
+                                  className="text-[10px] font-bold uppercase tracking-wider mb-1 text-secondary-foreground"
                                 >
                                   Hoy
                                 </motion.span>
@@ -449,9 +422,8 @@ const Index = () => {
 
         </div>
       </main>
-      
       <Footer />
-    </div>
+    </>
   );
 };
 

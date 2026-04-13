@@ -7,7 +7,6 @@ import {
   ArrowLeft, Edit3, Save, Play, BookOpen, Users, MessageSquare,
   Calendar, Music2, CheckCircle2, AlertCircle, Sparkles, FileDown
 } from 'lucide-react';
-import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -223,8 +222,7 @@ const RepertorioDetalle = () => {
 
   if (!setlist) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-        <Navigation />
+      <>
         <div className="flex-1 flex items-center justify-center px-4">
           <Card className="max-w-md w-full p-8 card-gradient border-secondary/20 text-center">
             <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
@@ -241,10 +239,8 @@ const RepertorioDetalle = () => {
   const status = statusConfig[setlist.status];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <motion.div 

@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
-// This should match your VAPID public key
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+// VAPID public key from environment
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -63,17 +63,10 @@ export function usePushNotifications() {
   };
 
   const registerServiceWorker = async () => {
-    try {
-      // Register push service worker
-      const registration = await navigator.serviceWorker.register('/sw-push.js', {
-        scope: '/'
-      });
-      console.log('Push SW registered:', registration);
-      return registration;
-    } catch (error) {
-      console.error('SW registration failed:', error);
-      throw error;
-    }
+    const registration = await navigator.serviceWorker.register('/sw-push.js', {
+      scope: '/'
+    });
+    return registration;
   };
 
   const subscribe = useCallback(async () => {

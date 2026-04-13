@@ -20,11 +20,9 @@ export const notificationService = {
       });
 
       if (error) {
-        console.error('Error sending notification:', error);
         return false;
       }
 
-      console.log('Notification sent:', data);
       return true;
     } catch (error) {
       console.error('Error invoking notification function:', error);

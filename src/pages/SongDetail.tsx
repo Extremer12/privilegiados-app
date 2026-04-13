@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Navigation } from "@/components/Navigation";
+// Navigation removed
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
@@ -132,14 +132,13 @@ const SongDetail = () => {
 
   if (!song) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-        <Navigation />
-        <main className="flex-1 pt-24 pb-20 px-4">
+      <>
+        <main className="flex-1 pt-24 pb-20 px-4 w-full">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-muted-foreground">Canción no encontrada</p>
           </div>
         </main>
-      </div>
+      </>
     );
   }
 
@@ -151,9 +150,8 @@ const SongDetail = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <Button
@@ -374,7 +372,7 @@ const SongDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

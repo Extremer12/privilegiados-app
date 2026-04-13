@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SplashScreen } from "@/components/SplashScreen";
 import { Loader } from "@/components/ui/loader";
+import { Layout } from "@/components/Layout";
 
 // Lazy load all pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -76,22 +77,24 @@ const App = () => {
                 <Routes>
                   {/* Public routes */}
                   <Route path="/auth" element={<Auth />} />
+                  {/* Layout wrapper for protected and catch-all routes */}
+                  <Route element={<Layout />}>
+                    {/* Protected routes */}
+                    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                    <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
+                    <Route path="/canciones/:id" element={<ProtectedRoute><SongDetail /></ProtectedRoute>} />
+                    <Route path="/foro" element={<ProtectedRoute><Foro /></ProtectedRoute>} />
+                    <Route path="/miembros" element={<ProtectedRoute><Miembros /></ProtectedRoute>} />
+                    <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
+                    <Route path="/repertorios" element={<ProtectedRoute><Repertorios /></ProtectedRoute>} />
+                    <Route path="/repertorios/:id" element={<ProtectedRoute><RepertorioDetalle /></ProtectedRoute>} />
+                    <Route path="/en-vivo/:id" element={<ProtectedRoute><EnVivo /></ProtectedRoute>} />
+                    <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/perfil/:id" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
 
-                  {/* Protected routes */}
-                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
-                  <Route path="/canciones/:id" element={<ProtectedRoute><SongDetail /></ProtectedRoute>} />
-                  <Route path="/foro" element={<ProtectedRoute><Foro /></ProtectedRoute>} />
-                  <Route path="/miembros" element={<ProtectedRoute><Miembros /></ProtectedRoute>} />
-                  <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
-                  <Route path="/repertorios" element={<ProtectedRoute><Repertorios /></ProtectedRoute>} />
-                  <Route path="/repertorios/:id" element={<ProtectedRoute><RepertorioDetalle /></ProtectedRoute>} />
-                  <Route path="/en-vivo/:id" element={<ProtectedRoute><EnVivo /></ProtectedRoute>} />
-                  <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                  <Route path="/perfil/:id" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
-
-                  {/* Catch-all */}
-                  <Route path="*" element={<NotFound />} />
+                    {/* Catch-all */}
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
                 </Routes>
               </Suspense>
             </AuthProvider>

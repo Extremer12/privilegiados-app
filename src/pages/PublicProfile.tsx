@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -61,24 +60,22 @@ const PublicProfile = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-        <Navigation />
-        <main className="flex-1 pt-24 pb-20 px-4">
+    <>
+      <main className="flex-1 pt-24 pb-20 px-4 w-full">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-muted-foreground">Perfil no encontrado</p>
           </div>
         </main>
-        <Footer />
-      </div>
-    );
+      <Footer />
+    </>
+  );
   }
 
   const isOwnProfile = user.id === profile.id;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-2xl mx-auto">
           <Button
             variant="ghost"
@@ -152,7 +149,8 @@ const PublicProfile = () => {
           </Card>
         </div>
       </main>
-    </div>
+      
+    </>
   );
 };
 

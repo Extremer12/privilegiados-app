@@ -59,6 +59,9 @@ const Foro = () => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [showEmojis, setShowEmojis] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const MESSAGES_LIMIT = 50;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -119,20 +122,36 @@ const Foro = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (pageIndex = 0) => {
     try {
       const { data, error } = await supabase
-        .from("forum_posts")
+        .from("chat_messages")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false })
+        .range(pageIndex * MESSAGES_LIMIT, (pageIndex + 1) * MESSAGES_LIMIT - 1);
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      if (data) {
+        const reversedData = data.reverse();
+        if (pageIndex === 0) {
+          setMessages(reversedData);
+        } else {
+          setMessages(prev => [...reversedData, ...prev]);
+        }
+        setHasMore(data.length === MESSAGES_LIMIT);
+      }
     } catch (error) {
       console.error("Error fetching messages:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchMessages(nextPage);
   };
 
   const fetchProfiles = async () => {
@@ -182,19 +201,15 @@ const Foro = () => {
         });
         setTypingUsers(typing);
       })
-      .on("presence", { event: "join" }, ({ key }) => {
-        console.log("User joined:", key);
-      })
-      .on("presence", { event: "leave" }, ({ key }) => {
-        console.log("User left:", key);
-      });
+      .on("presence", { event: "join" }, () => {})
+      .on("presence", { event: "leave" }, () => {});
 
     channel.on(
       "postgres_changes",
       {
         event: "INSERT",
         schema: "public",
-        table: "forum_posts",
+        table: "chat_messages",
       },
       (payload) => {
         const newMessage = payload.new as ChatMessageType;
@@ -309,14 +324,11 @@ const Foro = () => {
     if (fileUrl) {
       const fileType = file.type.startsWith("image/") ? "image" : "file";
 
-      await supabase.from("forum_posts").insert({
+      await supabase.from("chat_messages").insert({
         content: file.name,
         file_url: fileUrl,
         file_type: fileType,
-        author_id: user.id,
-        category: "chat",
-        title: "",
-        likes: 0,
+        author_id: user.id
       });
     }
 
@@ -345,14 +357,11 @@ const Foro = () => {
     const fileUrl = await uploadFile(audioBlob, `audio_${Date.now()}.webm`);
 
     if (fileUrl) {
-      await supabase.from("forum_posts").insert({
+      await supabase.from("chat_messages").insert({
         content: "Mensaje de voz",
         file_url: fileUrl,
         file_type: "audio",
-        author_id: user.id,
-        category: "chat",
-        title: "",
-        likes: 0,
+        author_id: user.id
       });
     }
 
@@ -364,7 +373,7 @@ const Foro = () => {
     if (!message.trim() || !user) return;
 
     const messageContent = message;
-    const tempId = "temp-" + user.id;
+    const tempId = "temp-" + user.id + "-" + Date.now();
 
     const optimisticMessage: ChatMessageType = {
       id: tempId,
@@ -389,12 +398,9 @@ const Foro = () => {
     }
 
     try {
-      const { error } = await supabase.from("forum_posts").insert({
+      const { error } = await supabase.from("chat_messages").insert({
         content: messageContent,
-        author_id: user.id,
-        category: "chat",
-        title: "",
-        likes: 0,
+        author_id: user.id
       });
 
       if (error) throw error;
@@ -425,9 +431,8 @@ const Foro = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      <main className="flex-1 pt-20 pb-4 px-3 sm:px-4 flex flex-col">
+    <>
+      <main className="flex-1 pt-20 pb-4 px-3 sm:px-4 flex flex-col w-full">
         <div className="max-w-4xl mx-auto w-full flex flex-col h-[calc(100vh-120px)]">
           {/* Header */}
           <motion.div
@@ -625,7 +630,13 @@ const Foro = () => {
                         </div>
                       </motion.div>
                     ) : (
-                      <>
+                        {hasMore && (
+                          <div className="flex justify-center py-4">
+                            <Button variant="outline" size="sm" onClick={loadMore} className="bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20">
+                              Cargar mensajes anteriores
+                            </Button>
+                          </div>
+                        )}
                         {messages.map((msg) => (
                           <ChatMessage
                             key={msg.id}
@@ -811,7 +822,7 @@ const Foro = () => {
           </motion.div>
         </div>
       </main>
-    </div>
+    </>
   );
 };
 

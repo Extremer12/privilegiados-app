@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Navigation } from "@/components/Navigation";
+// Navigation removed
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { AddSongDialog } from "@/components/AddSongDialog";
-import { Plus, Music, Play, ExternalLink, Search } from "lucide-react";
+import { Plus, Music, Play, ExternalLink, Search, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 interface Song {
   id: string;
@@ -25,38 +28,19 @@ interface Song {
 const Canciones = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
-    if (user) {
-      fetchSongs();
-    }
-  }, [user]);
-
-  const fetchSongs = async () => {
-    try {
+  const { data: songs = [], isLoading: loading, refetch: fetchSongs } = useQuery({
+    queryKey: ['songs'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("songs")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setSongs(data || []);
-    } catch (error) {
-      console.error("Error fetching songs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data as Song[];
+    },
+    enabled: !!user,
+  });
 
   if (authLoading || !user) {
     return null;
@@ -76,9 +60,8 @@ const Canciones = () => {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
@@ -125,21 +108,31 @@ const Canciones = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Cargando canciones...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="p-6 card-gradient border-secondary/20">
+                  <div className="flex items-start gap-4 mb-4">
+                    <Skeleton className="w-12 h-12 rounded-lg bg-secondary/10" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-3/4 bg-secondary/10" />
+                      <Skeleton className="h-4 w-1/3 bg-secondary/10" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-9 w-full bg-secondary/10" />
+                    <Skeleton className="h-9 w-full bg-secondary/10" />
+                  </div>
+                </Card>
+              ))}
             </div>
           ) : filteredSongs.length === 0 ? (
-            <Card className="p-12 card-gradient border-secondary/20 text-center">
-              <Music className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2 text-foreground">
-                {songs.length === 0 ? "No hay canciones aún" : "No se encontraron canciones"}
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                {songs.length === 0 
-                  ? "Comienza agregando tu primera canción"
-                  : "Intenta con otro término de búsqueda o categoría"}
-              </p>
-            </Card>
+            <EmptyState
+              icon={Music}
+              title={songs.length === 0 ? "No hay canciones aún" : "No se encontraron canciones"}
+              description={songs.length === 0 
+                ? "Comienza agregando tu primera canción al repertorio"
+                : "Intenta con otro término de búsqueda o categoría"}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredSongs.map((song) => (
@@ -196,7 +189,7 @@ const Canciones = () => {
           )}
         </div>
       </main>
-    </div>
+    </>
   );
 };
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -185,9 +184,6 @@ const Eventos = () => {
     if (!deleteEventId || !user) return;
     
     try {
-      console.log("Attempting to delete event:", deleteEventId);
-      console.log("Current user ID:", user.id);
-      
       const { error } = await supabase
         .from("events")
         .delete()
@@ -232,9 +228,8 @@ const Eventos = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-        <Navigation />
-        <main className="flex-1 flex items-center justify-center px-4 pt-20">
+    <>
+      <main className="flex-1 flex items-center justify-center px-4 pt-20 w-full">
           <Card className="max-w-md w-full p-8 card-gradient border-secondary/20 text-center">
             <CalendarIcon className="w-16 h-16 mx-auto mb-4 text-secondary" />
             <h2 className="text-2xl font-bold text-foreground mb-2">
@@ -245,15 +240,14 @@ const Eventos = () => {
             </p>
           </Card>
         </main>
-      </div>
-    );
+      
+    </>
+  );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-
-      <main className="flex-1 pt-20 pb-24 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-24 px-4 safe-top safe-bottom w-full">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Header */}
           <Card variant="premium" className="p-8 animate-fade-in">

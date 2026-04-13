@@ -7,7 +7,6 @@ import {
   ListMusic, Clock, CheckCircle2, FileEdit, Music, Play, Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -143,9 +142,8 @@ const Repertorios = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-        <Navigation />
-        <main className="flex-1 flex items-center justify-center px-4 pt-20">
+    <>
+      <main className="flex-1 flex items-center justify-center px-4 pt-20 w-full">
           <Card className="max-w-md w-full p-8 card-gradient border-secondary/20 text-center">
             <Music className="w-16 h-16 mx-auto mb-4 text-secondary" />
             <h2 className="text-2xl font-bold text-foreground mb-2">
@@ -156,15 +154,14 @@ const Repertorios = () => {
             </p>
           </Card>
         </main>
-      </div>
-    );
+      
+    </>
+  );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <motion.div 

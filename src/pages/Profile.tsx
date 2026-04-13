@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -106,9 +105,8 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80">
-      <Navigation />
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom">
+    <>
+      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-2xl mx-auto">
           <Card className="p-6 md:p-8 card-gradient border-secondary/20">
             <div className="flex flex-col items-center mb-6">
@@ -215,7 +213,7 @@ const Profile = () => {
         </div>
       </main>
       <Footer />
-    </div>
+    </>
   );
 };
 

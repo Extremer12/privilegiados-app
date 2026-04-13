@@ -188,7 +188,6 @@ const EnVivo = () => {
           filter: `id=eq.${id}`,
         },
         (payload) => {
-          console.log("Session updated:", payload);
           const newSession = payload.new as LiveSession;
           setSession(newSession);
           
