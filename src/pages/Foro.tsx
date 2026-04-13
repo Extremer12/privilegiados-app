@@ -392,105 +392,70 @@ const Foro = () => {
         <div className="max-w-4xl mx-auto w-full flex flex-col h-[calc(100vh-120px)]">
           {/* Header */}
           <motion.div
-            className="mb-4"
-            initial={{ opacity: 0, y: -20 }}
+            className="mb-8"
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <Card className="p-4 bg-gradient-to-r from-card via-card to-card/80 border-secondary/20 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <motion.div
-                    className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary/30 to-purple-500/20 flex items-center justify-center shadow-lg"
-                    whileHover={{ rotate: 5, scale: 1.05 }}
-                  >
-                    <div
-                      className="absolute inset-0 rounded-2xl bg-secondary/20"
-                    />
-                    <MessageCircle className="w-7 h-7 text-secondary relative z-10" />
-                  </motion.div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-2xl font-bold text-foreground">Chat Grupal</h1>
-                      <div>
-                        <Sparkles className="w-5 h-5 text-secondary" />
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Hash className="w-3 h-3" />
-                      Conversación en tiempo real
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {/* Connection Status */}
-                  <div
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
-                      isConnected ? "bg-green-500/20" : "bg-red-500/20 animate-pulse"
-                    }`}
-                  >
-                    {isConnected ? (
-                      <Wifi className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <WifiOff className="w-4 h-4 text-red-400" />
-                    )}
-                    <span className={`text-xs font-medium ${isConnected ? "text-green-400" : "text-red-400"}`}>
-                      {isConnected ? "Conectado" : "Reconectando..."}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-light tracking-tight text-foreground">
+                  Comunidad
+                </h1>
+                <div className="flex items-center gap-3 mt-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">
+                      {isConnected ? "En tiempo real" : "Desconectado"}
                     </span>
                   </div>
-
-                  {/* Online Users */}
-                  <Badge
-                    variant="secondary"
-                    className="flex items-center gap-2 px-4 py-2 bg-secondary/20 border-secondary/30 shadow-lg"
-                  >
-                    <div
-                      className="w-2.5 h-2.5 bg-green-400 rounded-full"
-                    />
-                    <Users className="w-4 h-4" />
-                    <span className="font-bold text-base">{onlineUsers.length}</span>
-                    <span className="text-xs text-muted-foreground hidden sm:inline">en línea</span>
-                  </Badge>
+                  <span className="text-muted-foreground/20 text-xs">•</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">
+                      {onlineUsers.length}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">
+                      Conectados
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Online Users Avatars */}
+              {/* Online Users Avatars - Sleek and Minimal */}
               {onlineUsers.length > 0 && (
                 <motion.div
-                  className="flex items-center gap-2 mt-4 pt-4 border-t border-border/30"
+                  className="flex items-center gap-3"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <span className="text-xs text-muted-foreground mr-2">En línea:</span>
-                  <div className="flex -space-x-2">
-                    {onlineUsers.slice(0, 8).map((userId, index) => {
+                  <div className="flex -space-x-3">
+                    {onlineUsers.slice(0, 5).map((userId, index) => {
                       const profile = profiles[userId];
                       return (
                         <motion.div
                           key={userId}
                           initial={{ scale: 0, x: -10 }}
                           animate={{ scale: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
+                          transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
                         >
-                          <Avatar className="w-8 h-8 border-2 border-card ring-2 ring-green-500/30">
+                          <Avatar className="w-10 h-10 squircle-sm border-4 border-[#0d1117] relative z-10 shadow-xl">
                             <AvatarImage src={profile?.avatar_url || undefined} />
-                            <AvatarFallback className="bg-secondary/20 text-secondary text-xs">
+                            <AvatarFallback className="bg-white/5 text-muted-foreground text-[10px] uppercase font-bold">
                               {profile?.full_name?.charAt(0) || "?"}
                             </AvatarFallback>
                           </Avatar>
                         </motion.div>
                       );
                     })}
-                    {onlineUsers.length > 8 && (
-                      <div className="w-8 h-8 rounded-full bg-secondary/20 border-2 border-card flex items-center justify-center">
-                        <span className="text-xs text-secondary font-medium">+{onlineUsers.length - 8}</span>
+                    {onlineUsers.length > 5 && (
+                      <div className="w-10 h-10 squircle-sm bg-white/[0.03] border-4 border-[#0d1117] flex items-center justify-center relative z-0">
+                        <span className="text-[10px] text-muted-foreground/60 font-bold">+{onlineUsers.length - 5}</span>
                       </div>
                     )}
                   </div>
                 </motion.div>
               )}
-            </Card>
+            </div>
           </motion.div>
 
           {/* Chat Container */}

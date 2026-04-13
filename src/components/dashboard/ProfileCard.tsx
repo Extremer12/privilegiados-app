@@ -20,95 +20,58 @@ export const ProfileCard = ({ profile, email }: ProfileCardProps) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
+      transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ scale: 1.005 }}
+      whileTap={{ scale: 0.995 }}
     >
       <Card
-        variant="premium"
-        className="relative p-5 cursor-pointer group overflow-hidden"
+        className="relative p-6 cursor-pointer group squircle border-white/[0.04] bg-gradient-to-br from-white/[0.03] to-transparent hover:bg-white/[0.05] transition-all duration-500 overflow-hidden shadow-2xl shadow-black/20"
         onClick={() => navigate("/perfil")}
       >
-        {/* Animated Background */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        />
-
-        {/* Glow Effect */}
-        <motion.div
-          className="absolute -top-20 -right-20 w-40 h-40 bg-secondary/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        />
-
-        <div className="relative z-10 flex items-center gap-4">
-          {/* Avatar Ring */}
+        <div className="relative z-10 flex items-center gap-6">
+          {/* Avatar Area */}
           <div className="relative">
-            <div
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-secondary via-amber-400 to-secondary"
-              style={{
-                padding: "3px",
-              }}
-            />
-            <Avatar className="w-18 h-18 border-4 border-card relative z-10">
+            <Avatar className="w-20 h-20 squircle-sm border-2 border-white/5 relative z-10 ring-4 ring-secondary/5">
               <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-gradient-to-br from-secondary/40 to-secondary/20 text-secondary font-bold text-2xl">
+              <AvatarFallback className="bg-secondary/10 text-secondary font-light text-3xl squircle-sm">
                 {profile?.full_name?.charAt(0) || email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             
-            {/* Online Indicator */}
-            <div
-              className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-3 border-card z-20"
-            >
-              <Activity className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            </div>
+            {/* Minimal Online Dot */}
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-[#1a1f2c] z-20 shadow-lg shadow-green-500/20" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <motion.h2
-                className="text-xl font-bold text-foreground truncate"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
+            <div className="flex items-center gap-3 mb-1">
+              <h2 className="text-2xl font-light tracking-tight text-foreground truncate">
                 {profile?.full_name || "Músico"}
-              </motion.h2>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.5, type: "spring" }}
-              >
-                <Verified className="w-5 h-5 text-blue-400" />
-              </motion.div>
+              </h2>
             </div>
 
-            <div className="flex items-center gap-2 mb-2">
-              <Badge
-                variant="secondary"
-                className="bg-gradient-to-r from-secondary/20 to-amber-500/20 text-secondary border-secondary/30 font-medium flex items-center gap-1"
-              >
-                <Crown className="w-3 h-3" />
-                {profile?.role || "Miembro del grupo"}
-              </Badge>
-            </div>
+            <p className="text-[10px] tracking-widest text-secondary/70 font-medium uppercase mb-2">
+              {profile?.role || "Miembro del grupo"}
+            </p>
 
             {profile?.bio && (
-              <p className="text-sm text-muted-foreground line-clamp-1">
+              <p className="text-sm text-muted-foreground/60 font-light italic truncate">
                 {profile.bio}
               </p>
             )}
           </div>
 
-          {/* Arrow with Animation */}
           <motion.div
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary/20 to-secondary/10 flex items-center justify-center"
-            whileHover={{ scale: 1.1, x: 5 }}
-            transition={{ type: "spring", stiffness: 400 }}
+            className="w-10 h-10 rounded-full bg-white/[0.03] flex items-center justify-center border border-white/[0.05]"
+            whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.06)" }}
           >
-            <ChevronRight className="w-6 h-6 text-secondary" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground/40" />
           </motion.div>
         </div>
+
+        {/* Subtle decorative element - non-generic soft glow */}
+        <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-secondary/[0.02] rounded-full blur-3xl pointer-events-none" />
       </Card>
     </motion.div>
   );

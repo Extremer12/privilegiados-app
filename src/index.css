@@ -315,5 +315,22 @@ All colors MUST be HSL.
       opacity: 1;
     }
   }
+
+  /* Squircle Utilities - Modern high-radius look */
+  .squircle {
+    border-radius: 2.5rem;
+  }
+
+  .squircle-sm {
+    border-radius: 1.25rem;
+  }
+
+  .tracking-elegant {
+    letter-spacing: 0.15em;
+  }
+
+  .tracking-modern {
+    letter-spacing: -0.02em;
+  }
 }
 
