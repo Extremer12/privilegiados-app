@@ -125,6 +125,7 @@ const Index = () => {
   };
 
   if (!user) {
+    return (
       <>
         <main className="flex-1 flex items-center justify-center px-4 pt-20 pb-20 w-full min-h-screen">
           <motion.div
