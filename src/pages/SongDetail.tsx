@@ -31,6 +31,7 @@ interface Song {
   id: string;
   title: string;
   category: "alabanza" | "adoracion" | "especial" | "otro";
+  author: string | null;
   lyrics: string | null;
   chords: string | null;
   audio_url: string | null;
@@ -189,12 +190,17 @@ const SongDetail = () => {
                 <Music className="w-8 h-8 text-secondary" aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2 break-words">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 break-words">
                   {song.title}
                 </h1>
+                {song.author && (
+                  <p className="text-muted-foreground font-medium mb-3 flex items-center gap-1.5">
+                    <span className="opacity-75">Por</span> {song.author}
+                  </p>
+                )}
                 <Badge
                   variant="outline"
-                  className={categoryColors[song.category] || categoryColors.otro}
+                  className={`${categoryColors[song.category] || categoryColors.otro} ${!song.author ? 'mt-2' : ''}`}
                 >
                   {song.category}
                 </Badge>
@@ -357,6 +363,7 @@ const SongDetail = () => {
       {showPrintPreview && (
         <PrintPreviewMode
           title={song.title}
+          author={song.author}
           category={song.category}
           content={transposedChords || song.lyrics || ""}
           onClose={() => setShowPrintPreview(false)}

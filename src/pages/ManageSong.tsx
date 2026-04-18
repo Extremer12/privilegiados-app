@@ -27,6 +27,7 @@ const ManageSong = () => {
   
   const [formData, setFormData] = useState({
     title: "",
+    author: "",
     category: "otro",
     lyrics: "",
     chords: "",
@@ -53,6 +54,7 @@ const ManageSong = () => {
     if (existingSong) {
       setFormData({
         title: existingSong.title || "",
+        author: existingSong.author || "",
         category: existingSong.category || "otro",
         lyrics: existingSong.lyrics || "",
         chords: existingSong.chords || "",
@@ -128,6 +130,7 @@ const ManageSong = () => {
           .from("songs")
           .update({
             title: formData.title,
+            author: formData.author || null,
             category: formData.category,
             lyrics: formData.lyrics,
             chords: formData.chords,
@@ -147,6 +150,7 @@ const ManageSong = () => {
       } else {
         const { data: newSong, error } = await supabase.from("songs").insert({
           title: formData.title,
+          author: formData.author || null,
           category: formData.category,
           lyrics: formData.lyrics,
           chords: formData.chords,
@@ -211,16 +215,29 @@ const ManageSong = () => {
 
         <Card className="p-6 md:p-8 card-gradient border-secondary/20">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-                placeholder="Nombre de la canción"
-                className="h-12 text-lg"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="title">Título *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                  placeholder="Nombre de la canción"
+                  className="h-12 text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="author">Autor o Grupo (Opcional)</Label>
+                <Input
+                  id="author"
+                  value={formData.author}
+                  onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                  placeholder="Ej: Miel San Marcos, Hillsong..."
+                  className="h-12 text-lg"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
