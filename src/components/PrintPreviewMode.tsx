@@ -27,53 +27,66 @@ export const PrintPreviewMode = ({ title, category, content, onClose }: PrintPre
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-neutral-900 overflow-hidden">
       
-      {/* Top Bar (Only visible when controls are hidden, so you can still close it) */}
+      {/* Floating Action Buttons when controls are hidden */}
       {!showControls && (
-        <div className="absolute top-4 right-4 z-50 flex gap-2">
-          <Button variant="secondary" size="icon" onClick={() => setShowControls(true)} className="rounded-full shadow-lg">
-            <Eye className="w-5 h-5" />
-          </Button>
-          <Button variant="destructive" size="icon" onClick={onClose} className="rounded-full shadow-lg">
+        <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3">
+          <Button 
+            size="icon" 
+            variant="destructive"
+            onClick={onClose} 
+            className="rounded-full shadow-2xl h-12 w-12"
+            title="Cerrar vista previa"
+          >
             <X className="w-5 h-5" />
+          </Button>
+          <Button 
+            size="icon" 
+            onClick={() => setShowControls(true)} 
+            className="rounded-full shadow-2xl h-14 w-14 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+            title="Mostrar controles"
+          >
+            <Settings2 className="w-6 h-6" />
           </Button>
         </div>
       )}
 
       {/* Workspace Area - This contains the 'Paper' */}
       <div 
-        className="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center pb-[300px]"
+        className="flex-1 overflow-y-auto bg-neutral-900 pb-[300px]"
         onClick={() => {
           if (showControls) setShowControls(false);
         }}
       >
-        <div 
-          className="bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[1.5cm] text-black transition-all duration-300 relative"
-          style={{
-            fontFamily: fontFamily === 'sans-serif' ? 'Inter, sans-serif' : fontFamily === 'serif' ? 'Georgia, serif' : 'Courier New, monospace'
-          }}
-          onClick={(e) => e.stopPropagation()} // Prevent clicks on the paper from hiding controls
-        >
-          <div className="flex justify-between items-start border-b border-gray-300 pb-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-black m-0 p-0 leading-tight">{title}</h1>
-              <span className="text-gray-500 uppercase text-xs tracking-widest font-bold">{category}</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-400">
-              <Music className="w-5 h-5" />
-              <span className="font-bold text-sm tracking-widest">PRIVILEGIADOS</span>
-            </div>
-          </div>
-
+        <div className="min-h-full py-8 px-4 flex justify-center items-start">
           <div 
-            className="whitespace-pre-wrap leading-relaxed"
-            style={{ 
-              fontSize: `${fontSize}px`,
-              textAlign: align as any,
-              columnCount: layout === '2' ? 2 : 1,
-              columnGap: '2rem'
+            className="bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] h-max p-[1.5cm] text-black transition-all duration-300 relative"
+            style={{
+              fontFamily: fontFamily === 'sans-serif' ? 'Inter, sans-serif' : fontFamily === 'serif' ? 'Georgia, serif' : 'Courier New, monospace'
             }}
+            onClick={(e) => e.stopPropagation()} // Prevent clicks on the paper from hiding controls
           >
-            {content || "No hay contenido para imprimir."}
+            <div className="flex justify-between items-start border-b border-gray-300 pb-4 mb-6">
+              <div>
+                <h1 className="text-3xl font-bold text-black m-0 p-0 leading-tight">{title}</h1>
+                <span className="text-gray-500 uppercase text-xs tracking-widest font-bold">{category}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <Music className="w-5 h-5" />
+                <span className="font-bold text-sm tracking-widest">PRIVILEGIADOS</span>
+              </div>
+            </div>
+
+            <div 
+              className="whitespace-pre-wrap leading-relaxed"
+              style={{ 
+                fontSize: `${fontSize}px`,
+                textAlign: align as any,
+                columnCount: layout === '2' ? 2 : 1,
+                columnGap: '2rem'
+              }}
+            >
+              {content || "No hay contenido para imprimir."}
+            </div>
           </div>
         </div>
       </div>
