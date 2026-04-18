@@ -12,6 +12,7 @@ export interface Setlist {
   service_director: string | null;
   preacher: string | null;
   status: 'draft' | 'ready' | 'completed';
+  sections_config?: any;
 }
 
 export interface SetlistSong {
@@ -59,9 +60,7 @@ export interface Song {
 export const SECTION_TYPES = [
   { id: 'alabanza', name: 'Alabanza', icon: 'Music', color: 'text-yellow-400', description: 'Canciones de celebración y gozo' },
   { id: 'adoracion', name: 'Adoración', icon: 'Heart', color: 'text-pink-400', description: 'Momento íntimo de adoración' },
-  { id: 'lectura', name: 'Lectura Bíblica', icon: 'BookOpen', color: 'text-blue-400', description: 'Lectura de la Palabra' },
   { id: 'ofrenda', name: 'Diezmo y Ofrenda', icon: 'Gift', color: 'text-green-400', description: 'Momento de ofrenda' },
-  { id: 'palabra', name: 'Comparte la Palabra', icon: 'MessageSquare', color: 'text-purple-400', description: 'Predicación del mensaje' },
   { id: 'ministracion', name: 'Ministración', icon: 'Sparkles', color: 'text-cyan-400', description: 'Ministración especial' },
   { id: 'cierre', name: 'Cierre', icon: 'Flag', color: 'text-orange-400', description: 'Cierre del servicio' },
 ] as const;

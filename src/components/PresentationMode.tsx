@@ -68,13 +68,18 @@ export const PresentationMode = ({ lyrics, title, onClose }: PresentationModePro
       </div>
 
       {/* Lyrics Display */}
-      <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center">
-        <pre
-          className="font-sans text-center whitespace-pre-wrap leading-relaxed max-w-5xl"
-          style={{ fontSize: `${fontSize}px` }}
-        >
-          {lyrics}
-        </pre>
+      <div className="flex-1 overflow-y-auto p-4 md:p-12">
+        <div className="min-h-full flex flex-col justify-center">
+          <pre
+            className="font-sans font-black text-center whitespace-pre-wrap leading-[1.2] max-w-6xl mx-auto my-auto"
+            style={{ 
+              fontSize: `${fontSize}px`,
+              textShadow: darkMode ? '0 4px 24px rgba(0,0,0,0.5)' : 'none'
+            }}
+          >
+            {lyrics}
+          </pre>
+        </div>
       </div>
     </div>
   );

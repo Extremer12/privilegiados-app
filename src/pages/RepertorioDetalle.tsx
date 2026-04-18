@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Edit3, Save, Play, BookOpen, Users, MessageSquare,
   Calendar, Music2, CheckCircle2, AlertCircle, Sparkles, FileDown
@@ -29,6 +29,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+import { PrintSetlistMode } from '@/components/repertorios/PrintSetlistMode';
+
 const RepertorioDetalle = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -38,6 +40,8 @@ const RepertorioDetalle = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [addSongDialogOpen, setAddSongDialogOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState<SectionType>('alabanza');
+  const [sections, setSections] = useState<any[]>([]);
+  const [printMode, setPrintMode] = useState(false);
 
   const [editForm, setEditForm] = useState({
     title: '',
@@ -98,6 +102,7 @@ const RepertorioDetalle = () => {
         preacher: setlist.preacher || '',
         status: setlist.status,
       });
+      setSections(setlist.sections_config || SECTION_TYPES);
     }
   }, [setlist]);
 
@@ -112,6 +117,7 @@ const RepertorioDetalle = () => {
           service_director: editForm.service_director || null,
           preacher: editForm.preacher || null,
           status: editForm.status,
+          sections_config: sections,
         })
         .eq('id', setlist!.id);
 
@@ -197,7 +203,7 @@ const RepertorioDetalle = () => {
   };
 
   const handleExportPDF = () => {
-    toast.info('La exportación a PDF estará disponible pronto');
+    setPrintMode(true);
   };
 
   const songsBySection = songs.reduce((acc, song) => {
@@ -290,7 +296,7 @@ const RepertorioDetalle = () => {
                 </p>
               </div>
 
-              <div className="flex gap-3 h-fit">
+              <div className="flex gap-3 h-fit flex-wrap">
                 {isEditing ? (
                   <>
                     <Button variant="ghost" onClick={() => setIsEditing(false)} className="text-xs font-light tracking-wide hover:bg-white/5">
@@ -304,6 +310,9 @@ const RepertorioDetalle = () => {
                   <>
                     <Button variant="ghost" onClick={() => setIsEditing(true)} className="w-12 h-12 squircle-sm bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all">
                       <Edit3 className="h-5 w-5 text-muted-foreground/60" />
+                    </Button>
+                    <Button variant="ghost" onClick={handleExportPDF} className="w-12 h-12 squircle-sm bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all">
+                      <FileDown className="h-5 w-5 text-muted-foreground/60" />
                     </Button>
                     <Button 
                       onClick={handleStartLive}
@@ -402,6 +411,8 @@ const RepertorioDetalle = () => {
             transition={{ delay: 0.1 }}
           >
             <ServiceStructureView
+              sections={sections}
+              onUpdateSections={setSections}
               songsBySection={songsBySection}
               onAddSong={(section) => {
                 setSelectedSection(section as SectionType);
@@ -409,7 +420,7 @@ const RepertorioDetalle = () => {
               }}
               onRemoveSong={handleRemoveSong}
               onSongClick={(song) => navigate(`/canciones/${song.song_id}`)}
-              isEditing={true}
+              isEditing={isEditing}
             />
           </motion.div>
         </div>
@@ -424,6 +435,18 @@ const RepertorioDetalle = () => {
         currentPosition={getPositionForSection(selectedSection)}
         onSongAdded={() => queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] })}
       />
+
+      {/* Print Mode */}
+      <AnimatePresence>
+        {printMode && setlist && (
+          <PrintSetlistMode
+            setlist={setlist}
+            sections={sections}
+            songsBySection={songsBySection}
+            onClose={() => setPrintMode(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 };
