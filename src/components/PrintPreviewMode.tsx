@@ -66,17 +66,22 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
             }}
             onClick={(e) => e.stopPropagation()} // Prevent clicks on the paper from hiding controls
           >
-            <div className="flex justify-between items-start border-b border-gray-300 pb-4 mb-6">
-              <div>
-                <h1 className="text-3xl font-bold text-black m-0 p-0 leading-tight">{title}</h1>
-                <div className="flex items-center gap-2 mt-1">
-                  {author && <span className="text-gray-600 font-medium">{author} &bull;</span>}
-                  <span className="text-gray-500 uppercase text-xs tracking-widest font-bold">{category}</span>
-                </div>
+            <div className="border-b-2 border-black/10 pb-6 mb-8 text-center">
+              <div className="flex justify-center items-center gap-2 mb-4 opacity-60">
+                <img src="/logo.jpg" alt="Privilegiados" className="w-5 h-5 rounded object-cover grayscale" />
+                <span className="font-bold text-[10px] tracking-[0.2em] uppercase text-gray-500">Privilegiados App</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-400">
-                <img src="/logo.jpg" alt="Privilegiados" className="w-8 h-8 rounded-sm object-cover" />
-                <span className="font-bold text-sm tracking-widest">PRIVILEGIADOS</span>
+              <h1 className="text-4xl md:text-5xl font-black text-black m-0 p-0 leading-tight tracking-tight mb-4">
+                {title}
+              </h1>
+              <div className="flex justify-center items-center gap-3">
+                {author && (
+                  <span className="text-gray-700 font-semibold text-lg">{author}</span>
+                )}
+                {author && <span className="text-gray-300">&bull;</span>}
+                <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                  {category}
+                </span>
               </div>
             </div>
 
@@ -95,45 +100,38 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
         </div>
       </div>
 
-      {/* Floating Bottom Controls */}
+      {/* Floating Bottom Controls (Glassmorphism Toolbar) */}
       <AnimatePresence>
         {showControls && (
           <motion.div 
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="absolute bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95vw] max-w-4xl"
           >
-            <div className="max-w-5xl mx-auto p-4 md:p-6">
+            <div className="bg-neutral-950/70 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-center gap-4 md:gap-8 overflow-hidden">
               
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2 text-foreground font-bold text-lg">
-                  <Settings2 className="w-5 h-5 text-secondary" />
-                  Configuración de Impresión
-                </div>
+              <div className="flex items-center gap-3 w-full md:w-auto shrink-0 border-b md:border-b-0 md:border-r border-white/10 pb-4 md:pb-0 md:pr-6">
+                <Button variant="hero" onClick={handlePrint} className="w-full md:w-auto shadow-lg shadow-secondary/20 h-12 px-6 rounded-xl">
+                  <Printer className="w-5 h-5 mr-2" />
+                  Imprimir
+                </Button>
                 <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => setShowControls(false)} title="Ocultar controles">
-                    <EyeOff className="w-4 h-4 mr-2" />
-                    Ocultar
+                  <Button variant="secondary" size="icon" onClick={() => setShowControls(false)} title="Ocultar controles" className="h-12 w-12 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/5">
+                    <EyeOff className="w-5 h-5" />
                   </Button>
-                  <Button variant="outline" onClick={onClose}>
-                    <X className="w-4 h-4 mr-2" />
-                    Cerrar
-                  </Button>
-                  <Button variant="hero" onClick={handlePrint}>
-                    <Printer className="w-4 h-4 mr-2" />
-                    Imprimir Ahora
+                  <Button variant="destructive" size="icon" onClick={onClose} title="Cerrar" className="h-12 w-12 rounded-xl border border-red-500/20">
+                    <X className="w-5 h-5" />
                   </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="flex items-center justify-between gap-4 md:gap-6 flex-1 w-full overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                 {/* Size */}
-                <div className="space-y-4 bg-background/50 p-4 rounded-xl border border-border/50">
-                  <Label className="flex items-center gap-2 text-muted-foreground font-semibold">
-                    <ALargeSmall className="w-4 h-4 text-primary" /> 
-                    Tamaño de Letra <span className="text-foreground ml-auto">{fontSize}px</span>
+                <div className="flex flex-col gap-2 min-w-[140px] flex-1">
+                  <Label className="text-xs text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                    <ALargeSmall className="w-3 h-3 text-secondary" /> Tamaño ({fontSize}px)
                   </Label>
                   <Slider
                     value={[fontSize]}
@@ -146,31 +144,29 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
                 </div>
 
                 {/* Font */}
-                <div className="space-y-4 bg-background/50 p-4 rounded-xl border border-border/50">
-                  <Label className="flex items-center gap-2 text-muted-foreground font-semibold">
-                    <Type className="w-4 h-4 text-primary" /> 
-                    Tipo de Fuente
+                <div className="flex flex-col gap-2 min-w-[130px]">
+                  <Label className="text-xs text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                    <Type className="w-3 h-3 text-secondary" /> Fuente
                   </Label>
                   <Select value={fontFamily} onValueChange={setFontFamily}>
-                    <SelectTrigger className="bg-background border-border/50">
+                    <SelectTrigger className="h-10 bg-black/40 border-white/10 text-sm rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sans-serif">Moderna (Sans Serif)</SelectItem>
-                      <SelectItem value="serif">Clásica (Serif)</SelectItem>
-                      <SelectItem value="monospace">Acordes (Monospace)</SelectItem>
+                      <SelectItem value="sans-serif">Moderna</SelectItem>
+                      <SelectItem value="serif">Clásica</SelectItem>
+                      <SelectItem value="monospace">Acordes</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Alignment */}
-                <div className="space-y-4 bg-background/50 p-4 rounded-xl border border-border/50">
-                  <Label className="flex items-center gap-2 text-muted-foreground font-semibold">
-                    <AlignLeft className="w-4 h-4 text-primary" /> 
-                    Alineación
+                <div className="flex flex-col gap-2 min-w-[130px]">
+                  <Label className="text-xs text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                    <AlignLeft className="w-3 h-3 text-secondary" /> Alineación
                   </Label>
                   <Select value={align} onValueChange={setAlign}>
-                    <SelectTrigger className="bg-background border-border/50">
+                    <SelectTrigger className="h-10 bg-black/40 border-white/10 text-sm rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -181,26 +177,20 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
                 </div>
 
                 {/* Layout */}
-                <div className="space-y-4 bg-background/50 p-4 rounded-xl border border-border/50">
-                  <Label className="flex items-center gap-2 text-muted-foreground font-semibold">
-                    <Columns className="w-4 h-4 text-primary" /> 
-                    Diseño de Página
+                <div className="flex flex-col gap-2 min-w-[130px]">
+                  <Label className="text-xs text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                    <Columns className="w-3 h-3 text-secondary" /> Columnas
                   </Label>
                   <Select value={layout} onValueChange={setLayout}>
-                    <SelectTrigger className="bg-background border-border/50">
+                    <SelectTrigger className="h-10 bg-black/40 border-white/10 text-sm rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1 Columna (Normal)</SelectItem>
-                      <SelectItem value="2">2 Columnas (Ahorrar Hojas)</SelectItem>
+                      <SelectItem value="1">1 Columna</SelectItem>
+                      <SelectItem value="2">2 Columnas</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              
-              <div className="mt-6 text-xs text-muted-foreground text-center flex items-center justify-center gap-2 bg-secondary/10 text-secondary-foreground py-2 rounded-lg max-w-2xl mx-auto">
-                <Printer className="w-4 h-4" />
-                <span>Para imprimir con el fondo y los colores correctos, activa <strong>"Gráficos de fondo"</strong> en las opciones de tu navegador.</span>
               </div>
             </div>
           </motion.div>
@@ -212,17 +202,22 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
            style={{
               fontFamily: fontFamily === 'sans-serif' ? 'Inter, sans-serif' : fontFamily === 'serif' ? 'Georgia, serif' : 'Courier New, monospace'
             }}>
-        <div className="flex justify-between items-start border-b border-gray-300 pb-4 mb-6" style={{ breakInside: 'avoid' }}>
-          <div>
-            <h1 className="text-3xl font-bold text-black m-0 p-0 leading-tight">{title}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              {author && <span className="text-gray-600 font-medium">{author} &bull;</span>}
-              <span className="text-gray-500 uppercase text-xs tracking-widest font-bold">{category}</span>
-            </div>
+        <div className="border-b-2 border-black/10 pb-6 mb-8 text-center" style={{ breakInside: 'avoid' }}>
+          <div className="flex justify-center items-center gap-2 mb-4 opacity-60">
+            <img src="/logo.jpg" alt="Privilegiados" className="w-5 h-5 rounded object-cover grayscale" />
+            <span className="font-bold text-[10px] tracking-[0.2em] uppercase text-gray-500">Privilegiados App</span>
           </div>
-          <div className="flex items-center gap-2 text-gray-400">
-            <img src="/logo.jpg" alt="Privilegiados" className="w-8 h-8 rounded-sm object-cover" />
-            <span className="font-bold text-sm tracking-widest">PRIVILEGIADOS</span>
+          <h1 className="text-4xl md:text-5xl font-black text-black m-0 p-0 leading-tight tracking-tight mb-4">
+            {title}
+          </h1>
+          <div className="flex justify-center items-center gap-3">
+            {author && (
+              <span className="text-gray-700 font-semibold text-lg">{author}</span>
+            )}
+            {author && <span className="text-gray-300">&bull;</span>}
+            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+              {category}
+            </span>
           </div>
         </div>
 
@@ -232,7 +227,7 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
             fontSize: `${fontSize}px`,
             textAlign: align as any,
             columnCount: layout === '2' ? 2 : 1,
-            columnGap: '2rem'
+            columnGap: '3rem'
           }}
         >
           {content || "No hay contenido para imprimir."}

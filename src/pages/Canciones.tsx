@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/EmptyState";
 interface Song {
   id: string;
   title: string;
+  author?: string | null;
   category: "alabanza" | "adoracion" | "especial" | "otro";
   lyrics: string | null;
   chords: string | null;
@@ -48,26 +49,38 @@ const Canciones = () => {
     return null;
   }
 
-  const categoryStyles: Record<string, { badge: string, iconBg: string, iconColor: string }> = {
+  const categoryStyles: Record<string, { badge: string, iconBg: string, iconColor: string, cardBorder: string, cardBg: string, highlight: string }> = {
     alabanza: {
       badge: "bg-blue-500/20 text-blue-300 border-blue-500/40",
       iconBg: "from-blue-500/20 to-blue-500/5",
-      iconColor: "text-blue-400"
+      iconColor: "text-blue-400",
+      cardBorder: "border-blue-500/20 hover:border-blue-500/40",
+      cardBg: "hover:bg-blue-500/5",
+      highlight: "bg-blue-500"
     },
     adoracion: {
       badge: "bg-purple-500/20 text-purple-300 border-purple-500/40",
       iconBg: "from-purple-500/20 to-purple-500/5",
-      iconColor: "text-purple-400"
+      iconColor: "text-purple-400",
+      cardBorder: "border-purple-500/20 hover:border-purple-500/40",
+      cardBg: "hover:bg-purple-500/5",
+      highlight: "bg-purple-500"
     },
     especial: {
       badge: "bg-amber-500/20 text-amber-300 border-amber-500/40",
       iconBg: "from-amber-500/20 to-amber-500/5",
-      iconColor: "text-amber-400"
+      iconColor: "text-amber-400",
+      cardBorder: "border-amber-500/20 hover:border-amber-500/40",
+      cardBg: "hover:bg-amber-500/5",
+      highlight: "bg-amber-500"
     },
     otro: {
       badge: "bg-gray-500/20 text-gray-300 border-gray-500/40",
       iconBg: "from-gray-500/20 to-gray-500/5",
-      iconColor: "text-gray-400"
+      iconColor: "text-gray-400",
+      cardBorder: "border-gray-500/20 hover:border-gray-500/40",
+      cardBg: "hover:bg-gray-500/5",
+      highlight: "bg-gray-500"
     },
   };
 
@@ -87,7 +100,8 @@ const Canciones = () => {
   };
 
   const filteredSongs = songs.filter((song) => {
-    const matchesSearch = song.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = song.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (song.author && song.author.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === "all" || song.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -121,7 +135,7 @@ const Canciones = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
                 type="text"
-                placeholder="Buscar canciones..."
+                placeholder="Buscar por título o autor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 h-12 text-base"
@@ -142,9 +156,10 @@ const Canciones = () => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="p-6 card-gradient border-secondary/20">
+                <Card key={i} className="p-6 card-gradient border-secondary/20 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-secondary/20" />
                   <div className="flex items-start gap-4 mb-4">
-                    <Skeleton className="w-12 h-12 rounded-lg bg-secondary/10" />
+                    <Skeleton className="w-12 h-12 rounded-xl bg-secondary/10" />
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-5 w-3/4 bg-secondary/10" />
                       <Skeleton className="h-4 w-1/3 bg-secondary/10" />
@@ -178,11 +193,14 @@ const Canciones = () => {
                 return (
                   <motion.div key={song.id} variants={itemVariants} className="h-full">
                     <Card 
-                      className="group relative p-6 bg-card hover:bg-secondary/5 border-secondary/10 hover:border-secondary/30 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full shadow-md hover:shadow-xl hover:shadow-secondary/10"
+                      className={`group relative p-6 bg-card transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full shadow-md hover:shadow-xl border ${style.cardBorder} ${style.cardBg}`}
                       onClick={() => navigate(`/canciones/${song.id}`)}
                     >
+                      {/* Top color highlight line */}
+                      <div className={`absolute top-0 left-0 w-full h-1 ${style.highlight} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                      
                       {/* Animated gradient border effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                       
                       <div className="relative z-10 flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -196,9 +214,14 @@ const Canciones = () => {
                             >
                               {song.category}
                             </Badge>
-                            <h3 className="font-bold text-lg text-foreground line-clamp-1 group-hover:text-secondary transition-colors">
+                            <h3 className={`font-bold text-lg text-foreground line-clamp-1 transition-colors group-hover:${style.iconColor}`}>
                               {song.title}
                             </h3>
+                            {song.author && (
+                              <p className="text-sm text-muted-foreground line-clamp-1">
+                                {song.author}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
