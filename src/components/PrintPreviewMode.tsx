@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +20,12 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
   const [layout, setLayout] = useState("1");
   const [align, setAlign] = useState("left");
   const [showControls, setShowControls] = useState(true);
+
+  // Add fullscreen class to hide main app header
+  useEffect(() => {
+    document.body.classList.add('fullscreen-mode');
+    return () => document.body.classList.remove('fullscreen-mode');
+  }, []);
 
   const handlePrint = () => {
     window.print();

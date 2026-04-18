@@ -332,6 +332,15 @@ All colors MUST be HSL.
   .tracking-modern {
     letter-spacing: -0.02em;
   }
+
+  /* Fullscreen Mode Utilities */
+  body.fullscreen-mode header {
+    display: none !important;
+  }
+
+  body.fullscreen-mode .safe-top {
+    padding-top: 0 !important;
+  }
 }
 
 @media print {

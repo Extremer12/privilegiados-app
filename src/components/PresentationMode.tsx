@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ZoomIn, ZoomOut, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +11,12 @@ interface PresentationModeProps {
 export const PresentationMode = ({ lyrics, title, onClose }: PresentationModeProps) => {
   const [fontSize, setFontSize] = useState(32);
   const [darkMode, setDarkMode] = useState(true);
+
+  // Add fullscreen class to hide main app header
+  useEffect(() => {
+    document.body.classList.add('fullscreen-mode');
+    return () => document.body.classList.remove('fullscreen-mode');
+  }, []);
 
   const increaseFontSize = () => setFontSize((prev) => Math.min(prev + 4, 80));
   const decreaseFontSize = () => setFontSize((prev) => Math.max(prev - 4, 16));

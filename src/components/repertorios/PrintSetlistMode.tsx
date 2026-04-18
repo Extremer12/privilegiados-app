@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Printer, X, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Setlist, SetlistSong } from "./types";
 import { SectionConfig } from "./ServiceStructureView";
 
@@ -15,7 +15,12 @@ interface PrintSetlistModeProps {
 }
 
 export const PrintSetlistMode = ({ setlist, sections, songsBySection, onClose }: PrintSetlistModeProps) => {
-  const [columns, setColumns] = useState<1 | 2>(1);
+
+  // Add fullscreen class to hide main app header
+  useEffect(() => {
+    document.body.classList.add('fullscreen-mode');
+    return () => document.body.classList.remove('fullscreen-mode');
+  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -26,51 +31,53 @@ export const PrintSetlistMode = ({ setlist, sections, songsBySection, onClose }:
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm print:bg-white print:items-start"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md print:bg-white print:items-start"
     >
       {/* Floating Toolbar (Hidden when printing) */}
       <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl flex items-center gap-6 print:hidden"
+        initial={{ y: 100, x: "-50%", opacity: 0 }}
+        animate={{ y: 0, x: "-50%", opacity: 1 }}
+        exit={{ y: 100, x: "-50%", opacity: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="fixed bottom-10 left-1/2 z-[100] bg-neutral-900/90 backdrop-blur-2xl border border-white/10 p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-8 print:hidden min-w-[300px]"
       >
-        <div className="flex items-center gap-3 border-r border-white/10 pr-6">
+        <div className="flex items-center gap-4 border-r border-white/10 pr-8">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setColumns(1)}
-            className={`rounded-xl transition-all ${columns === 1 ? 'bg-secondary text-primary-foreground' : 'text-white/70 hover:bg-white/10'}`}
+            className={`h-12 w-12 rounded-2xl transition-all ${columns === 1 ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
           >
-            <LayoutTemplate className="w-5 h-5" />
+            <LayoutTemplate className="w-6 h-6" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setColumns(2)}
-            className={`rounded-xl transition-all ${columns === 2 ? 'bg-secondary text-primary-foreground' : 'text-white/70 hover:bg-white/10'}`}
+            className={`h-12 w-12 rounded-2xl transition-all ${columns === 2 ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
           >
             <div className="flex gap-0.5">
-              <div className="w-2 h-4 border border-current rounded-sm" />
-              <div className="w-2 h-4 border border-current rounded-sm" />
+              <div className="w-2.5 h-5 border-2 border-current rounded-[4px]" />
+              <div className="w-2.5 h-5 border-2 border-current rounded-[4px]" />
             </div>
           </Button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Button
             onClick={onClose}
             variant="ghost"
-            className="rounded-xl text-white/70 hover:text-white hover:bg-white/10 font-medium tracking-wide"
+            className="h-12 px-6 rounded-2xl text-white/50 hover:text-red-400 hover:bg-red-400/10 font-medium tracking-wide transition-all"
           >
-            <X className="w-4 h-4 mr-2" />
-            Cancelar
+            <X className="w-5 h-5 mr-2" />
+            Cerrar
           </Button>
           <Button
             onClick={handlePrint}
-            className="rounded-xl bg-secondary text-primary-foreground hover:bg-secondary/90 font-bold tracking-wider uppercase px-8 shadow-lg shadow-secondary/20"
+            className="h-12 px-8 rounded-2xl bg-secondary text-primary-foreground hover:bg-secondary/90 font-bold tracking-widest uppercase shadow-xl shadow-secondary/30 transition-all active:scale-95"
           >
-            <Printer className="w-4 h-4 mr-2" />
-            Imprimir Estructura
+            <Printer className="w-5 h-5 mr-2" />
+            Imprimir
           </Button>
         </div>
       </motion.div>
