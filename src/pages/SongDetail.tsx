@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { toast } from "@/hooks/use-toast";
 import { PresentationMode } from "@/components/PresentationMode";
+import { PrintPreviewDialog } from "@/components/PrintPreviewDialog";
 import { SongComments } from "@/components/SongComments";
 import { transposeChords } from "@/utils/chordTransposer";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
@@ -211,14 +212,11 @@ const SongDetail = () => {
                   Modo Presentación
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={handlePrint}
-                className="flex-1"
-              >
-                <Printer className="w-4 h-4 mr-2" aria-hidden="true" />
-                Imprimir
-              </Button>
+              <PrintPreviewDialog
+                title={song.title}
+                category={song.category}
+                content={transposedChords || song.lyrics || ""}
+              />
               {song.youtube_url && (
                 <Button
                   variant="outline"
