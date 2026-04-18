@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { toast } from "@/hooks/use-toast";
 import { PresentationMode } from "@/components/PresentationMode";
-import { PrintPreviewDialog } from "@/components/PrintPreviewDialog";
+import { PrintPreviewMode } from "@/components/PrintPreviewMode";
 import { SongComments } from "@/components/SongComments";
 import { transposeChords } from "@/utils/chordTransposer";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
@@ -48,6 +48,7 @@ const SongDetail = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [transposeSteps, setTransposeSteps] = useState(0);
   const [fontSize, setFontSize] = useState(16);
 
@@ -212,11 +213,14 @@ const SongDetail = () => {
                   Modo Presentación
                 </Button>
               )}
-              <PrintPreviewDialog
-                title={song.title}
-                category={song.category}
-                content={transposedChords || song.lyrics || ""}
-              />
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowPrintPreview(true)}
+              >
+                <Printer className="w-4 h-4 mr-2" aria-hidden="true" />
+                Imprimir
+              </Button>
               {song.youtube_url && (
                 <Button
                   variant="outline"
@@ -346,6 +350,16 @@ const SongDetail = () => {
           lyrics={song.lyrics}
           title={song.title}
           onClose={() => setShowPresentation(false)}
+        />
+      )}
+
+      {/* Print Preview Mode */}
+      {showPrintPreview && (
+        <PrintPreviewMode
+          title={song.title}
+          category={song.category}
+          content={transposedChords || song.lyrics || ""}
+          onClose={() => setShowPrintPreview(false)}
         />
       )}
 
