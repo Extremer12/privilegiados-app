@@ -210,25 +210,31 @@ export const AddSongDialog = ({ onSongAdded, trigger, editMode = false, existing
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="lyrics">Letra</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="lyrics">Letra (Solo texto)</Label>
+              <span className="text-xs text-muted-foreground">Opcional si incluyes letra con acordes abajo</span>
+            </div>
             <Textarea
               id="lyrics"
               value={formData.lyrics}
               onChange={(e) => setFormData({ ...formData, lyrics: e.target.value })}
-              placeholder="Letra de la canción..."
-              rows={6}
+              placeholder="Solo letra de la canción (sin acordes)..."
+              rows={4}
               className="resize-none font-mono"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="chords">Acordes y Notas</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="chords">Letra con Acordes (Recomendado)</Label>
+              <span className="text-xs text-muted-foreground">Pega todo junto aquí</span>
+            </div>
             <Textarea
               id="chords"
               value={formData.chords}
               onChange={(e) => setFormData({ ...formData, chords: e.target.value })}
-              placeholder="Acordes y notas personalizadas..."
-              rows={4}
+              placeholder="Ejemplo:&#10; G           C&#10;Toda la gloria es para Ti..."
+              rows={8}
               className="resize-none font-mono"
             />
           </div>

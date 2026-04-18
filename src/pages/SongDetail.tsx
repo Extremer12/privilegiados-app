@@ -159,19 +159,19 @@ const SongDetail = () => {
               Volver
             </Button>
 
-            {(isOwner || isAdmin) && (
-              <div className="flex gap-2">
-                <AddSongDialog
-                  onSongAdded={() => queryClient.invalidateQueries({ queryKey: ['song', id] })}
-                  editMode
-                  existingSong={song}
-                  trigger={
-                    <Button variant="outline" size="sm">
-                      <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
-                      Editar
-                    </Button>
-                  }
-                />
+            <div className="flex gap-2">
+              <AddSongDialog
+                onSongAdded={() => queryClient.invalidateQueries({ queryKey: ['song', id] })}
+                editMode
+                existingSong={song}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
+                    Editar
+                  </Button>
+                }
+              />
+              {(isOwner || isAdmin) && (
                 <Button
                   variant="destructive"
                   size="sm"
@@ -180,8 +180,8 @@ const SongDetail = () => {
                   <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
                   Eliminar
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <Card className="p-6 md:p-8 card-gradient border-secondary/20 mb-6">
