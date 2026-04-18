@@ -9,7 +9,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Music, ExternalLink, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, Printer, Youtube } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { AddSongDialog } from "@/components/AddSongDialog";
+
 import { toast } from "@/hooks/use-toast";
 import { PresentationMode } from "@/components/PresentationMode";
 import { SongComments } from "@/components/SongComments";
@@ -160,17 +160,14 @@ const SongDetail = () => {
             </Button>
 
             <div className="flex gap-2">
-              <AddSongDialog
-                onSongAdded={() => queryClient.invalidateQueries({ queryKey: ['song', id] })}
-                editMode
-                existingSong={song}
-                trigger={
-                  <Button variant="outline" size="sm">
-                    <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
-                    Editar
-                  </Button>
-                }
-              />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate(`/canciones/${id}/editar`)}
+              >
+                <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
+                Editar
+              </Button>
               {(isOwner || isAdmin) && (
                 <Button
                   variant="destructive"

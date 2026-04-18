@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-// Navigation removed
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { AddSongDialog } from "@/components/AddSongDialog";
-import { Plus, Music, Play, ExternalLink, Search, Loader2 } from "lucide-react";
+
+import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,11 +48,42 @@ const Canciones = () => {
     return null;
   }
 
-  const categoryColors: Record<string, string> = {
-    alabanza: "bg-blue-500/20 text-blue-300 border-blue-500/40",
-    adoracion: "bg-purple-500/20 text-purple-300 border-purple-500/40",
-    especial: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-    otro: "bg-gray-500/20 text-gray-300 border-gray-500/40",
+  const categoryStyles: Record<string, { badge: string, iconBg: string, iconColor: string }> = {
+    alabanza: {
+      badge: "bg-blue-500/20 text-blue-300 border-blue-500/40",
+      iconBg: "from-blue-500/20 to-blue-500/5",
+      iconColor: "text-blue-400"
+    },
+    adoracion: {
+      badge: "bg-purple-500/20 text-purple-300 border-purple-500/40",
+      iconBg: "from-purple-500/20 to-purple-500/5",
+      iconColor: "text-purple-400"
+    },
+    especial: {
+      badge: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+      iconBg: "from-amber-500/20 to-amber-500/5",
+      iconColor: "text-amber-400"
+    },
+    otro: {
+      badge: "bg-gray-500/20 text-gray-300 border-gray-500/40",
+      iconBg: "from-gray-500/20 to-gray-500/5",
+      iconColor: "text-gray-400"
+    },
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
   };
 
   const filteredSongs = songs.filter((song) => {
@@ -75,15 +106,14 @@ const Canciones = () => {
               </p>
             </div>
             
-            <AddSongDialog
-              onSongAdded={fetchSongs}
-              trigger={
-                <Button variant="hero" size="lg">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Agregar Canción
-                </Button>
-              }
-            />
+            <Button 
+              variant="hero" 
+              size="lg"
+              onClick={() => navigate('/canciones/nueva')}
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Agregar Canción
+            </Button>
           </div>
 
           <div className="mb-6 space-y-4">
@@ -136,58 +166,93 @@ const Canciones = () => {
                 : "Intenta con otro término de búsqueda o categoría"}
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSongs.map((song) => (
-                <Card 
-                  key={song.id} 
-                  className="p-6 card-gradient border-secondary/20 hover:border-secondary/40 transition-all hover-lift overflow-hidden"
-                >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-lg bg-secondary/20 flex items-center justify-center flex-shrink-0">
-                      <Music className="w-6 h-6 text-secondary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground mb-2 truncate">
-                        {song.title}
-                      </h3>
-                      <Badge
-                        variant="outline"
-                        className={categoryColors[song.category] || categoryColors.otro}
-                      >
-                        {song.category}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {filteredSongs.map((song) => {
+                const style = categoryStyles[song.category] || categoryStyles.otro;
+                
+                return (
+                  <motion.div key={song.id} variants={itemVariants} className="h-full">
+                    <Card 
+                      className="group relative p-6 bg-card hover:bg-secondary/5 border-secondary/10 hover:border-secondary/30 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full shadow-md hover:shadow-xl hover:shadow-secondary/10"
                       onClick={() => navigate(`/canciones/${song.id}`)}
                     >
-                      Ver Detalles
-                    </Button>
-                    
-                    {song.youtube_url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(song.youtube_url!, "_blank");
-                        }}
-                      >
-                        <Play className="w-4 h-4 mr-2" />
-                        YouTube
-                        <ExternalLink className="w-3 h-3 ml-1" />
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
+                      {/* Animated gradient border effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      
+                      <div className="relative z-10 flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${style.iconBg}`}>
+                             <Music className={`w-6 h-6 ${style.iconColor}`} />
+                          </div>
+                          <div>
+                            <Badge
+                              variant="outline"
+                              className={`mb-1.5 ${style.badge}`}
+                            >
+                              {song.category}
+                            </Badge>
+                            <h3 className="font-bold text-lg text-foreground line-clamp-1 group-hover:text-secondary transition-colors">
+                              {song.title}
+                            </h3>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="relative z-10 flex-grow">
+                        {/* Indicators */}
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {song.lyrics && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md border border-border/50 shadow-sm">
+                              <FileText className="w-3 h-3" />
+                              Letra
+                            </div>
+                          )}
+                          {song.chords && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md border border-border/50 shadow-sm">
+                              <FileMusic className="w-3 h-3" />
+                              Acordes
+                            </div>
+                          )}
+                          {song.audio_url && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md border border-border/50 shadow-sm">
+                              <Headphones className="w-3 h-3" />
+                              Audio
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bottom Action Area */}
+                      <div className="relative z-10 flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+                        <span className="text-xs font-medium text-secondary flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform -translate-x-2 group-hover:translate-x-0">
+                          Abrir detalles <ChevronRight className="w-3 h-3" />
+                        </span>
+                        
+                        {song.youtube_url && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-red-500/10 hover:text-red-500 text-muted-foreground transition-colors ml-auto z-20 relative"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(song.youtube_url!, "_blank");
+                            }}
+                            title="Ver en YouTube"
+                          >
+                            <Youtube className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           )}
         </div>
       </main>
