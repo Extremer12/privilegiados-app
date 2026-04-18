@@ -49,38 +49,38 @@ const Canciones = () => {
     return null;
   }
 
-  const categoryStyles: Record<string, { badge: string, iconBg: string, iconColor: string, cardBorder: string, cardBg: string, highlight: string }> = {
+  const categoryStyles: Record<string, { badge: string, iconColor: string, gradient: string, glow: string, textHover: string, dot: string }> = {
     alabanza: {
-      badge: "bg-blue-500/20 text-blue-300 border-blue-500/40",
-      iconBg: "from-blue-500/20 to-blue-500/5",
-      iconColor: "text-blue-400",
-      cardBorder: "border-blue-500/20 hover:border-blue-500/40",
-      cardBg: "hover:bg-blue-500/5",
-      highlight: "bg-blue-500"
+      badge: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+      iconColor: "text-blue-500",
+      gradient: "from-blue-950/30 via-background to-background",
+      glow: "hover:shadow-[0_0_40px_-15px_rgba(59,130,246,0.4)] hover:border-blue-500/30",
+      textHover: "group-hover:text-blue-400",
+      dot: "bg-blue-500"
     },
     adoracion: {
-      badge: "bg-purple-500/20 text-purple-300 border-purple-500/40",
-      iconBg: "from-purple-500/20 to-purple-500/5",
-      iconColor: "text-purple-400",
-      cardBorder: "border-purple-500/20 hover:border-purple-500/40",
-      cardBg: "hover:bg-purple-500/5",
-      highlight: "bg-purple-500"
+      badge: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+      iconColor: "text-purple-500",
+      gradient: "from-purple-950/30 via-background to-background",
+      glow: "hover:shadow-[0_0_40px_-15px_rgba(168,85,247,0.4)] hover:border-purple-500/30",
+      textHover: "group-hover:text-purple-400",
+      dot: "bg-purple-500"
     },
     especial: {
-      badge: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-      iconBg: "from-amber-500/20 to-amber-500/5",
-      iconColor: "text-amber-400",
-      cardBorder: "border-amber-500/20 hover:border-amber-500/40",
-      cardBg: "hover:bg-amber-500/5",
-      highlight: "bg-amber-500"
+      badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      iconColor: "text-amber-500",
+      gradient: "from-amber-950/30 via-background to-background",
+      glow: "hover:shadow-[0_0_40px_-15px_rgba(245,158,11,0.4)] hover:border-amber-500/30",
+      textHover: "group-hover:text-amber-400",
+      dot: "bg-amber-500"
     },
     otro: {
-      badge: "bg-gray-500/20 text-gray-300 border-gray-500/40",
-      iconBg: "from-gray-500/20 to-gray-500/5",
-      iconColor: "text-gray-400",
-      cardBorder: "border-gray-500/20 hover:border-gray-500/40",
-      cardBg: "hover:bg-gray-500/5",
-      highlight: "bg-gray-500"
+      badge: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+      iconColor: "text-gray-500",
+      gradient: "from-neutral-900/40 via-background to-background",
+      glow: "hover:shadow-[0_0_40px_-15px_rgba(156,163,175,0.4)] hover:border-gray-500/30",
+      textHover: "group-hover:text-gray-400",
+      dot: "bg-gray-500"
     },
   };
 
@@ -193,83 +193,74 @@ const Canciones = () => {
                 return (
                   <motion.div key={song.id} variants={itemVariants} className="h-full">
                     <Card 
-                      className={`group relative p-6 bg-card transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full shadow-md hover:shadow-xl border ${style.cardBorder} ${style.cardBg}`}
+                      className={`group relative p-6 bg-gradient-to-br ${style.gradient} border-secondary/10 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-[280px] shadow-lg ${style.glow}`}
                       onClick={() => navigate(`/canciones/${song.id}`)}
                     >
-                      {/* Top color highlight line */}
-                      <div className={`absolute top-0 left-0 w-full h-1 ${style.highlight} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                      {/* Giant watermark icon */}
+                      <Music className={`absolute -right-8 -bottom-8 w-40 h-40 opacity-[0.03] transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700 pointer-events-none ${style.iconColor}`} />
                       
-                      {/* Animated gradient border effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                      
-                      <div className="relative z-10 flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${style.iconBg}`}>
-                             <Music className={`w-6 h-6 ${style.iconColor}`} />
-                          </div>
-                          <div>
-                            <Badge
-                              variant="outline"
-                              className={`mb-1.5 ${style.badge}`}
+                      <div className="relative z-10 flex-grow flex flex-col">
+                        <div className="flex justify-between items-start mb-4">
+                          <Badge variant="outline" className={`px-3 py-1 font-bold tracking-widest text-[10px] uppercase rounded-full backdrop-blur-md ${style.badge}`}>
+                            {song.category}
+                          </Badge>
+                          
+                          {song.youtube_url && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-8 h-8 rounded-full bg-black/40 hover:bg-red-500 hover:text-white text-muted-foreground transition-colors z-20 backdrop-blur-md border border-white/5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(song.youtube_url!, "_blank");
+                              }}
+                              title="Ver en YouTube"
                             >
-                              {song.category}
-                            </Badge>
-                            <h3 className={`font-bold text-lg text-foreground line-clamp-1 transition-colors group-hover:${style.iconColor}`}>
-                              {song.title}
-                            </h3>
-                            {song.author && (
-                              <p className="text-sm text-muted-foreground line-clamp-1">
-                                {song.author}
-                              </p>
-                            )}
+                              <Youtube className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <div className="mt-auto">
+                          <h3 className={`font-black text-2xl md:text-3xl tracking-tight leading-none mb-2 text-foreground ${style.textHover} transition-colors line-clamp-2`}>
+                            {song.title}
+                          </h3>
+                          
+                          {song.author ? (
+                            <p className="text-sm text-neutral-400 font-medium flex items-center gap-2 mb-5">
+                              <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                              {song.author}
+                            </p>
+                          ) : (
+                            <div className="h-4 mb-5" /> // Spacer if no author
+                          )}
+                           
+                          {/* Indicators */}
+                          <div className="flex flex-wrap gap-2 items-center justify-between border-t border-white/5 pt-4">
+                            <div className="flex gap-2">
+                              {song.lyrics && (
+                                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/30 text-neutral-300 border border-white/5 shadow-sm" title="Tiene letra">
+                                  <FileText className="w-4 h-4" />
+                                </div>
+                              )}
+                              {song.chords && (
+                                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/30 text-neutral-300 border border-white/5 shadow-sm" title="Tiene acordes">
+                                  <FileMusic className="w-4 h-4" />
+                                </div>
+                              )}
+                              {song.audio_url && (
+                                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/30 text-neutral-300 border border-white/5 shadow-sm" title="Tiene audio">
+                                  <Headphones className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-x-2 group-hover:translate-x-0">
+                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
+                                <ChevronRight className="w-4 h-4" />
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="relative z-10 flex-grow">
-                        {/* Indicators */}
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {song.lyrics && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md border border-border/50 shadow-sm">
-                              <FileText className="w-3 h-3" />
-                              Letra
-                            </div>
-                          )}
-                          {song.chords && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md border border-border/50 shadow-sm">
-                              <FileMusic className="w-3 h-3" />
-                              Acordes
-                            </div>
-                          )}
-                          {song.audio_url && (
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md border border-border/50 shadow-sm">
-                              <Headphones className="w-3 h-3" />
-                              Audio
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Bottom Action Area */}
-                      <div className="relative z-10 flex items-center justify-between mt-6 pt-4 border-t border-border/50">
-                        <span className="text-xs font-medium text-secondary flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform -translate-x-2 group-hover:translate-x-0">
-                          Abrir detalles <ChevronRight className="w-3 h-3" />
-                        </span>
-                        
-                        {song.youtube_url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-red-500/10 hover:text-red-500 text-muted-foreground transition-colors ml-auto z-20 relative"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(song.youtube_url!, "_blank");
-                            }}
-                            title="Ver en YouTube"
-                          >
-                            <Youtube className="w-4 h-4" />
-                          </Button>
-                        )}
                       </div>
                     </Card>
                   </motion.div>

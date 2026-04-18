@@ -104,11 +104,11 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
       <AnimatePresence>
         {showControls && (
           <motion.div 
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
+            initial={{ y: 100, x: "-50%", opacity: 0 }}
+            animate={{ y: 0, x: "-50%", opacity: 1 }}
+            exit={{ y: 100, x: "-50%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[95vw] max-w-4xl"
+            className="fixed bottom-6 left-1/2 z-40 w-[95vw] max-w-4xl"
           >
             <div className="bg-neutral-950/70 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-center gap-4 md:gap-8 overflow-hidden">
               
