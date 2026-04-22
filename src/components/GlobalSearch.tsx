@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, ListMusic, Users, X, Command, Loader2 } from "lucide-react";
+import { Search, Music, ListMusic, Users, X, Command, Loader2, ChevronRight } from "lucide-react";
 import { Input } from "./ui/input";
 import { supabase } from "@/integrations/supabase/client";
 

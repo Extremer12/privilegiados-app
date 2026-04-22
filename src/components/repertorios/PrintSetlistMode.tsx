@@ -15,6 +15,7 @@ interface PrintSetlistModeProps {
 }
 
 export const PrintSetlistMode = ({ setlist, sections, songsBySection, onClose }: PrintSetlistModeProps) => {
+  const [columns, setColumns] = useState(1);
 
   // Add fullscreen class to hide main app header
   useEffect(() => {
