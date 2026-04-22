@@ -28,30 +28,43 @@ export const Navigation = () => {
     setIsOpen(false);
   }, [location.pathname]);
 
+  // Lock body scroll when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   const menuVariants = {
     closed: {
       opacity: 0,
-      height: 0,
+      y: "-100%",
       transition: {
-        duration: 0.3,
-        staggerChildren: 0.05,
-        staggerDirection: -1,
+        duration: 0.4,
+        ease: [0.32, 0.72, 0, 1], // easeOutQuint
+        when: "afterChildren",
       },
     },
     open: {
       opacity: 1,
-      height: "auto",
+      y: 0,
       transition: {
-        duration: 0.3,
-        staggerChildren: 0.07,
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1], // easeOutQuint
+        staggerChildren: 0.08,
         delayChildren: 0.1,
       },
     },
   };
 
   const itemVariants = {
-    closed: { opacity: 0, x: -20 },
-    open: { opacity: 1, x: 0 },
+    closed: { opacity: 0, y: 20, scale: 0.95 },
+    open: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } },
   };
 
   return (
@@ -176,7 +189,7 @@ export const Navigation = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Full-Screen Mobile Menu Overlay */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -184,86 +197,98 @@ export const Navigation = () => {
               initial="closed"
               animate="open"
               exit="closed"
-              className="md:hidden overflow-hidden"
+              className="fixed inset-0 z-[100] bg-background/98 backdrop-blur-3xl flex flex-col md:hidden"
             >
-              <div className="py-4 space-y-2">
-                {navLinks.map((link, index) => (
-                  <motion.div
-                    key={link.path}
-                    variants={itemVariants}
-                    custom={index}
-                  >
-                    <Link
-                      to={link.path}
-                      onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${
-                        isActive(link.path)
-                          ? "bg-secondary/20 text-secondary"
-                          : "text-foreground hover:bg-secondary/10 hover:text-secondary"
-                      }`}
+              <div className="flex items-center justify-between p-4 px-6 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <img src="/logo.jpg" alt="Logo" className="w-10 h-10 rounded-full" />
+                  <span className="font-black tracking-tight text-xl">Privilegiados</span>
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsOpen(false)}
+                  className="w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-foreground transition-colors"
+                  aria-label="Cerrar menú"
+                >
+                  <X size={24} />
+                </motion.button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-6 py-8 space-y-4">
+                {navLinks.map((link, index) => {
+                  const active = isActive(link.path);
+                  return (
+                    <motion.div
+                      key={link.path}
+                      variants={itemVariants}
+                      custom={index}
                     >
-                      <motion.div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          isActive(link.path)
-                            ? "bg-secondary/30"
-                            : "bg-secondary/10"
+                      <Link
+                        to={link.path}
+                        onClick={() => setIsOpen(false)}
+                        className={`flex items-center gap-5 p-4 rounded-3xl transition-all active:scale-[0.96] ${
+                          active
+                            ? "bg-secondary text-primary-foreground shadow-xl shadow-secondary/20"
+                            : "bg-secondary/5 text-foreground active:bg-secondary/15"
                         }`}
-                        whileHover={{ scale: 1.1, rotate: 5 }}
                       >
-                        <link.icon className="w-6 h-6" aria-hidden="true" />
-                      </motion.div>
-                      <span className="text-lg font-semibold flex-1">{link.name}</span>
-                      <ChevronRight
-                        className={`w-5 h-5 transition-transform ${
-                          isActive(link.path) ? "text-secondary" : "text-muted-foreground"
-                        }`}
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  </motion.div>
-                ))}
+                        <div
+                          className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${
+                            active
+                              ? "bg-white/20 text-white"
+                              : "bg-background text-muted-foreground"
+                          }`}
+                        >
+                          <link.icon className="w-7 h-7" aria-hidden="true" />
+                        </div>
+                        <span className={`text-xl font-bold flex-1 tracking-wide ${active ? "text-white" : ""}`}>{link.name}</span>
+                        {active && (
+                          <ChevronRight
+                            className="w-6 h-6 text-white/70"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
 
-                {/* Separator */}
-                <motion.div
-                  variants={itemVariants}
-                  className="border-t border-border/50 my-4"
-                />
+                <motion.div variants={itemVariants} className="pt-6 pb-2">
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                </motion.div>
 
-                {/* Notifications */}
+                {/* Mobile Notifications */}
                 {user && (
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-secondary/10"
-                  >
-                    <span className="text-base font-semibold text-foreground">
-                      Notificaciones
-                    </span>
-                    <NotificationBell />
+                  <motion.div variants={itemVariants} className="flex justify-center pb-4">
+                    <div className="flex items-center gap-4 px-6 py-4 rounded-3xl bg-secondary/5 border border-white/5">
+                      <span className="font-semibold text-muted-foreground">Notificaciones</span>
+                      <NotificationBell />
+                    </div>
                   </motion.div>
                 )}
 
                 {/* Profile/Auth Button */}
-                <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants} className="pb-8">
                   {user ? (
                     <Link to="/perfil" onClick={() => setIsOpen(false)}>
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button
-                          variant="hero"
-                          size="lg"
-                          className="w-full flex items-center gap-3 h-14 text-lg shadow-lg shadow-secondary/20"
-                        >
-                          <User className="w-5 h-5" />
-                          Mi Perfil
-                        </Button>
-                      </motion.div>
+                      <Button
+                        variant="hero"
+                        size="lg"
+                        className="w-full flex items-center justify-center gap-3 h-16 rounded-3xl text-lg font-bold shadow-xl shadow-secondary/20 active:scale-[0.98] transition-all"
+                      >
+                        <User className="w-6 h-6" />
+                        Mi Perfil
+                      </Button>
                     </Link>
                   ) : (
                     <Link to="/auth" onClick={() => setIsOpen(false)}>
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button variant="hero" size="lg" className="w-full h-14 text-lg">
-                          Iniciar Sesión
-                        </Button>
-                      </motion.div>
+                      <Button 
+                        variant="hero" 
+                        size="lg" 
+                        className="w-full h-16 rounded-3xl text-lg font-bold shadow-xl shadow-secondary/20 active:scale-[0.98] transition-all"
+                      >
+                        Iniciar Sesión
+                      </Button>
                     </Link>
                   )}
                 </motion.div>
