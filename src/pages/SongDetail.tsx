@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Music, ExternalLink, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, Printer, Youtube } from "lucide-react";
+import { ArrowLeft, Music, ExternalLink, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, Printer, Youtube, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 import { toast } from "@/hooks/use-toast";
@@ -85,6 +85,59 @@ const SongDetail = () => {
     }
   }, [song, user?.id]);
 
+  // Favorite status query
+  const { data: favoriteData, refetch: refetchFavorite } = useQuery({
+    queryKey: ['favorite', id, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("favorite_songs")
+        .select("id")
+        .eq("song_id", id)
+        .eq("user_id", user?.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id && !!user,
+  });
+
+  const isFavorite = !!favoriteData;
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async () => {
+      if (isFavorite) {
+        const { error } = await supabase
+          .from("favorite_songs")
+          .delete()
+          .eq("song_id", id)
+          .eq("user_id", user?.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("favorite_songs")
+          .insert({
+            song_id: id,
+            user_id: user?.id
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      refetchFavorite();
+      toast({
+        title: isFavorite ? "Quitado de favoritos" : "Añadido a favoritos",
+        description: isFavorite ? "La canción ya no está en tus favoritos" : "La canción se ha guardado en tus favoritos",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!song) throw new Error("No hay canción seleccionada");
@@ -126,7 +179,11 @@ const SongDetail = () => {
     : null;
 
   if (authLoading || !user || loading) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader />
+      </div>
+    );
   }
 
   if (!song) {
@@ -163,6 +220,16 @@ const SongDetail = () => {
             </Button>
 
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toggleFavoriteMutation.mutate()}
+                disabled={toggleFavoriteMutation.isPending}
+                className={`transition-all ${isFavorite ? 'text-amber-500 border-amber-500/50 bg-amber-500/10' : ''}`}
+              >
+                <Star className={`w-4 h-4 mr-2 ${isFavorite ? 'fill-amber-500' : ''}`} aria-hidden="true" />
+                {isFavorite ? 'Favorito' : 'Marcar Favorito'}
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm"

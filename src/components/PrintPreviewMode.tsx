@@ -134,10 +134,10 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4 md:gap-6 flex-1 w-full overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+              <div className="flex items-center justify-start gap-4 md:gap-6 flex-1 w-full overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                 {/* Size */}
-                <div className="flex flex-col gap-2 min-w-[140px] flex-1">
-                  <Label className="text-xs text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                <div className="flex flex-col gap-2 min-w-[120px] flex-shrink-0">
+                  <Label className="text-[10px] text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
                     <ALargeSmall className="w-3 h-3 text-secondary" /> Tamaño ({fontSize}px)
                   </Label>
                   <Slider
@@ -146,17 +146,17 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
                     max={36}
                     step={1}
                     onValueChange={(vals) => setFontSize(vals[0])}
-                    className="py-2"
+                    className="py-1"
                   />
                 </div>
 
                 {/* Font */}
-                <div className="flex flex-col gap-2 min-w-[130px]">
-                  <Label className="text-xs text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                <div className="flex flex-col gap-2 min-w-[110px] flex-shrink-0">
+                  <Label className="text-[10px] text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
                     <Type className="w-3 h-3 text-secondary" /> Fuente
                   </Label>
                   <Select value={fontFamily} onValueChange={setFontFamily}>
-                    <SelectTrigger className="h-10 bg-black/40 border-white/10 text-sm rounded-lg">
+                    <SelectTrigger className="h-9 bg-black/40 border-white/10 text-[13px] rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -168,12 +168,12 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
                 </div>
 
                 {/* Alignment */}
-                <div className="flex flex-col gap-2 min-w-[130px]">
-                  <Label className="text-xs text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                <div className="flex flex-col gap-2 min-w-[110px] flex-shrink-0">
+                  <Label className="text-[10px] text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
                     <AlignLeft className="w-3 h-3 text-secondary" /> Alineación
                   </Label>
                   <Select value={align} onValueChange={setAlign}>
-                    <SelectTrigger className="h-10 bg-black/40 border-white/10 text-sm rounded-lg">
+                    <SelectTrigger className="h-9 bg-black/40 border-white/10 text-[13px] rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -184,12 +184,12 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
                 </div>
 
                 {/* Layout */}
-                <div className="flex flex-col gap-2 min-w-[130px]">
-                  <Label className="text-xs text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
+                <div className="flex flex-col gap-2 min-w-[110px] flex-shrink-0">
+                  <Label className="text-[10px] text-neutral-400 font-semibold flex items-center gap-1.5 uppercase tracking-wider">
                     <Columns className="w-3 h-3 text-secondary" /> Columnas
                   </Label>
                   <Select value={layout} onValueChange={setLayout}>
-                    <SelectTrigger className="h-10 bg-black/40 border-white/10 text-sm rounded-lg">
+                    <SelectTrigger className="h-9 bg-black/40 border-white/10 text-[13px] rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

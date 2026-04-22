@@ -45,8 +45,25 @@ const Canciones = () => {
     enabled: !!user,
   });
 
+  const { data: favorites = [] } = useQuery({
+    queryKey: ['favorites', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("favorite_songs")
+        .select("song_id")
+        .eq("user_id", user?.id);
+      if (error) throw error;
+      return data.map(f => f.song_id);
+    },
+    enabled: !!user,
+  });
+
   if (authLoading || !user) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader />
+      </div>
+    );
   }
 
   const categoryStyles: Record<string, { badge: string, iconColor: string, gradient: string, glow: string, textHover: string, dot: string }> = {
@@ -102,6 +119,11 @@ const Canciones = () => {
   const filteredSongs = songs.filter((song) => {
     const matchesSearch = song.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (song.author && song.author.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    if (selectedCategory === "favorites") {
+      return matchesSearch && favorites.includes(song.id);
+    }
+    
     const matchesCategory = selectedCategory === "all" || song.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -143,8 +165,9 @@ const Canciones = () => {
             </div>
 
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="all">Todas</TabsTrigger>
+                <TabsTrigger value="favorites" className="text-amber-500 font-bold">Favoritos</TabsTrigger>
                 <TabsTrigger value="alabanza">Alabanza</TabsTrigger>
                 <TabsTrigger value="adoracion">Adoración</TabsTrigger>
                 <TabsTrigger value="especial">Especial</TabsTrigger>
@@ -205,20 +228,27 @@ const Canciones = () => {
                             {song.category}
                           </Badge>
                           
-                          {song.youtube_url && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="w-8 h-8 rounded-full bg-black/40 hover:bg-red-500 hover:text-white text-muted-foreground transition-colors z-20 backdrop-blur-md border border-white/5"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(song.youtube_url!, "_blank");
-                              }}
-                              title="Ver en YouTube"
-                            >
-                              <Youtube className="w-4 h-4" />
-                            </Button>
-                          )}
+                          <div className="flex gap-2">
+                            {favorites.includes(song.id) && (
+                              <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 backdrop-blur-md border border-amber-500/20" title="Favorito">
+                                <Star className="w-4 h-4 fill-amber-500" />
+                              </div>
+                            )}
+                            {song.youtube_url && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-8 h-8 rounded-full bg-black/40 hover:bg-red-500 hover:text-white text-muted-foreground transition-colors z-20 backdrop-blur-md border border-white/5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(song.youtube_url!, "_blank");
+                                }}
+                                title="Ver en YouTube"
+                              >
+                                <Youtube className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         
                         <div className="mt-auto">
