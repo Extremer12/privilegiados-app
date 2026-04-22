@@ -23,6 +23,11 @@ export const Navigation = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Auto-close mobile menu on navigation
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
   const menuVariants = {
     closed: {
       opacity: 0,

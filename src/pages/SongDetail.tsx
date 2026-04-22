@@ -228,24 +228,24 @@ const SongDetail = () => {
                 disabled={toggleFavoriteMutation.isPending}
                 className={`transition-all ${isFavorite ? 'text-amber-500 border-amber-500/50 bg-amber-500/10' : ''}`}
               >
-                <Star className={`w-4 h-4 mr-2 ${isFavorite ? 'fill-amber-500' : ''}`} aria-hidden="true" />
-                {isFavorite ? 'Favorito' : 'Marcar Favorito'}
+                <Star className={`w-4 h-4 md:mr-2 ${isFavorite ? 'fill-amber-500' : ''}`} aria-hidden="true" />
+                <span className="hidden md:inline">{isFavorite ? 'Favorito' : 'Marcar Favorito'}</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate(`/canciones/${id}/editar`)}
               >
-                <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
-                Editar
+                <Edit className="w-4 h-4 md:mr-2" aria-hidden="true" />
+                <span className="hidden md:inline">Editar</span>
               </Button>
               <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
-                  Eliminar
+                  <Trash2 className="w-4 h-4 md:mr-2" aria-hidden="true" />
+                  <span className="hidden md:inline">Eliminar</span>
                 </Button>
             </div>
           </div>
