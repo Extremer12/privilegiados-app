@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -203,42 +204,45 @@ export const PrintPreviewMode = ({ title, author, category, content, onClose }: 
         )}
       </AnimatePresence>
 
-      {/* HIDDEN PRINT SECTION. This is the only thing that gets printed because of index.css rules. */}
-      <div id="print-section" className="hidden print:block bg-white text-black p-0 m-0"
-           style={{
-              fontFamily: fontFamily === 'sans-serif' ? 'Inter, sans-serif' : fontFamily === 'serif' ? 'Georgia, serif' : 'Courier New, monospace'
-            }}>
-        <div className="border-b-2 border-black/10 pb-6 mb-8 text-center" style={{ breakInside: 'avoid' }}>
-          <div className="flex justify-center items-center gap-2 mb-4 opacity-60">
-            <img src="/logo.jpg" alt="Privilegiados" className="w-5 h-5 rounded object-cover grayscale" />
-            <span className="font-bold text-[10px] tracking-[0.2em] uppercase text-gray-500">Privilegiados App</span>
+      {/* HIDDEN PRINT SECTION — Portaled to body so `body > * { display: none }` does not affect it */}
+      {createPortal(
+        <div id="print-section" className="hidden print:block bg-white text-black p-0 m-0"
+             style={{
+                fontFamily: fontFamily === 'sans-serif' ? 'Inter, sans-serif' : fontFamily === 'serif' ? 'Georgia, serif' : 'Courier New, monospace'
+              }}>
+          <div className="border-b-2 border-black/10 pb-6 mb-8 text-center" style={{ breakInside: 'avoid' }}>
+            <div className="flex justify-center items-center gap-2 mb-4 opacity-60">
+              <img src="/logo.jpg" alt="Privilegiados" className="w-5 h-5 rounded object-cover grayscale" />
+              <span className="font-bold text-[10px] tracking-[0.2em] uppercase text-gray-500">Privilegiados App</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-black m-0 p-0 leading-tight tracking-tight mb-4">
+              {title}
+            </h1>
+            <div className="flex justify-center items-center gap-3">
+              {author && (
+                <span className="text-gray-700 font-semibold text-lg">{author}</span>
+              )}
+              {author && <span className="text-gray-300">&bull;</span>}
+              <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                {category}
+              </span>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-black m-0 p-0 leading-tight tracking-tight mb-4">
-            {title}
-          </h1>
-          <div className="flex justify-center items-center gap-3">
-            {author && (
-              <span className="text-gray-700 font-semibold text-lg">{author}</span>
-            )}
-            {author && <span className="text-gray-300">&bull;</span>}
-            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-              {category}
-            </span>
-          </div>
-        </div>
 
-        <div 
-          className="whitespace-pre-wrap leading-relaxed"
-          style={{ 
-            fontSize: `${fontSize}px`,
-            textAlign: align as any,
-            columnCount: layout === '2' ? 2 : 1,
-            columnGap: '3rem'
-          }}
-        >
-          {content || "No hay contenido para imprimir."}
-        </div>
-      </div>
+          <div 
+            className="whitespace-pre-wrap leading-relaxed"
+            style={{ 
+              fontSize: `${fontSize}px`,
+              textAlign: align as any,
+              columnCount: layout === '2' ? 2 : 1,
+              columnGap: '3rem'
+            }}
+          >
+            {content || "No hay contenido para imprimir."}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

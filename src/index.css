@@ -344,23 +344,35 @@ All colors MUST be HSL.
 }
 
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  #print-section, #print-section * {
-    visibility: visible;
-  }
-  #print-section {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+  /* Hide everything except the print section */
+  body {
     background: white !important;
     color: black !important;
   }
-  
+
+  body > * {
+    display: none !important;
+  }
+
+  #print-section {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  #print-section * {
+    color: black !important;
+    background-color: transparent !important;
+  }
+
+  #print-section img {
+    filter: grayscale(100%);
+  }
+
   /* Remove page margins and headers/footers usually added by browsers */
   @page {
     margin: 1.5cm;

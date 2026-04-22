@@ -2,7 +2,6 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -295,7 +294,7 @@ const Foro = () => {
 
       const { error } = await supabase.from("chat_messages").insert({
         content: fileName.includes("audio_") ? "Mensaje de voz" : fileName,
-        file_url: fileUrl,
+        file_url: publicUrl,
         file_type: fileType,
         author_id: user!.id
       });
