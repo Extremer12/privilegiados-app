@@ -171,8 +171,7 @@ const SongDetail = () => {
                 <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
                 Editar
               </Button>
-              {(isOwner || isAdmin) && (
-                <Button
+              <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
@@ -180,7 +179,6 @@ const SongDetail = () => {
                   <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
                   Eliminar
                 </Button>
-              )}
             </div>
           </div>
 
