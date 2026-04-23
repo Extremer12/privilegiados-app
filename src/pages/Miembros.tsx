@@ -122,8 +122,8 @@ const Miembros = () => {
     roleActionMutation.mutate({ id: roleActionMember.id, action: roleActionMember.action });
   };
 
-  const filteredMembers = members.filter((member) =>
-    member.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredMembers = (members || []).filter((member) =>
+    member.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     member.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     member.instrument?.toLowerCase().includes(searchQuery.toLowerCase())
   );

@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight } from "lucide-react";
+import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,38 +67,42 @@ const Canciones = () => {
     );
   }
 
-  const categoryStyles: Record<string, { badge: string, iconColor: string, gradient: string, glow: string, textHover: string, dot: string }> = {
+  const categoryStyles: Record<string, { badge: string, iconColor: string, gradient: string, glow: string, textHover: string, dot: string, borderFocus: string }> = {
     alabanza: {
-      badge: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+      badge: "bg-[#0A2540]/80 text-[#3B82F6] border-[#3B82F6]/30",
       iconColor: "text-blue-500",
-      gradient: "from-blue-950/30 via-background to-background",
-      glow: "hover:shadow-[0_0_40px_-15px_rgba(59,130,246,0.4)] hover:border-blue-500/30",
+      gradient: "from-[#0A192F]/80 via-background to-background",
+      glow: "hover:shadow-[0_8px_30px_rgba(59,130,246,0.12)]",
       textHover: "group-hover:text-blue-400",
-      dot: "bg-blue-500"
+      dot: "bg-blue-500",
+      borderFocus: "group-hover:border-blue-500/40"
     },
     adoracion: {
-      badge: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+      badge: "bg-[#2D1B4E]/80 text-[#A855F7] border-[#A855F7]/30",
       iconColor: "text-purple-500",
-      gradient: "from-purple-950/30 via-background to-background",
-      glow: "hover:shadow-[0_0_40px_-15px_rgba(168,85,247,0.4)] hover:border-purple-500/30",
+      gradient: "from-[#1F103A]/80 via-background to-background",
+      glow: "hover:shadow-[0_8px_30px_rgba(168,85,247,0.12)]",
       textHover: "group-hover:text-purple-400",
-      dot: "bg-purple-500"
+      dot: "bg-purple-500",
+      borderFocus: "group-hover:border-purple-500/40"
     },
     especial: {
-      badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      badge: "bg-[#3D2514]/80 text-[#F59E0B] border-[#F59E0B]/30",
       iconColor: "text-amber-500",
-      gradient: "from-amber-950/30 via-background to-background",
-      glow: "hover:shadow-[0_0_40px_-15px_rgba(245,158,11,0.4)] hover:border-amber-500/30",
+      gradient: "from-[#2A180A]/80 via-background to-background",
+      glow: "hover:shadow-[0_8px_30px_rgba(245,158,11,0.12)]",
       textHover: "group-hover:text-amber-400",
-      dot: "bg-amber-500"
+      dot: "bg-amber-500",
+      borderFocus: "group-hover:border-amber-500/40"
     },
     otro: {
-      badge: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+      badge: "bg-[#252525]/80 text-[#9CA3AF] border-[#9CA3AF]/30",
       iconColor: "text-gray-500",
-      gradient: "from-neutral-900/40 via-background to-background",
-      glow: "hover:shadow-[0_0_40px_-15px_rgba(156,163,175,0.4)] hover:border-gray-500/30",
+      gradient: "from-[#151515]/80 via-background to-background",
+      glow: "hover:shadow-[0_8px_30px_rgba(156,163,175,0.12)]",
       textHover: "group-hover:text-gray-400",
-      dot: "bg-gray-500"
+      dot: "bg-gray-500",
+      borderFocus: "group-hover:border-gray-500/40"
     },
   };
 
@@ -107,14 +111,14 @@ const Canciones = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: 0.05,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
+    hidden: { opacity: 0, y: 15, scale: 0.98 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } },
   };
 
   const filteredSongs = songs.filter((song) => {
@@ -135,17 +139,18 @@ const Canciones = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 tracking-tight">
                 Canciones
               </h1>
-              <p className="text-muted-foreground">
-                Biblioteca de canciones del grupo
+              <p className="text-muted-foreground font-medium">
+                Biblioteca de música del grupo
               </p>
             </div>
             
             <Button 
               variant="hero" 
               size="lg"
+              className="rounded-2xl shadow-lg shadow-secondary/20"
               onClick={() => navigate('/canciones/nueva')}
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -153,45 +158,49 @@ const Canciones = () => {
             </Button>
           </div>
 
-          <div className="mb-6 space-y-4">
+          <div className="mb-8 space-y-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
                 type="text"
                 placeholder="Buscar por título o autor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 text-base"
+                className="pl-12 h-14 text-base rounded-2xl bg-white/[0.03] border-white/10 focus-visible:ring-secondary/50"
               />
             </div>
 
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="all">Todas</TabsTrigger>
-                <TabsTrigger value="favorites" className="text-amber-500 font-bold">Favoritos</TabsTrigger>
-                <TabsTrigger value="alabanza">Alabanza</TabsTrigger>
-                <TabsTrigger value="adoracion">Adoración</TabsTrigger>
-                <TabsTrigger value="especial">Especial</TabsTrigger>
-                <TabsTrigger value="otro">Otro</TabsTrigger>
+              <TabsList className="flex overflow-x-auto no-scrollbar bg-transparent p-0 gap-2 h-auto border-none">
+                <TabsTrigger value="all" className="rounded-full px-5 py-2.5 data-[state=active]:bg-white/10 data-[state=active]:text-white bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all">Todas</TabsTrigger>
+                <TabsTrigger value="favorites" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 hover:text-amber-400 transition-all">
+                  <Star className="w-3.5 h-3.5 mr-1.5" /> Favoritos
+                </TabsTrigger>
+                <TabsTrigger value="alabanza" className="rounded-full px-5 py-2.5 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400 data-[state=active]:border-blue-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-blue-500/10 transition-all">Alabanza</TabsTrigger>
+                <TabsTrigger value="adoracion" className="rounded-full px-5 py-2.5 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 data-[state=active]:border-purple-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-purple-500/10 transition-all">Adoración</TabsTrigger>
+                <TabsTrigger value="especial" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 transition-all">Especial</TabsTrigger>
+                <TabsTrigger value="otro" className="rounded-full px-5 py-2.5 data-[state=active]:bg-white/10 data-[state=active]:text-white bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all">Otro</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="p-6 card-gradient border-secondary/20 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-secondary/20" />
-                  <div className="flex items-start gap-4 mb-4">
-                    <Skeleton className="w-12 h-12 rounded-xl bg-secondary/10" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-5 w-3/4 bg-secondary/10" />
-                      <Skeleton className="h-4 w-1/3 bg-secondary/10" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <Card key={i} className="p-6 bg-white/[0.02] border-white/5 rounded-3xl relative overflow-hidden h-[240px]">
+                  <div className="space-y-4 h-full flex flex-col">
+                    <div className="flex justify-between">
+                      <Skeleton className="w-20 h-6 rounded-full bg-white/5" />
+                      <Skeleton className="w-8 h-8 rounded-full bg-white/5" />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-9 w-full bg-secondary/10" />
-                    <Skeleton className="h-9 w-full bg-secondary/10" />
+                    <div className="mt-auto space-y-3">
+                      <Skeleton className="h-8 w-3/4 bg-white/5" />
+                      <Skeleton className="h-4 w-1/2 bg-white/5" />
+                    </div>
+                    <div className="flex gap-2 pt-4 border-t border-white/5 mt-4">
+                      <Skeleton className="w-6 h-6 rounded bg-white/5" />
+                      <Skeleton className="w-6 h-6 rounded bg-white/5" />
+                    </div>
                   </div>
                 </Card>
               ))}
@@ -206,40 +215,41 @@ const Canciones = () => {
             />
           ) : (
             <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
             >
               {filteredSongs.map((song) => {
                 const style = categoryStyles[song.category] || categoryStyles.otro;
+                const isFav = favorites.includes(song.id);
                 
                 return (
                   <motion.div key={song.id} variants={itemVariants} className="h-full">
                     <Card 
-                      className={`group relative p-6 bg-gradient-to-br ${style.gradient} border-secondary/10 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-[280px] shadow-lg ${style.glow}`}
+                      className={`group relative p-5 bg-gradient-to-br ${style.gradient} border border-white/[0.05] ${style.borderFocus} rounded-3xl transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-[260px] ${style.glow} hover:-translate-y-1`}
                       onClick={() => navigate(`/canciones/${song.id}`)}
                     >
-                      {/* Giant watermark icon */}
-                      <Music className={`absolute -right-8 -bottom-8 w-40 h-40 opacity-[0.03] transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-700 pointer-events-none ${style.iconColor}`} />
+                      {/* Subtler background icon for premium feel */}
+                      <Disc3 className={`absolute -right-6 -bottom-6 w-32 h-32 opacity-[0.02] transform group-hover:scale-110 group-hover:-rotate-45 transition-all duration-700 pointer-events-none ${style.iconColor}`} />
                       
-                      <div className="relative z-10 flex-grow flex flex-col">
-                        <div className="flex justify-between items-start mb-4">
-                          <Badge variant="outline" className={`px-3 py-1 font-bold tracking-widest text-[10px] uppercase rounded-full backdrop-blur-md ${style.badge}`}>
+                      <div className="relative z-10 flex-grow flex flex-col h-full">
+                        <div className="flex justify-between items-start mb-2">
+                          <Badge variant="outline" className={`px-3 py-1 font-bold text-[10px] uppercase tracking-wider rounded-full backdrop-blur-md ${style.badge}`}>
                             {song.category}
                           </Badge>
                           
-                          <div className="flex gap-2">
-                            {favorites.includes(song.id) && (
-                              <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 backdrop-blur-md border border-amber-500/20" title="Favorito">
-                                <Star className="w-4 h-4 fill-amber-500" />
+                          <div className="flex gap-1.5 items-center">
+                            {isFav && (
+                              <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center backdrop-blur-md border border-amber-500/20 shadow-sm" title="Favorito">
+                                <Star className="w-4 h-4 fill-amber-500 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
                               </div>
                             )}
                             {song.youtube_url && (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="w-8 h-8 rounded-full bg-black/40 hover:bg-red-500 hover:text-white text-muted-foreground transition-colors z-20 backdrop-blur-md border border-white/5"
+                                className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-red-500 hover:text-white text-white/50 transition-all z-20 backdrop-blur-md border border-white/5"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   window.open(song.youtube_url!, "_blank");
@@ -252,44 +262,41 @@ const Canciones = () => {
                           </div>
                         </div>
                         
-                        <div className="mt-auto">
-                          <h3 className={`font-black text-2xl md:text-3xl tracking-tight leading-none mb-2 text-foreground ${style.textHover} transition-colors line-clamp-2`}>
+                        {/* Title and Author Pushed to Bottom */}
+                        <div className="mt-auto mb-4">
+                          <h3 className={`font-black text-2xl tracking-tight leading-tight mb-1 text-foreground/90 ${style.textHover} transition-colors line-clamp-2`}>
                             {song.title}
                           </h3>
                           
-                          {song.author ? (
-                            <p className="text-sm text-neutral-400 font-medium flex items-center gap-2 mb-5">
-                              <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                          {song.author && (
+                            <p className="text-sm text-white/40 font-medium flex items-center gap-2">
                               {song.author}
                             </p>
-                          ) : (
-                            <div className="h-4 mb-5" /> // Spacer if no author
                           )}
+                        </div>
                            
-                          {/* Indicators */}
-                          <div className="flex flex-wrap gap-2 items-center justify-between border-t border-white/5 pt-4">
-                            <div className="flex gap-2">
-                              {song.lyrics && (
-                                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/30 text-neutral-300 border border-white/5 shadow-sm" title="Tiene letra">
-                                  <FileText className="w-4 h-4" />
-                                </div>
-                              )}
-                              {song.chords && (
-                                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/30 text-neutral-300 border border-white/5 shadow-sm" title="Tiene acordes">
-                                  <FileMusic className="w-4 h-4" />
-                                </div>
-                              )}
-                              {song.audio_url && (
-                                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/30 text-neutral-300 border border-white/5 shadow-sm" title="Tiene audio">
-                                  <Headphones className="w-4 h-4" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-x-2 group-hover:translate-x-0">
-                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
-                                <ChevronRight className="w-4 h-4" />
+                        {/* Elegant Icon Dock */}
+                        <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
+                          <div className="flex gap-1">
+                            {song.lyrics && (
+                              <div className="flex items-center justify-center w-7 h-7 rounded-md text-white/30 group-hover:text-white/60 transition-colors" title="Tiene letra">
+                                <FileText className="w-4 h-4" />
                               </div>
-                            </div>
+                            )}
+                            {song.chords && (
+                              <div className="flex items-center justify-center w-7 h-7 rounded-md text-white/30 group-hover:text-white/60 transition-colors" title="Tiene acordes">
+                                <FileMusic className="w-4 h-4" />
+                              </div>
+                            )}
+                            {song.audio_url && (
+                              <div className="flex items-center justify-center w-7 h-7 rounded-md text-white/30 group-hover:text-white/60 transition-colors" title="Tiene audio">
+                                <Headphones className="w-4 h-4" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="w-7 h-7 rounded-full bg-white/[0.03] group-hover:bg-white/[0.1] flex items-center justify-center text-white/30 group-hover:text-white/90 transition-all transform group-hover:translate-x-1">
+                            <ChevronRight className="w-4 h-4" />
                           </div>
                         </div>
                       </div>
