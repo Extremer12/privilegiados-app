@@ -235,6 +235,7 @@ const SongDetail = () => {
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate(`/canciones/${id}/editar`)}
+                className="h-9 px-3 md:px-4"
               >
                 <Edit className="w-4 h-4 md:mr-2" aria-hidden="true" />
                 <span className="hidden md:inline">Editar</span>
@@ -243,9 +244,10 @@ const SongDetail = () => {
                   variant="destructive"
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
+                  className="h-9 px-3 md:px-4"
                 >
-                  <Trash2 className="w-4 h-4 md:mr-2" aria-hidden="true" />
-                  <span className="hidden md:inline">Eliminar</span>
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                  <span className="sr-only">Eliminar</span>
                 </Button>
             </div>
           </div>

@@ -90,6 +90,9 @@ const EnVivo = () => {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
 
+  // Wake Lock state
+  const wakeLockRef = useRef<any>(null);
+
   // Fetch initial data
   useEffect(() => {
     if (user && id) {
@@ -97,9 +100,25 @@ const EnVivo = () => {
       const unsubSession = subscribeToSession();
       const unsubComments = subscribeToComments();
       
+      // Request Wake Lock to keep screen on
+      const requestWakeLock = async () => {
+        try {
+          if ('wakeLock' in navigator) {
+            wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+          }
+        } catch (err) {
+          console.error('Wake Lock error:', err);
+        }
+      };
+
+      requestWakeLock();
+      
       return () => {
         unsubSession();
         unsubComments();
+        if (wakeLockRef.current) {
+          wakeLockRef.current.release();
+        }
       };
     }
   }, [user, id]);
@@ -624,10 +643,10 @@ const EnVivo = () => {
                       <Button
                         variant="destructive"
                         onClick={() => setShowEndDialog(true)}
-                        className="gap-2"
+                        className="gap-2 h-10 px-3 md:px-4"
                       >
                         <StopCircle className="w-4 h-4" />
-                        <span className="hidden sm:inline">Finalizar</span>
+                        <span className="hidden md:inline">Finalizar</span>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Finalizar sesión en vivo</TooltipContent>

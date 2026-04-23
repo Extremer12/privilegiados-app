@@ -259,6 +259,7 @@ const Foro = () => {
     onSuccess: () => {
       setMessage("");
       setShowEmojis(false);
+      queryClient.invalidateQueries({ queryKey: ['chat_messages'] });
       if (channelRef.current) {
         channelRef.current.track({
           user_id: user!.id,
@@ -301,6 +302,9 @@ const Foro = () => {
 
       if (error) throw error;
       return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat_messages'] });
     },
     onSettled: () => setUploading(false),
     onError: (error: any) => {
