@@ -5,12 +5,12 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, Edit3, Save, Play, BookOpen, Users, MessageSquare,
-  Calendar, Music2, CheckCircle2, AlertCircle, Sparkles, FileDown
+  ArrowLeft, Edit3, Save, Play, Users, MessageSquare,
+  AlertCircle, FileDown, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader } from '@/components/ui/loader';
@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/select';
 import { ServiceStructureView } from '@/components/repertorios/ServiceStructureView';
 import { AddSongToSetlistDialog } from '@/components/repertorios/AddSongToSetlistDialog';
-import { HelpTooltip } from '@/components/repertorios/HelpTooltip';
 import { Setlist, SetlistSong, SECTION_TYPES, SectionType } from '@/components/repertorios/types';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -218,15 +217,17 @@ const RepertorioDetalle = () => {
     return sectionSongs.length + 1;
   };
 
-  const statusConfig = {
-    draft: { label: 'Borrador', className: 'bg-muted text-muted-foreground' },
-    ready: { label: 'Listo para el servicio', className: 'bg-green-500/20 text-green-400' },
-    completed: { label: 'Servicio completado', className: 'bg-blue-500/20 text-blue-400' },
-  };
+  const statusOptions = [
+    { value: 'draft', label: 'Borrador', color: 'text-amber-400' },
+    { value: 'ready', label: 'Listo para el servicio', color: 'text-emerald-400' },
+    { value: 'completed', label: 'Servicio completado', color: 'text-sky-400' },
+  ];
+
+  const currentStatus = statusOptions.find(s => s.value === (isEditing ? editForm.status : setlist?.status)) || statusOptions[0];
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary/95 to-primary/80">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader />
       </div>
     );
@@ -238,7 +239,7 @@ const RepertorioDetalle = () => {
         <Card className="max-w-md w-full p-8 card-gradient border-secondary/20 text-center">
           <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2 text-foreground">Repertorio no encontrado</h1>
-          <Button onClick={() => navigate('/repertorios')} className="mt-4 bg-secondary text-primary-foreground hover:bg-secondary/90">
+          <Button onClick={() => navigate('/repertorios')} className="mt-4 bg-secondary text-primary-foreground hover:bg-secondary/90 rounded-xl h-12">
             Volver a Repertorios
           </Button>
         </Card>
@@ -246,77 +247,118 @@ const RepertorioDetalle = () => {
     );
   }
 
-  const status = statusConfig[setlist.status];
-
   return (
     <>
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
+      <main className="flex-1 pt-24 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-4xl mx-auto">
-          {/* Header Editorial */}
+          {/* Header */}
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-12 px-2"
+            className="mb-8"
           >
+            {/* Back button */}
             <Button
               variant="ghost"
               onClick={() => navigate('/repertorios')}
-              className="mb-8 -ml-3 gap-2 text-muted-foreground/50 hover:text-secondary hover:bg-secondary/5 transition-all"
+              className="mb-6 -ml-2 gap-2 text-muted-foreground hover:text-secondary hover:bg-secondary/5 transition-all rounded-xl h-10"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span className="text-[10px] uppercase tracking-widest font-bold">Volver</span>
+              <span className="text-sm font-semibold">Volver</span>
             </Button>
 
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            {/* Title area */}
+            <div className="flex flex-col gap-6">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-4">
-                  <Badge className="bg-secondary/10 text-secondary border-none px-2 py-0.5 text-[9px] uppercase tracking-widest font-bold">
-                    {status.label}
-                  </Badge>
-                  <div className="w-1 h-1 rounded-full bg-muted-foreground/20" />
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-medium">
+                {/* Status badge */}
+                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                  {isEditing ? (
+                    <Select
+                      value={editForm.status}
+                      onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value as any }))}
+                    >
+                      <SelectTrigger className="w-auto h-8 text-xs font-semibold bg-white/5 border-white/10 rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge className={`border-none px-3 py-1 text-xs font-semibold rounded-lg bg-white/5 ${currentStatus.color}`}>
+                      {currentStatus.label}
+                    </Badge>
+                  )}
+                  <span className="text-sm text-muted-foreground">
                     {songs.length} canciones
                   </span>
                 </div>
                 
+                {/* Title */}
                 {isEditing ? (
                   <Input
                     value={editForm.title}
                     onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="text-4xl md:text-5xl font-extralight tracking-tight bg-white/[0.02] border-white/[0.05] focus:border-secondary/30 h-auto py-2"
+                    className="text-2xl md:text-3xl font-bold tracking-tight bg-white/[0.03] border-white/10 focus:border-secondary/40 h-auto py-3 rounded-xl"
                   />
                 ) : (
-                  <h1 className="text-4xl md:text-6xl font-extralight tracking-tight text-foreground leading-tight">
+                  <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
                     {setlist.title}
                   </h1>
                 )}
                 
-                <p className="mt-4 text-[10px] uppercase tracking-[0.2em] text-secondary font-bold">
+                {/* Date */}
+                <p className="mt-3 text-sm font-semibold text-secondary capitalize">
                   {format(new Date(setlist.service_date), "EEEE d 'de' MMMM, yyyy", { locale: es })}
                 </p>
               </div>
 
-              <div className="flex gap-3 h-fit flex-wrap">
+              {/* Action buttons */}
+              <div className="flex gap-2 flex-wrap">
                 {isEditing ? (
                   <>
-                    <Button variant="ghost" onClick={() => setIsEditing(false)} className="text-xs font-light tracking-wide hover:bg-white/5">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setIsEditing(false)} 
+                      className="h-11 px-5 rounded-xl text-sm font-semibold hover:bg-white/5"
+                    >
+                      <X className="h-4 w-4 mr-2" />
                       Cancelar
                     </Button>
-                    <Button onClick={handleSave} disabled={saveMutation.isPending} className="squircle-sm bg-secondary text-primary-foreground hover:opacity-90 px-6 font-medium text-xs tracking-wide">
-                      {saveMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                    <Button 
+                      onClick={handleSave} 
+                      disabled={saveMutation.isPending} 
+                      className="h-11 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm active:scale-[0.97] transition-all"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Button variant="ghost" onClick={() => setIsEditing(true)} className="w-12 h-12 squircle-sm bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all">
-                      <Edit3 className="h-5 w-5 text-muted-foreground/60" />
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setIsEditing(true)} 
+                      className="h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-semibold active:scale-[0.97] transition-all"
+                    >
+                      <Edit3 className="h-4 w-4 mr-2" />
+                      Editar
                     </Button>
-                    <Button variant="ghost" onClick={handleExportPDF} className="w-12 h-12 squircle-sm bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all">
-                      <FileDown className="h-5 w-5 text-muted-foreground/60" />
+                    <Button 
+                      variant="ghost" 
+                      onClick={handleExportPDF} 
+                      className="h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-semibold active:scale-[0.97] transition-all"
+                    >
+                      <FileDown className="h-4 w-4 mr-2" />
+                      PDF
                     </Button>
                     <Button 
                       onClick={handleStartLive}
-                      className="h-12 px-8 squircle-sm bg-secondary text-primary-foreground hover:opacity-90 font-medium text-xs tracking-widest uppercase shadow-xl shadow-secondary/20"
+                      className="h-11 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm shadow-lg shadow-secondary/20 active:scale-[0.97] transition-all"
                     >
                       <Play className="h-4 w-4 mr-2" />
                       En Vivo
@@ -327,60 +369,63 @@ const RepertorioDetalle = () => {
             </div>
           </motion.div>
 
-          {/* Info del servicio - Clean Blocks */}
+          {/* Service info */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="grid gap-8 mb-16 px-2"
+            transition={{ delay: 0.15 }}
+            className="space-y-6 mb-10"
           >
-            {/* Versículo */}
+            {/* Theme verse */}
             {(isEditing || setlist.theme_verse) && (
-              <div className="space-y-4">
-                <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/30">
-                  Concepto Espiritual
+              <div className="space-y-2">
+                <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
+                  Versículo Temático
                 </h3>
                 {isEditing ? (
                   <Textarea
                     value={editForm.theme_verse}
                     onChange={(e) => setEditForm(prev => ({ ...prev, theme_verse: e.target.value }))}
                     placeholder="Escribe el versículo temático..."
-                    className="bg-white/[0.02] border-white/[0.05] focus:border-secondary/30 min-h-[100px] font-light text-lg italic"
+                    className="bg-white/[0.03] border-white/10 focus:border-secondary/40 min-h-[80px] text-base italic rounded-xl"
                   />
                 ) : (
-                  <p className="text-2xl font-extralight italic text-foreground/80 leading-relaxed border-l-2 border-secondary/20 pl-8 py-2">
-                    "{setlist.theme_verse}"
-                  </p>
+                  <div className="border-l-[3px] border-secondary/40 pl-5 py-2">
+                    <p className="text-lg italic text-foreground/80 leading-relaxed">
+                      "{setlist.theme_verse}"
+                    </p>
+                  </div>
                 )}
               </div>
             )}
 
-            <div className="grid sm:grid-cols-2 gap-12">
-              <div className="space-y-4">
-                <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/30">
-                  Liderazgo
+            {/* Leadership */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
+                  Dirección de Culto
                 </h3>
                 {isEditing ? (
                   <Input
                     value={editForm.service_director}
                     onChange={(e) => setEditForm(prev => ({ ...prev, service_director: e.target.value }))}
                     placeholder="Director del servicio"
-                    className="bg-white/[0.02] border-white/[0.05] focus:border-secondary/30"
+                    className="bg-white/[0.03] border-white/10 focus:border-secondary/40 rounded-xl h-11"
                   />
                 ) : (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 squircle-sm bg-secondary/10 flex items-center justify-center">
-                      <Users className="h-4 w-4 text-secondary/60" />
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                      <Users className="h-4 w-4 text-secondary" />
                     </div>
-                    <p className="text-lg font-light text-foreground/70">
+                    <p className="text-base font-medium text-foreground/80">
                       {setlist.service_director || '—'}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/30">
+              <div className="space-y-2">
+                <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
                   Palabra
                 </h3>
                 {isEditing ? (
@@ -388,14 +433,14 @@ const RepertorioDetalle = () => {
                     value={editForm.preacher}
                     onChange={(e) => setEditForm(prev => ({ ...prev, preacher: e.target.value }))}
                     placeholder="Persona que predica"
-                    className="bg-white/[0.02] border-white/[0.05] focus:border-secondary/30"
+                    className="bg-white/[0.03] border-white/10 focus:border-secondary/40 rounded-xl h-11"
                   />
                 ) : (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 squircle-sm bg-secondary/10 flex items-center justify-center">
-                      <MessageSquare className="h-4 w-4 text-secondary/60" />
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                      <MessageSquare className="h-4 w-4 text-secondary" />
                     </div>
-                    <p className="text-lg font-light text-foreground/70">
+                    <p className="text-base font-medium text-foreground/80">
                       {setlist.preacher || '—'}
                     </p>
                   </div>
@@ -404,7 +449,7 @@ const RepertorioDetalle = () => {
             </div>
           </motion.div>
 
-          {/* Estructura del servicio */}
+          {/* Service Structure */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

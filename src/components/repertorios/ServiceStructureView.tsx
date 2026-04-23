@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   Music, Heart, BookOpen, Gift, MessageSquare, Sparkles, Flag,
-  ChevronDown, ChevronUp, Plus, GripVertical, X, ArrowUp, ArrowDown, Edit2, Check
+  ChevronDown, ChevronUp, Plus, X, ArrowUp, ArrowDown, Edit2, Check
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -96,10 +96,13 @@ export function ServiceStructureView({
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between mb-8 px-2">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-extralight tracking-tight text-foreground">Estructura del Servicio</h2>
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+            Estructura del Servicio
+          </h2>
           <HelpTooltip
             title="Estructura del Servicio"
             description="Organiza las canciones por secciones según el flujo típico de un culto. Cada sección representa un momento diferente del servicio."
@@ -111,15 +114,16 @@ export function ServiceStructureView({
             onClick={addSection}
             variant="outline"
             size="sm"
-            className="squircle-sm border-white/[0.05] bg-white/[0.02] hover:bg-secondary hover:text-primary-foreground transition-all duration-300 gap-2 text-xs"
+            className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary hover:text-primary-foreground transition-all gap-2 text-sm font-semibold active:scale-[0.97]"
           >
             <Plus className="h-4 w-4" />
-            Añadir Sección
+            Sección
           </Button>
         )}
       </div>
 
-      <div className="space-y-6">
+      {/* Sections */}
+      <div className="space-y-4">
         {sections.map((section, index) => {
           const Icon = iconMap[section.icon] || Sparkles;
           const songs = songsBySection[section.id] || [];
@@ -132,53 +136,62 @@ export function ServiceStructureView({
               open={isExpanded}
               onOpenChange={() => !isRenaming && toggleSection(section.id)}
             >
-              <Card className={`
-                squircle border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.02] transition-all duration-300 overflow-hidden
-                ${songs.length > 0 ? 'border-l-2 border-l-secondary/40' : 'border-l-transparent'}
-              `}>
+              <Card className={`rounded-2xl border overflow-hidden transition-all duration-300 ${
+                songs.length > 0 
+                  ? 'border-l-[3px] border-l-secondary/60 border-white/10 bg-white/[0.02]' 
+                  : 'border-white/5 bg-white/[0.01]'
+              }`}>
                 <CollapsibleTrigger asChild>
-                  <CardHeader className={`cursor-pointer py-6 px-8 ${isRenaming ? 'pointer-events-none' : ''}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6 flex-1">
-                        <div className={`w-10 h-10 squircle-sm flex items-center justify-center bg-white/[0.03] shrink-0 ${section.color}`}>
-                          <Icon className="h-5 w-5 opacity-60" />
+                  <CardHeader className={`cursor-pointer py-5 px-5 md:px-6 ${isRenaming ? 'pointer-events-none' : ''}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        {/* Section icon */}
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-white/[0.05] shrink-0 ${section.color}`}>
+                          <Icon className="h-5 w-5" aria-hidden="true" />
                         </div>
-                        <div className="flex-1">
+                        
+                        {/* Section name */}
+                        <div className="flex-1 min-w-0">
                           {isRenaming ? (
                             <div className="flex items-center gap-2 pointer-events-auto">
                               <Input 
                                 value={editingName}
                                 onChange={(e) => setEditingName(e.target.value)}
-                                className="max-w-[250px] h-8 bg-black/20 border-white/10"
+                                className="max-w-[200px] h-9 bg-black/20 border-white/10 text-base"
                                 autoFocus
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') saveSectionName(section.id);
                                 }}
                               />
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-green-400" onClick={() => saveSectionName(section.id)}>
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-9 w-9 rounded-lg text-emerald-400 hover:bg-emerald-400/10" 
+                                onClick={() => saveSectionName(section.id)}
+                                aria-label="Guardar nombre"
+                              >
                                 <Check className="h-4 w-4" />
                               </Button>
                             </div>
                           ) : (
                             <>
-                              <CardTitle className="text-lg font-light tracking-wide text-foreground/90 flex items-center gap-2">
+                              <CardTitle className="text-base md:text-lg font-semibold tracking-wide text-foreground flex items-center gap-2">
                                 {section.name}
                                 {isEditing && (
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground transition-opacity" 
+                                  <button 
+                                    className="text-muted-foreground/40 hover:text-secondary transition-colors p-1" 
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setEditingSectionId(section.id);
                                       setEditingName(section.name);
                                     }}
+                                    aria-label={`Renombrar ${section.name}`}
                                   >
-                                    <Edit2 className="h-3 w-3" />
-                                  </Button>
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </button>
                                 )}
                               </CardTitle>
-                              <p className="text-[10px] uppercase tracking-widest text-muted-foreground/30 mt-1">
+                              <p className="text-xs text-muted-foreground mt-0.5">
                                 {section.description}
                               </p>
                             </>
@@ -186,46 +199,57 @@ export function ServiceStructureView({
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4 pointer-events-auto">
+                      {/* Right side controls */}
+                      <div className="flex items-center gap-2 shrink-0 pointer-events-auto">
+                        {/* Edit controls */}
                         {isEditing && !isRenaming && (
-                          <div className="flex items-center gap-1 mr-4 bg-black/20 rounded-lg p-1 border border-white/5">
+                          <div className="flex items-center gap-1 bg-black/20 rounded-lg p-1 border border-white/5">
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-6 w-6 text-muted-foreground hover:text-white disabled:opacity-30"
+                              className="h-8 w-8 rounded-md text-muted-foreground hover:text-white disabled:opacity-20"
                               disabled={index === 0}
                               onClick={(e) => { e.stopPropagation(); moveSection(index, 'up'); }}
+                              aria-label="Mover sección arriba"
                             >
-                              <ArrowUp className="h-3 w-3" />
+                              <ArrowUp className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-6 w-6 text-muted-foreground hover:text-white disabled:opacity-30"
+                              className="h-8 w-8 rounded-md text-muted-foreground hover:text-white disabled:opacity-20"
                               disabled={index === sections.length - 1}
                               onClick={(e) => { e.stopPropagation(); moveSection(index, 'down'); }}
+                              aria-label="Mover sección abajo"
                             >
-                              <ArrowDown className="h-3 w-3" />
+                              <ArrowDown className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-6 w-6 text-red-400/50 hover:text-red-400 hover:bg-red-400/10"
+                              className="h-8 w-8 rounded-md text-red-400/60 hover:text-red-400 hover:bg-red-400/10"
                               onClick={(e) => { e.stopPropagation(); deleteSection(index); }}
+                              aria-label="Eliminar sección"
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         )}
-                        <span className="text-[10px] font-bold text-secondary tracking-widest bg-secondary/10 px-2 py-0.5 rounded-full">
+
+                        {/* Song count badge */}
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                          songs.length > 0 
+                            ? 'bg-secondary/15 text-secondary' 
+                            : 'bg-white/5 text-muted-foreground'
+                        }`}>
                           {songs.length}
                         </span>
+
+                        {/* Chevron */}
                         {!isRenaming && (
-                          isExpanded ? (
-                            <ChevronUp className="h-4 w-4 text-muted-foreground/30" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground/30" />
-                          )
+                          isExpanded 
+                            ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> 
+                            : <ChevronDown className="h-5 w-5 text-muted-foreground" />
                         )}
                       </div>
                     </div>
@@ -233,76 +257,77 @@ export function ServiceStructureView({
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent>
-                  <CardContent className="px-8 pb-8 pt-2">
+                  <CardContent className="px-5 md:px-6 pb-5 pt-0">
                     {songs.length === 0 ? (
-                      <div className="py-8 border-t border-white/[0.02] text-center">
-                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground/20 font-medium">
+                      <div className="py-6 border-t border-white/5 text-center">
+                        <p className="text-sm text-muted-foreground/60">
                           Sin canciones asignadas
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-4 border-t border-white/[0.02] pt-6">
+                      <div className="space-y-2 border-t border-white/5 pt-4">
                         {songs.map((song, songIndex) => (
                           <div
                             key={song.id}
-                            className="flex items-center gap-6 p-6 squircle-sm bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.03] transition-all group"
+                            className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all active:scale-[0.99] group"
                           >
-                            <div className="w-8 h-8 rounded-full bg-secondary/5 flex items-center justify-center shrink-0">
-                              <span className="text-[10px] font-bold text-secondary/40">
+                            {/* Number */}
+                            <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
+                              <span className="text-xs font-bold text-secondary">
                                 {songIndex + 1}
                               </span>
                             </div>
+
+                            {/* Song info */}
                             <div 
                               className="flex-1 cursor-pointer min-w-0"
                               onClick={() => onSongClick(song)}
                             >
-                              <p className="text-xl font-light tracking-tight text-foreground/90 group-hover:text-secondary transition-colors truncate">
+                              <p className="text-base font-semibold text-foreground group-hover:text-secondary transition-colors truncate">
                                 {song.songs?.title || 'Sin título'}
                               </p>
-                              {(song.special_instructions || song.notes) && (
-                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground/40 mt-2 italic font-medium truncate">
-                                  {song.special_instructions || song.notes}
-                                </p>
+                              {(song.special_instructions || song.notes || song.assigned_to) && (
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                  {song.assigned_to && (
+                                    <span className="text-xs font-semibold text-muted-foreground bg-white/5 px-2 py-0.5 rounded-md">
+                                      {song.assigned_to}
+                                    </span>
+                                  )}
+                                  {(song.special_instructions || song.notes) && (
+                                    <span className="text-xs italic text-muted-foreground/70 truncate">
+                                      {song.special_instructions || song.notes}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
                             
-                            <div className="flex items-center gap-6 shrink-0">
-                              {song.assigned_to && (
-                                <div className="flex items-center gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-secondary/40" />
-                                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-bold">
-                                    {song.assigned_to}
-                                  </span>
-                                </div>
-                              )}
-                              
-                              {isEditing && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-10 w-10 squircle-sm hover:bg-destructive/10 text-muted-foreground/20 hover:text-destructive transition-all"
-                                  onClick={() => onRemoveSong(song.id)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
+                            {/* Remove button */}
+                            {isEditing && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 shrink-0 rounded-xl hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-all active:scale-[0.9]"
+                                onClick={() => onRemoveSong(song.id)}
+                                aria-label={`Remover ${song.songs?.title || 'canción'}`}
+                              >
+                                <X className="h-5 w-5" />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
                     )}
 
-                    {isEditing && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full mt-6 h-12 squircle-sm border border-dashed border-white/[0.1] hover:border-secondary/30 hover:bg-secondary/5 text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/40 hover:text-secondary transition-all"
-                        onClick={() => onAddSong(section.id)}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Agregar canción
-                      </Button>
-                    )}
+                    {/* Add song button - always visible, even in non-edit mode */}
+                    <Button
+                      variant="ghost"
+                      className="w-full mt-4 h-12 rounded-xl border border-dashed border-white/10 hover:border-secondary/40 hover:bg-secondary/5 text-sm font-semibold text-muted-foreground hover:text-secondary transition-all active:scale-[0.98]"
+                      onClick={() => onAddSong(section.id)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Agregar canción
+                    </Button>
                   </CardContent>
                 </CollapsibleContent>
               </Card>

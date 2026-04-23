@@ -1,12 +1,11 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { 
-  Calendar, Music2, Users, Play, Eye, Trash2, Settings, 
+  Play, Eye, Trash2,
   CheckCircle2, Clock, FileEdit 
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Setlist } from './types';
 
 interface SetlistCardProps {
@@ -22,17 +21,20 @@ const statusConfig = {
   draft: { 
     label: 'Borrador', 
     icon: FileEdit, 
-    className: 'bg-muted text-muted-foreground' 
+    dotColor: 'bg-amber-400',
+    textColor: 'text-amber-400',
   },
   ready: { 
     label: 'Listo', 
     icon: CheckCircle2, 
-    className: 'bg-green-500/20 text-green-400' 
+    dotColor: 'bg-emerald-400',
+    textColor: 'text-emerald-400',
   },
   completed: { 
     label: 'Completado', 
     icon: Clock, 
-    className: 'bg-blue-500/20 text-blue-400' 
+    dotColor: 'bg-sky-400',
+    textColor: 'text-sky-400',
   },
 };
 
@@ -42,92 +44,96 @@ export function SetlistCard({
   onView, 
   onStartLive, 
   onDelete, 
-  isOwner 
 }: SetlistCardProps) {
   const status = statusConfig[setlist.status] || statusConfig.draft;
-  const StatusIcon = status.icon;
   const serviceDate = new Date(setlist.service_date);
   const isToday = format(new Date(), 'yyyy-MM-dd') === format(serviceDate, 'yyyy-MM-dd');
+  const isPast = serviceDate < new Date() && !isToday;
 
   return (
-    <Card className="squircle relative overflow-hidden bg-gradient-to-br from-neutral-900/80 to-background border border-white/10 hover:border-secondary/40 transition-all duration-500 shadow-xl group">
-      {/* Decorative background glow */}
-      <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-secondary/10 blur-[40px] group-hover:bg-secondary/20 transition-all duration-500 pointer-events-none" />
-      
-      <CardHeader className="pb-4 relative z-10">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1.5 flex-1">
-            <div className="flex items-center gap-3 flex-wrap mb-2">
-              <Badge className={`border-none px-2.5 py-0.5 text-[9px] uppercase tracking-widest font-bold ${status.className}`}>
-                <StatusIcon className="w-3 h-3 mr-1 inline-block" />
+    <Card className={`relative overflow-hidden rounded-2xl border transition-all duration-300 shadow-lg group ${
+      isToday 
+        ? 'border-secondary/50 bg-gradient-to-br from-secondary/10 to-background shadow-secondary/10' 
+        : isPast
+          ? 'border-white/5 bg-white/[0.02] opacity-70'
+          : 'border-white/10 bg-gradient-to-br from-neutral-900/80 to-background hover:border-secondary/30'
+    }`}>
+      <CardHeader className="pb-3 relative z-10">
+        <div className="space-y-3">
+          {/* Status + Date row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${status.dotColor}`} />
+              <span className={`text-xs font-semibold tracking-wide ${status.textColor}`}>
                 {status.label}
-              </Badge>
-              {isToday && (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary/20 border border-secondary/30">
-                  <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-                  <span className="text-[9px] uppercase tracking-widest text-secondary font-bold">Hoy</span>
-                </div>
-              )}
+              </span>
             </div>
-            
-            <h3 className="text-2xl font-black tracking-tight text-foreground group-hover:text-secondary transition-colors line-clamp-1 mt-2">
-              {setlist.title}
-            </h3>
-            
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
-              {format(serviceDate, "EEEE d 'de' MMMM", { locale: es })}
-            </p>
+            {isToday && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30">
+                <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                <span className="text-xs font-bold text-secondary">HOY</span>
+              </div>
+            )}
           </div>
+          
+          {/* Title */}
+          <h3 className="text-xl font-bold tracking-tight text-foreground group-hover:text-secondary transition-colors line-clamp-2 leading-snug">
+            {setlist.title}
+          </h3>
+          
+          {/* Date */}
+          <p className="text-sm text-muted-foreground font-medium capitalize">
+            {format(serviceDate, "EEEE d 'de' MMMM", { locale: es })}
+          </p>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 relative z-10">
+      <CardContent className="space-y-4 relative z-10 pt-0">
+        {/* Verse */}
         {setlist.theme_verse && (
-          <div className="relative py-2 bg-white/5 rounded-lg p-3 border border-white/5">
-            <p className="text-sm italic text-muted-foreground font-medium leading-relaxed">
+          <div className="py-3 px-4 bg-white/[0.04] rounded-xl border border-white/5">
+            <p className="text-sm italic text-muted-foreground leading-relaxed line-clamp-2">
               "{setlist.theme_verse}"
             </p>
           </div>
         )}
 
-        <div className="flex items-center gap-6 bg-black/20 p-3 rounded-lg border border-white/5">
-          <div className="flex flex-col">
-            <span className="text-lg text-secondary font-black">{songsCount}</span>
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Canciones</span>
+        {/* Stats row */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-black text-secondary">{songsCount}</span>
+            <span className="text-xs text-muted-foreground font-medium">canciones</span>
           </div>
           {setlist.service_director && (
             <div className="flex-1 min-w-0 border-l border-white/10 pl-4">
-              <span className="text-foreground/80 font-semibold truncate block">
+              <p className="text-sm font-medium text-foreground/80 truncate">
                 {setlist.service_director}
-              </span>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold block">
-                Director
-              </span>
+              </p>
+              <p className="text-xs text-muted-foreground">Director</p>
             </div>
           )}
         </div>
 
-        {/* Acciones */}
-        <div className="flex items-center gap-3 pt-4">
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-2">
           <Button
             onClick={onView}
             variant="ghost"
-            size="sm"
-            className="flex-1 h-10 bg-white/5 hover:bg-white/10 text-foreground text-xs font-bold tracking-wider uppercase transition-all"
+            className="flex-1 h-12 rounded-xl bg-white/5 hover:bg-white/10 text-foreground text-sm font-semibold transition-all active:scale-[0.97]"
           >
+            <Eye className="w-4 h-4 mr-2" />
             Detalles
           </Button>
           
           <Button
             onClick={onStartLive}
-            size="sm"
-            className="flex-1 h-10 bg-secondary text-primary-foreground hover:opacity-90 font-bold text-xs tracking-wider uppercase shadow-lg shadow-secondary/20"
+            className="flex-1 h-12 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm shadow-lg shadow-secondary/20 transition-all active:scale-[0.97]"
           >
-            <Play className="w-3 h-3 mr-2" />
+            <Play className="w-4 h-4 mr-2" />
             En Vivo
           </Button>
 
-          {isOwner && onDelete && (
+          {onDelete && (
             <Button
               onClick={(e) => {
                 e.stopPropagation();
@@ -135,9 +141,10 @@ export function SetlistCard({
               }}
               variant="ghost"
               size="icon"
-              className="h-10 w-10 text-red-400 hover:text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+              className="h-12 w-12 shrink-0 rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all active:scale-[0.95]"
+              aria-label="Eliminar repertorio"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
             </Button>
           )}
         </div>

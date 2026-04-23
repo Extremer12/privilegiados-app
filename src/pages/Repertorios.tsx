@@ -1,16 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { 
-  Plus, Music2, Calendar, Sparkles, HelpCircle, Filter, 
-  ListMusic, Clock, CheckCircle2, FileEdit, Music, Play, Trash2
+  Plus, Sparkles, HelpCircle, 
+  ListMusic, Clock, CheckCircle2, FileEdit, Music, Play
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader } from '@/components/ui/loader';
 import { 
@@ -22,7 +20,6 @@ import {
 } from '@/components/ui/dialog';
 import { SetlistCard } from '@/components/repertorios/SetlistCard';
 import { CreateSetlistDialog } from '@/components/repertorios/CreateSetlistDialog';
-import { HelpTooltip } from '@/components/repertorios/HelpTooltip';
 import { Setlist } from '@/components/repertorios/types';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,6 +28,13 @@ import { toast } from 'sonner';
 interface SetlistWithCount extends Setlist {
   songsCount: number;
 }
+
+const filterTabs = [
+  { id: 'all', label: 'Todos', icon: ListMusic },
+  { id: 'draft', label: 'Borrador', icon: FileEdit },
+  { id: 'ready', label: 'Listos', icon: CheckCircle2 },
+  { id: 'completed', label: 'Pasados', icon: Clock },
+];
 
 const Repertorios = () => {
   const navigate = useNavigate();
@@ -64,7 +68,6 @@ const Repertorios = () => {
 
   const handleStartLive = async (setlist: Setlist) => {
     try {
-      // Check for existing active session
       const { data: existingSession } = await supabase
         .from('live_sessions')
         .select('id')
@@ -77,7 +80,6 @@ const Repertorios = () => {
         return;
       }
 
-      // Create new session
       const { data: newSession, error } = await supabase
         .from('live_sessions')
         .insert({
@@ -116,7 +118,7 @@ const Repertorios = () => {
   });
 
   const handleDeleteSetlist = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este repertorio?')) return;
+    if (!confirm('¿Estás seguro de eliminar este repertorio? Esta acción no se puede deshacer.')) return;
     deleteMutation.mutate(id);
   };
 
@@ -131,8 +133,8 @@ const Repertorios = () => {
 
   if (!user) {
     return (
-    <>
-      <main className="flex-1 flex items-center justify-center px-4 pt-20 w-full">
+      <>
+        <main className="flex-1 flex items-center justify-center px-4 pt-20 w-full">
           <Card className="max-w-md w-full p-8 card-gradient border-secondary/20 text-center">
             <Music className="w-16 h-16 mx-auto mb-4 text-secondary" />
             <h2 className="text-2xl font-bold text-foreground mb-2">
@@ -143,78 +145,76 @@ const Repertorios = () => {
             </p>
           </Card>
         </main>
-      
-    </>
-  );
+      </>
+    );
   }
 
   return (
     <>
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
+      <main className="flex-1 pt-24 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-6xl mx-auto">
-          {/* Header Editorial */}
+          {/* Header */}
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12 px-2"
+            className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8"
           >
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-4xl md:text-5xl font-extralight tracking-elegant text-foreground">
-                  REPERTORIOS
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+                  Repertorios
                 </h1>
                 <button
                   onClick={() => setHelpDialogOpen(true)}
-                  className="text-muted-foreground/30 hover:text-secondary transition-colors"
+                  className="text-muted-foreground/50 hover:text-secondary transition-colors p-1"
+                  aria-label="Ayuda sobre repertorios"
                 >
                   <HelpCircle className="h-5 w-5" />
                 </button>
               </div>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50 font-medium mt-3">
-                Gestión y organización de servicios musicales
+              <p className="text-sm text-muted-foreground mt-1">
+                Organiza y gestiona los servicios musicales
               </p>
             </div>
             
             <Button
               onClick={() => setCreateDialogOpen(true)}
-              variant="outline"
-              size="lg"
-              className="squircle-sm border-white/[0.05] bg-white/[0.02] hover:bg-secondary hover:text-primary-foreground hover:border-secondary transition-all duration-300 gap-2"
+              className="h-12 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm gap-2 shadow-lg shadow-secondary/20 active:scale-[0.97] transition-all"
             >
               <Plus className="h-5 w-5" />
               Nuevo Repertorio
             </Button>
           </motion.div>
 
-          {/* Próximos servicios - Squircle Cards */}
+          {/* Próximos servicios */}
           {upcomingSetlists.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="mb-12"
+              className="mb-8"
             >
-              <h2 className="text-[10px] uppercase tracking-widest font-bold mb-4 text-muted-foreground/40 flex items-center gap-2 px-2">
+              <h2 className="text-xs uppercase tracking-widest font-bold mb-3 text-muted-foreground/60 px-1">
                 Próximos Servicios
               </h2>
-              <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+              <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar -mx-1 px-1">
                 {upcomingSetlists.map(setlist => (
                   <Card 
                     key={setlist.id}
-                    className="shrink-0 w-64 cursor-pointer squircle border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.05] hover:border-secondary/20 transition-all duration-500 shadow-2xl shadow-black/20"
+                    className="shrink-0 w-60 cursor-pointer rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-secondary/30 transition-all duration-300 active:scale-[0.98]"
                     onClick={() => navigate(`/repertorios/${setlist.id}`)}
                   >
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                        <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">
+                    <CardContent className="p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-2 h-2 rounded-full bg-secondary" />
+                        <span className="text-xs font-bold text-secondary capitalize">
                           {format(new Date(setlist.service_date), "EEEE d", { locale: es })}
                         </span>
                       </div>
-                      <p className="font-light text-xl tracking-tight text-foreground truncate mb-1">
+                      <p className="font-semibold text-lg text-foreground truncate mb-1">
                         {setlist.title}
                       </p>
-                      <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground/40 font-medium">
+                      <p className="text-xs text-muted-foreground font-medium">
                         {setlist.songsCount} canciones
                       </p>
                     </CardContent>
@@ -224,49 +224,51 @@ const Repertorios = () => {
             </motion.div>
           )}
 
-          {/* Filtros */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="grid w-full grid-cols-4 max-w-md bg-secondary/10">
-              <TabsTrigger value="all" className="gap-1 data-[state=active]:bg-secondary data-[state=active]:text-primary-foreground">
-                <ListMusic className="h-4 w-4" />
-                Todos
-              </TabsTrigger>
-              <TabsTrigger value="draft" className="gap-1 data-[state=active]:bg-secondary data-[state=active]:text-primary-foreground">
-                <FileEdit className="h-4 w-4" />
-                Borrador
-              </TabsTrigger>
-              <TabsTrigger value="ready" className="gap-1 data-[state=active]:bg-secondary data-[state=active]:text-primary-foreground">
-                <CheckCircle2 className="h-4 w-4" />
-                Listos
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="gap-1 data-[state=active]:bg-secondary data-[state=active]:text-primary-foreground">
-                <Clock className="h-4 w-4" />
-                Pasados
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Filter Tabs - Mobile optimized */}
+          <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
+            {filterTabs.map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all active:scale-[0.97] ${
+                    isActive
+                      ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20'
+                      : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                  }`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Lista de repertorios */}
+          {/* List */}
           {loading ? (
-            <div className="flex justify-center py-12">
+            <div className="flex justify-center py-16">
               <Loader />
             </div>
           ) : filteredSetlists.length === 0 ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12"
+              className="text-center py-16"
             >
-              <Sparkles className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2 text-foreground">
+              <Sparkles className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2 text-foreground">
                 {activeTab === 'all' 
                   ? 'No hay repertorios aún' 
-                  : `No hay repertorios en estado "${activeTab}"`}
+                  : `No hay repertorios "${filterTabs.find(t => t.id === activeTab)?.label}"`}
               </h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Crea tu primer repertorio para organizar las canciones del próximo servicio
               </p>
-              <Button onClick={() => setCreateDialogOpen(true)} className="gap-2 bg-secondary text-primary-foreground hover:bg-secondary/90">
+              <Button 
+                onClick={() => setCreateDialogOpen(true)} 
+                className="gap-2 bg-secondary text-primary-foreground hover:bg-secondary/90 h-12 px-6 rounded-xl font-bold"
+              >
                 <Plus className="h-4 w-4" />
                 Crear Repertorio
               </Button>
@@ -317,7 +319,7 @@ const Repertorios = () => {
       <Dialog open={helpDialogOpen} onOpenChange={setHelpDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-xl">
               <HelpCircle className="h-5 w-5 text-secondary" />
               ¿Cómo usar los Repertorios?
             </DialogTitle>
@@ -326,45 +328,48 @@ const Repertorios = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 mt-4">
-            <div className="flex gap-3">
-              <div className="p-2 rounded-lg bg-secondary/20 h-fit">
+          <div className="space-y-5 mt-4">
+            <div className="flex gap-4 items-start">
+              <div className="p-2.5 rounded-xl bg-secondary/15 shrink-0">
                 <Plus className="h-5 w-5 text-secondary" />
               </div>
               <div>
-                <h4 className="font-semibold text-foreground">Crear Repertorio</h4>
-                <p className="text-sm text-muted-foreground">
+                <h4 className="font-bold text-foreground mb-1">Crear Repertorio</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   Define el título, fecha, versículo temático, director del culto y predicador.
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <div className="p-2 rounded-lg bg-secondary/20 h-fit">
+            <div className="flex gap-4 items-start">
+              <div className="p-2.5 rounded-xl bg-secondary/15 shrink-0">
                 <ListMusic className="h-5 w-5 text-secondary" />
               </div>
               <div>
-                <h4 className="font-semibold text-foreground">Agregar Canciones por Sección</h4>
-                <p className="text-sm text-muted-foreground">
+                <h4 className="font-bold text-foreground mb-1">Agregar Canciones</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   Organiza las canciones según el flujo del culto: Alabanza, Adoración, Ofrenda, Ministración, etc.
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <div className="p-2 rounded-lg bg-secondary/20 h-fit">
+            <div className="flex gap-4 items-start">
+              <div className="p-2.5 rounded-xl bg-secondary/15 shrink-0">
                 <Play className="h-5 w-5 text-secondary" />
               </div>
               <div>
-                <h4 className="font-semibold text-foreground">Modo En Vivo</h4>
-                <p className="text-sm text-muted-foreground">
+                <h4 className="font-bold text-foreground mb-1">Modo En Vivo</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   Sincroniza las letras en tiempo real con todo el equipo durante el servicio.
                 </p>
               </div>
             </div>
           </div>
 
-          <Button onClick={() => setHelpDialogOpen(false)} className="mt-4 bg-secondary text-primary-foreground hover:bg-secondary/90">
+          <Button 
+            onClick={() => setHelpDialogOpen(false)} 
+            className="mt-4 w-full h-12 rounded-xl bg-secondary text-primary-foreground hover:bg-secondary/90 font-bold"
+          >
             ¡Entendido!
           </Button>
         </DialogContent>
