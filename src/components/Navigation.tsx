@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
-import { Menu, X, User, Home, Music, ListMusic, MessageCircle, Users, CalendarDays, ChevronRight } from "lucide-react";
+import { Menu, X, User, Home, Music, ListMusic, MessageCircle, Users, CalendarDays, BarChart3, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalSearch } from "./GlobalSearch";
@@ -19,6 +19,7 @@ export const Navigation = () => {
     { name: "Repertorios", path: "/repertorios", icon: ListMusic },
     { name: "Foro", path: "/foro", icon: MessageCircle },
     { name: "Miembros", path: "/miembros", icon: Users },
+    { name: "Estadísticas", path: "/estadisticas", icon: BarChart3 },
     { name: "Eventos", path: "/eventos", icon: CalendarDays },
   ];
 
