@@ -22,6 +22,7 @@ import { SetlistCard } from '@/components/repertorios/SetlistCard';
 import { CreateSetlistDialog } from '@/components/repertorios/CreateSetlistDialog';
 import { Setlist } from '@/components/repertorios/types';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -39,6 +40,7 @@ const filterTabs = [
 const Repertorios = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isLeader } = useUserRole();
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
@@ -77,6 +79,11 @@ const Repertorios = () => {
 
       if (existingSession) {
         navigate(`/en-vivo/${existingSession.id}`);
+        return;
+      }
+
+      if (!isLeader) {
+        toast.error('Solo los líderes pueden iniciar un servicio en vivo.');
         return;
       }
 

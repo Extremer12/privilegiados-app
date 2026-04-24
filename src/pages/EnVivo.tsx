@@ -28,7 +28,8 @@ import { LyricsDisplay } from "@/components/live/LyricsDisplay";
 import { SongListPanel } from "@/components/live/SongListPanel";
 import { LiveChat } from "@/components/live/LiveChat";
 import { VoiceChannel } from "@/components/live/VoiceChannel";
-import { EndSessionDialog } from "@/components/live/EndSessionDialog";
+import { EndSessionDialog, FinalizeServiceData } from "@/components/live/EndSessionDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface LiveSession {
   id: string;
@@ -75,6 +76,7 @@ const EnVivo = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isLeader } = useUserRole();
   
   const [session, setSession] = useState<LiveSession | null>(null);
   const [setlist, setSetlist] = useState<Setlist | null>(null);
@@ -317,10 +319,70 @@ const EnVivo = () => {
     }
   };
 
-  const handleEndSession = async () => {
+  const handleEndSession = async (data: FinalizeServiceData) => {
     setIsEnding(true);
     
     try {
+      // 1. Create service report
+      const { data: report, error: reportError } = await supabase
+        .from("service_reports")
+        .insert({
+          setlist_id: session?.setlist_id,
+          live_session_id: id,
+          finalized_by: user?.id,
+          service_date: new Date().toISOString(),
+          duration_minutes: Math.round((new Date().getTime() - new Date(session?.started_at || new Date()).getTime()) / 60000),
+          notes: data.notes,
+          attendance_count: data.attendance_count
+        })
+        .select()
+        .single();
+
+      if (reportError) throw reportError;
+
+      // 2. Add participants
+      if (data.participants.length > 0) {
+        const { error: partsError } = await supabase
+          .from("service_participants")
+          .insert(
+            data.participants.map(p => ({
+              service_report_id: report.id,
+              participant_name: p.name,
+              role_in_service: p.role
+            }))
+          );
+        if (partsError) throw partsError;
+      }
+
+      // 3. Add songs played
+      const playedSongs = data.songs.filter(s => s.played);
+      if (playedSongs.length > 0) {
+        const { error: songsError } = await supabase
+          .from("service_songs")
+          .insert(
+            playedSongs.map((s, idx) => ({
+              service_report_id: report.id,
+              song_id: s.song_id,
+              position: idx + 1,
+              was_improvised: s.was_improvised
+            }))
+          );
+        if (songsError) throw songsError;
+      }
+
+      // 4. Add leader's rating if any
+      if (data.leader_rating > 0) {
+        const { error: ratingError } = await supabase
+          .from("service_ratings")
+          .insert({
+            service_report_id: report.id,
+            user_id: user?.id,
+            rating: data.leader_rating
+          });
+        if (ratingError) console.error("Error saving rating:", ratingError); // Non-blocking
+      }
+
+      // 5. Update session
       const { error } = await supabase
         .from("live_sessions")
         .update({
@@ -335,13 +397,13 @@ const EnVivo = () => {
       if (session?.setlist_id) {
         await supabase
           .from("setlists")
-          .update({ status: "completado" })
+          .update({ status: "completed" })
           .eq("id", session.setlist_id);
       }
 
       toast({
-        title: "🎉 ¡Sesión finalizada!",
-        description: "El culto ha terminado. ¡Gloria a Dios!",
+        title: "🎉 ¡Culto Finalizado!",
+        description: "Se guardaron las estadísticas del servicio exitosamente.",
       });
 
       navigate("/repertorios");
@@ -349,7 +411,7 @@ const EnVivo = () => {
       console.error("Error ending session:", error);
       toast({
         title: "Error",
-        description: "No se pudo finalizar la sesión",
+        description: "No se pudo finalizar la sesión y guardar las estadísticas.",
         variant: "destructive",
       });
     } finally {
@@ -397,6 +459,7 @@ const EnVivo = () => {
 
   const currentSong = songs[session?.current_position || 0];
   const isCreator = session?.created_by === user?.id;
+  const canEndSession = isCreator || isLeader;
 
   return (
     <TooltipProvider>
@@ -637,7 +700,7 @@ const EnVivo = () => {
                   </TooltipContent>
                 </Tooltip>
 
-                {isCreator && (
+                {canEndSession && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -663,6 +726,7 @@ const EnVivo = () => {
           onClose={() => setShowEndDialog(false)}
           onConfirm={handleEndSession}
           isEnding={isEnding}
+          setlistSongs={songs}
         />
       </motion.div>
     </TooltipProvider>
