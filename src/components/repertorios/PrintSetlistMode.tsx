@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Printer, X, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -39,28 +40,25 @@ export const PrintSetlistMode = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 backdrop-blur-xl print:bg-white print:relative print:inset-auto print:block print-root"
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 backdrop-blur-xl"
     >
       <style>
         {`
           @media print {
-            /* Hide everything by default */
             body, html {
               background: white !important;
               color: black !important;
               height: auto !important;
               overflow: visible !important;
+              margin: 0 !important;
+              padding: 0 !important;
             }
             
-            body > *:not(.print-root) {
+            #root, .fixed, .no-print {
               display: none !important;
             }
 
-            #root {
-              display: none !important;
-            }
-
-            .print-root {
+            #setlist-print-section {
               display: block !important;
               position: static !important;
               width: 100% !important;
@@ -68,26 +66,8 @@ export const PrintSetlistMode = ({
               overflow: visible !important;
               visibility: visible !important;
               background: white !important;
-              opacity: 1 !important;
-              transform: none !important;
-              filter: none !important;
-            }
-
-            .printable-content {
-              display: block !important;
-              width: 100% !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              visibility: visible !important;
-              position: static !important;
-              box-shadow: none !important;
-              background: white !important;
               color: black !important;
-            }
-
-            /* Fix for Framer Motion and other overlays */
-            [style*="opacity: 0"] {
-              opacity: 1 !important;
+              padding: 1.5cm !important;
             }
 
             @page {
@@ -146,133 +126,146 @@ export const PrintSetlistMode = ({
         </div>
       </motion.div>
 
-      {/* Printable Area */}
-      <div className="bg-white text-black w-full h-full md:w-[800px] md:h-[90vh] md:rounded-2xl overflow-y-auto md:shadow-2xl print:w-full print:h-auto print:overflow-visible print:shadow-none print:rounded-none printable-content">
+      {/* Preview Area (Screen only) */}
+      <div className="bg-white text-black w-full h-full md:w-[800px] md:h-[90vh] md:rounded-2xl overflow-y-auto md:shadow-2xl print:hidden">
         <div className="p-12 md:p-16 max-w-4xl mx-auto">
-          
-          {/* Document Header */}
-          <div className="border-b-2 border-black pb-8 mb-8">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h1 className="text-4xl font-black tracking-tight uppercase leading-none mb-2">
-                  {setlist.title}
-                </h1>
-                <p className="text-sm font-bold tracking-widest uppercase text-gray-500">
-                  {format(new Date(setlist.service_date), "EEEE d 'de' MMMM, yyyy", { locale: es })}
-                </p>
-              </div>
-              
-              <div className="text-right">
-                <img src="/logo.jpg" alt="Logo" className="h-12 object-contain ml-auto grayscale opacity-80" />
-                <p className="text-[10px] uppercase tracking-widest font-bold mt-2 text-gray-400">
-                  Privilegiados App
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-8 pt-4">
-              {setlist.service_director && (
-                <div>
-                  <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold block mb-1">Director</span>
-                  <span className="text-sm font-bold">{setlist.service_director}</span>
-                </div>
-              )}
-              {setlist.preacher && (
-                <div>
-                  <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold block mb-1">Palabra</span>
-                  <span className="text-sm font-bold">{setlist.preacher}</span>
-                </div>
-              )}
-            </div>
-
-            {setlist.theme_verse && (
-              <div className="mt-6 bg-gray-50 p-4 border-l-4 border-black">
-                <p className="text-sm font-medium italic text-gray-700">
-                  "{setlist.theme_verse}"
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Service Sections */}
-          <div className={`grid gap-x-12 gap-y-8 ${columns === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {sections.map((section, idx) => {
-              const songs = songsBySection[section.id] || [];
-              if (songs.length === 0 && section.id !== 'palabra' && section.id !== 'cierre' && section.id !== 'ofrenda') {
-                return null;
-              }
-
-              return (
-                <div key={section.id} className="break-inside-avoid">
-                  <div className="flex items-center gap-3 border-b border-gray-200 pb-2 mb-4">
-                    <span className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-                      {idx + 1}
-                    </span>
-                    <h2 className="text-lg font-black uppercase tracking-widest">
-                      {section.name}
-                    </h2>
-                  </div>
-                  
-                  {songs.length > 0 ? (
-                    <div className="space-y-4 pl-9">
-                      {songs.map((song, songIdx) => (
-                        <div key={song.id} className="relative">
-                          <span className="absolute -left-6 top-1 text-[10px] font-bold text-gray-400">
-                            {songIdx + 1}.
-                          </span>
-                          <p className="text-sm font-bold leading-tight">
-                            {song.songs?.title || 'Sin título'}
-                          </p>
-                          {(song.special_instructions || song.notes || song.assigned_to) && (
-                            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                              {song.assigned_to && (
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-black bg-gray-100 px-2 py-0.5 rounded-sm">
-                                  {song.assigned_to}
-                                </span>
-                              )}
-                              {(song.special_instructions || song.notes) && (
-                                <span className="text-[10px] italic text-gray-600">
-                                  {song.special_instructions || song.notes}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="pl-9 pb-4">
-                      <div className="w-full border-b border-dashed border-gray-300 mt-6"></div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Ministry Team Section */}
-          {participants.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-gray-100 break-inside-avoid">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
-                Ministerio / Equipo de Servicio
-              </h2>
-              <div className="grid grid-cols-3 gap-6">
-                {participants.map((p: any) => (
-                  <div key={p.id} className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">
-                      {p.role_in_service}
-                    </span>
-                    <span className="text-sm font-bold text-black">
-                      {p.profiles?.full_name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
+          {renderPrintContent(setlist, sections, songsBySection, participants, columns)}
         </div>
       </div>
+
+      {/* Hidden Print Section - Portaled to body */}
+      {createPortal(
+        <div id="setlist-print-section" className="hidden print:block bg-white text-black p-0 m-0">
+          {renderPrintContent(setlist, sections, songsBySection, participants, columns)}
+        </div>,
+        document.body
+      )}
     </motion.div>
   );
 };
+
+// Helper function to avoid duplicating the content logic
+const renderPrintContent = (setlist: Setlist, sections: SectionConfig[], songsBySection: Record<string, SetlistSong[]>, participants: any[], columns: number) => (
+  <div className="printable-content">
+    {/* Document Header */}
+    <div className="border-b-2 border-black pb-8 mb-8">
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-4xl font-black tracking-tight uppercase leading-none mb-2">
+            {setlist.title}
+          </h1>
+          <p className="text-sm font-bold tracking-widest uppercase text-gray-500">
+            {format(new Date(setlist.service_date), "EEEE d 'de' MMMM, yyyy", { locale: es })}
+          </p>
+        </div>
+        
+        <div className="text-right">
+          <img src="/logo.jpg" alt="Logo" className="h-12 object-contain ml-auto grayscale opacity-80" />
+          <p className="text-[10px] uppercase tracking-widest font-bold mt-2 text-gray-400">
+            Privilegiados App
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-8 pt-4">
+        {setlist.service_director && (
+          <div>
+            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold block mb-1">Director</span>
+            <span className="text-sm font-bold">{setlist.service_director}</span>
+          </div>
+        )}
+        {setlist.preacher && (
+          <div>
+            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold block mb-1">Palabra</span>
+            <span className="text-sm font-bold">{setlist.preacher}</span>
+          </div>
+        )}
+      </div>
+
+      {setlist.theme_verse && (
+        <div className="mt-6 bg-gray-50 p-4 border-l-4 border-black">
+          <p className="text-sm font-medium italic text-gray-700">
+            "{setlist.theme_verse}"
+          </p>
+        </div>
+      )}
+    </div>
+
+    {/* Service Sections */}
+    <div className={`grid gap-x-12 gap-y-8 ${columns === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      {sections.map((section, idx) => {
+        const songs = songsBySection[section.id] || [];
+        if (songs.length === 0 && section.id !== 'palabra' && section.id !== 'cierre' && section.id !== 'ofrenda') {
+          return null;
+        }
+
+        return (
+          <div key={section.id} className="break-inside-avoid">
+            <div className="flex items-center gap-3 border-b border-gray-200 pb-2 mb-4">
+              <span className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+                {idx + 1}
+              </span>
+              <h2 className="text-lg font-black uppercase tracking-widest">
+                {section.name}
+              </h2>
+            </div>
+            
+            {songs.length > 0 ? (
+              <div className="space-y-4 pl-9">
+                {songs.map((song, songIdx) => (
+                  <div key={song.id} className="relative">
+                    <span className="absolute -left-6 top-1 text-[10px] font-bold text-gray-400">
+                      {songIdx + 1}.
+                    </span>
+                    <p className="text-sm font-bold leading-tight">
+                      {song.songs?.title || 'Sin título'}
+                    </p>
+                    {(song.special_instructions || song.notes || song.assigned_to) && (
+                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                        {song.assigned_to && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-black bg-gray-100 px-2 py-0.5 rounded-sm">
+                            {song.assigned_to}
+                          </span>
+                        )}
+                        {(song.special_instructions || song.notes) && (
+                          <span className="text-[10px] italic text-gray-600">
+                            {song.special_instructions || song.notes}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="pl-9 pb-4">
+                <div className="w-full border-b border-dashed border-gray-300 mt-6"></div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
+    {/* Ministry Team Section */}
+    {participants.length > 0 && (
+      <div className="mt-12 pt-8 border-t border-gray-100 break-inside-avoid">
+        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
+          Ministerio / Equipo de Servicio
+        </h2>
+        <div className="grid grid-cols-3 gap-6">
+          {participants.map((p: any) => (
+            <div key={p.id} className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                {p.role_in_service}
+              </span>
+              <span className="text-sm font-bold text-black">
+                {p.profiles?.full_name}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+);

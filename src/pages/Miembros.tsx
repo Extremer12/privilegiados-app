@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Search, Users, Music, Mic, Shield, ShieldOff } from "lucide-react";
+import { User, Search, Users, Music, Mic, Shield, ShieldOff, Edit2, Check, UserCircle, Star, Crown, MessageSquare } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -21,6 +21,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Member {
   id: string;
@@ -36,14 +51,32 @@ interface UserRole {
 }
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
-  vocalista: <Mic className="w-4 h-4" />,
-  guitarrista: <Music className="w-4 h-4" />,
-  default: <User className="w-4 h-4" />,
+  admin: <Crown className="w-4 h-4 text-secondary" />,
+  pastor: <Shield className="w-4 h-4 text-secondary" />,
+  lider: <Star className="w-4 h-4 text-secondary" />,
+  moderador: <MessageSquare className="w-4 h-4 text-secondary" />,
+  vocalista: <Mic className="w-4 h-4 text-secondary" />,
+  guitarrista: <Music className="w-4 h-4 text-secondary" />,
+  default: <User className="w-4 h-4 text-secondary/50" />,
 };
+
+const AVAILABLE_ROLES = [
+  { value: "admin", label: "Administrador", icon: Crown },
+  { value: "pastor", label: "Pastor", icon: Shield },
+  { value: "lider", label: "Líder", icon: Star },
+  { value: "moderador", label: "Moderador", icon: MessageSquare },
+  { value: "vocalista", label: "Vocalista", icon: Mic },
+  { value: "guitarrista", label: "Guitarrista", icon: Music },
+  { value: "baterista", label: "Baterista", icon: Music },
+  { value: "tecladista", label: "Tecladista", icon: Music },
+  { value: "bajista", label: "Bajista", icon: Music },
+  { value: "sonidista", label: "Sonidista", icon: Shield },
+  { value: "otro", label: "Otro", icon: User },
+];
 
 const Miembros = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, promoteToAdmin, demoteFromAdmin } = useUserRole();
+  const { isAdmin, assignRole } = useUserRole();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
@@ -75,7 +108,8 @@ const Miembros = () => {
   const loading = loadingMembers || loadingRoles;
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleActionMember, setRoleActionMember] = useState<{ id: string; name: string; action: 'promote' | 'demote' } | null>(null);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -87,39 +121,52 @@ const Miembros = () => {
     return userRoles.some(role => role.user_id === userId && role.role === 'admin');
   };
 
-  const roleActionMutation = useMutation({
-    mutationFn: async ({ id, action }: { id: string; action: 'promote' | 'demote' }) => {
-      if (action === 'promote') {
-        const result = await promoteToAdmin(id);
-        if (!result.success) throw new Error(result.error || "No se pudo asignar el rol");
-        return { success: true, isPromote: true };
-      } else {
-        const result = await demoteFromAdmin(id);
-        if (!result.success) throw new Error(result.error || "No se pudo remover el rol");
-        return { success: true, isPromote: false };
-      }
+  const getMemberRole = (userId: string) => {
+    return userRoles.find(role => role.user_id === userId)?.role || 'otro';
+  };
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, role, roleLabel }: { userId: string, role: string, roleLabel: string }) => {
+      // 1. Update internal role for permissions
+      const roleResult = await assignRole(userId, role);
+      if (roleResult.error) throw new Error(roleResult.error);
+
+      // 2. Update profile for public display
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ role: roleLabel })
+        .eq("id", userId);
+      
+      if (profileError) throw profileError;
+
+      return { success: true };
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
-        title: data.isPromote ? "Administrador asignado" : "Rol removido",
-        description: data.isPromote ? "El usuario ahora es administrador" : "El usuario ya no es administrador",
+        title: "Rol actualizado",
+        description: "El rol del miembro ha sido actualizado correctamente",
       });
       queryClient.invalidateQueries({ queryKey: ['user_roles'] });
-      setRoleActionMember(null);
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      setEditingMember(null);
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Ocurrió un error con la operación",
+        description: error.message || "No se pudo actualizar el rol",
         variant: "destructive",
       });
-      setRoleActionMember(null);
     }
   });
 
-  const handleRoleAction = async () => {
-    if (!roleActionMember) return;
-    roleActionMutation.mutate({ id: roleActionMember.id, action: roleActionMember.action });
+  const handleUpdateRole = () => {
+    if (!editingMember || !selectedRole) return;
+    const roleObj = AVAILABLE_ROLES.find(r => r.value === selectedRole);
+    updateRoleMutation.mutate({ 
+      userId: editingMember.id, 
+      role: selectedRole,
+      roleLabel: roleObj?.label || selectedRole
+    });
   };
 
   const filteredMembers = (members || []).filter((member) =>
@@ -137,134 +184,127 @@ const Miembros = () => {
       <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <Card variant="premium" className="p-6 mb-6 animate-fade-in">
+          <Card variant="premium" className="p-6 mb-6 animate-fade-in shadow-2xl shadow-secondary/5 border-secondary/20">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary/30 to-secondary/10 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary/30 to-secondary/10 flex items-center justify-center shadow-lg shadow-secondary/20 border border-secondary/20">
                   <Users className="w-7 h-7 text-secondary" aria-hidden="true" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground">Miembros</h1>
-                  <p className="text-muted-foreground">
-                    {members.length} integrantes del grupo
+                  <h1 className="text-3xl font-bold text-foreground tracking-tight">Miembros</h1>
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                    {members.length} integrantes en total
                   </p>
                 </div>
               </div>
               {isAdmin && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/20 border border-secondary/30">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/10 border border-secondary/20 backdrop-blur-sm">
                   <Shield className="w-4 h-4 text-secondary" aria-hidden="true" />
-                  <span className="text-sm text-secondary font-medium">Administrador</span>
+                  <span className="text-sm text-secondary font-bold uppercase tracking-wider">Modo Admin</span>
                 </div>
               )}
             </div>
 
             {/* Search Bar */}
-            <div className="relative mt-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
+            <div className="relative mt-6 group">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <Search className="w-5 h-5 text-muted-foreground group-focus-within:text-secondary transition-colors" aria-hidden="true" />
+              </div>
               <Input
                 type="text"
                 placeholder="Buscar por nombre, rol o instrumento..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 bg-muted/50 border-border/50 rounded-xl text-base"
+                className="pl-12 h-14 bg-muted/30 border-border/50 rounded-2xl text-base focus:ring-secondary/20 focus:border-secondary/30 transition-all placeholder:text-muted-foreground/50"
                 aria-label="Buscar miembros del grupo"
               />
             </div>
           </Card>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <Loader />
-              <p className="text-muted-foreground">Cargando miembros...</p>
+            <div className="flex flex-col items-center justify-center py-20 space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-secondary/20 blur-2xl rounded-full" />
+                <Loader />
+              </div>
+              <p className="text-muted-foreground font-medium animate-pulse">Sincronizando miembros...</p>
             </div>
           ) : filteredMembers.length === 0 ? (
-            <Card className="p-12 text-center card-gradient border-secondary/20 animate-fade-in">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-secondary/10 flex items-center justify-center">
-                <User className="w-10 h-10 text-secondary/50" aria-hidden="true" />
+            <Card className="p-16 text-center card-gradient border-secondary/10 animate-fade-in rounded-3xl">
+              <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-secondary/5 flex items-center justify-center border border-secondary/10">
+                <UserCircle className="w-12 h-12 text-secondary/30" aria-hidden="true" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                {searchQuery ? "No se encontraron miembros" : "No hay miembros registrados"}
+              <h3 className="text-2xl font-bold text-foreground mb-3 tracking-tight">
+                {searchQuery ? "Búsqueda sin resultados" : "No hay miembros aún"}
               </h3>
-              <p className="text-muted-foreground">
-                {searchQuery ? "Intenta con otra búsqueda" : "Los miembros aparecerán aquí"}
+              <p className="text-muted-foreground max-w-xs mx-auto">
+                {searchQuery 
+                  ? "Prueba con otros términos como el instrumento o el apellido." 
+                  : "Cuando los usuarios se registren, aparecerán mágicamente aquí."}
               </p>
+              {searchQuery && (
+                <Button variant="ghost" onClick={() => setSearchQuery("")} className="mt-6 text-secondary hover:bg-secondary/10">
+                  Limpiar búsqueda
+                </Button>
+              )}
             </Card>
           ) : (
-            <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {filteredMembers.map((member, index) => {
                 const memberIsAdmin = isUserAdmin(member.id);
+                const currentRoleKey = getMemberRole(member.id).toLowerCase();
+                
                 return (
                   <Card
                     key={member.id}
-                    className="group relative p-5 sm:p-6 card-gradient border-secondary/20 cursor-pointer overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-secondary/20 hover:-translate-y-2 animate-fade-in"
+                    className="group relative p-6 card-gradient border-secondary/10 cursor-pointer overflow-hidden transition-all duration-500 hover:shadow-[0_20px_50px_rgba(var(--secondary-rgb),0.15)] hover:-translate-y-2 animate-fade-in rounded-3xl"
                     style={{
                       animationDelay: `${index * 50}ms`,
-                      transformStyle: "preserve-3d",
-                      perspective: "1000px",
                     }}
                     onClick={() => navigate(`/perfil/${member.id}`)}
                     role="button"
                     aria-label={`Ver perfil de ${member.full_name}`}
-                    onMouseMove={(e) => {
-                      const card = e.currentTarget;
-                      const rect = card.getBoundingClientRect();
-                      const x = e.clientX - rect.left;
-                      const y = e.clientY - rect.top;
-                      const centerX = rect.width / 2;
-                      const centerY = rect.height / 2;
-                      const rotateX = (y - centerY) / 15;
-                      const rotateY = (centerX - x) / 15;
-                      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px) scale(1.02)`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(1)";
-                    }}
                   >
-                    {/* Admin badge */}
-                    {memberIsAdmin && (
-                      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-full bg-secondary/30 border border-secondary/50">
-                        <Shield className="w-3 h-3 text-secondary" aria-hidden="true" />
-                        <span className="text-xs text-secondary font-medium">Admin</span>
-                      </div>
-                    )}
+                    {/* Role Icon Overlay */}
+                    <div className="absolute -top-4 -right-4 w-20 h-20 bg-secondary/5 rounded-full blur-2xl group-hover:bg-secondary/10 transition-colors" />
                     
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-secondary/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                    </div>
-                    
-                    <div className="relative flex flex-col items-center text-center space-y-4">
-                      {/* Avatar with glow */}
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-secondary/30 rounded-full blur-xl scale-110 opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-500" />
-                        <Avatar className="relative w-20 h-20 sm:w-24 sm:h-24 ring-4 ring-secondary/20 group-hover:ring-secondary/50 transition-all duration-300 shadow-xl">
+                    <div className="relative flex flex-col items-center text-center">
+                      {/* Avatar */}
+                      <div className="relative mb-5">
+                        <div className="absolute inset-0 bg-secondary/20 rounded-full blur-xl scale-110 opacity-0 group-hover:opacity-100 transition-all duration-700" />
+                        <Avatar className="w-24 h-24 sm:w-28 sm:h-28 ring-4 ring-background shadow-2xl group-hover:ring-secondary/20 transition-all duration-500">
                           <AvatarImage 
                             src={member.avatar_url || undefined} 
                             alt={member.full_name}
-                            className="object-cover"
+                            className="object-cover transition-transform duration-700 group-hover:scale-110"
                           />
-                          <AvatarFallback className="bg-gradient-to-br from-secondary/30 to-secondary/10 text-secondary text-2xl sm:text-3xl font-bold">
+                          <AvatarFallback className="bg-gradient-to-br from-secondary to-primary text-white text-3xl font-black">
                             {member.full_name.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         
-                        {/* Status indicator */}
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background border-2 border-secondary/30 flex items-center justify-center">
-                          <span aria-hidden="true">{ROLE_ICONS[member.role?.toLowerCase() || "default"] || ROLE_ICONS.default}</span>
+                        {/* Role Mini Badge */}
+                        <div className="absolute -bottom-1 right-2 w-8 h-8 rounded-xl bg-background border-2 border-secondary/20 shadow-lg flex items-center justify-center transition-transform group-hover:scale-110">
+                          {ROLE_ICONS[currentRoleKey] || ROLE_ICONS.default}
                         </div>
                       </div>
                       
                       {/* Info */}
-                      <div className="space-y-1">
-                        <h3 className="font-bold text-base sm:text-lg text-foreground group-hover:text-secondary transition-colors duration-300 line-clamp-2">
+                      <div className="space-y-1 mb-6">
+                        <h3 className="font-bold text-lg text-foreground group-hover:text-secondary transition-colors duration-300 line-clamp-1 tracking-tight">
                           {member.full_name}
                         </h3>
-                        <p className="text-xs sm:text-sm text-secondary/80 capitalize font-medium">
-                          {member.role || member.instrument || "Miembro"}
-                        </p>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-xs font-black uppercase tracking-widest text-secondary/80 bg-secondary/5 px-2 py-0.5 rounded-full">
+                            {member.role || "Miembro"}
+                          </span>
+                          {member.instrument && (
+                            <span className="text-xs text-muted-foreground font-medium italic">
+                              {member.instrument}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Admin controls */}
@@ -274,30 +314,13 @@ const Miembros = () => {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setRoleActionMember({
-                              id: member.id,
-                              name: member.full_name,
-                              action: memberIsAdmin ? 'demote' : 'promote'
-                            });
+                            setEditingMember(member);
+                            setSelectedRole(getMemberRole(member.id));
                           }}
-                          aria-label={memberIsAdmin ? "Quitar rol de administrador" : "Asignar rol de administrador"}
-                          className={`w-full mt-2 text-xs gap-1.5 ${
-                            memberIsAdmin 
-                              ? 'border-destructive/50 text-destructive hover:bg-destructive/10' 
-                              : 'border-secondary/50 text-secondary hover:bg-secondary/10'
-                          }`}
+                          className="w-full h-10 rounded-xl border-secondary/20 text-secondary hover:bg-secondary hover:text-white transition-all gap-2 group/btn font-bold text-xs uppercase tracking-tighter"
                         >
-                          {memberIsAdmin ? (
-                            <>
-                              <ShieldOff className="w-3.5 h-3.5" aria-hidden="true" />
-                              Quitar Admin
-                            </>
-                          ) : (
-                            <>
-                              <Shield className="w-3.5 h-3.5" aria-hidden="true" />
-                              Hacer Admin
-                            </>
-                          )}
+                          <Edit2 className="w-3.5 h-3.5 transition-transform group-hover/btn:rotate-12" />
+                          Gestionar Rol
                         </Button>
                       )}
                     </div>
@@ -309,34 +332,76 @@ const Miembros = () => {
         </div>
       </main>
 
-      {/* Role Action Confirmation Dialog */}
-      <AlertDialog open={!!roleActionMember} onOpenChange={(open) => !open && setRoleActionMember(null)}>
-        <AlertDialogContent className="card-gradient border-secondary/20">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground">
-              {roleActionMember?.action === 'promote' ? '¿Hacer administrador?' : '¿Quitar rol de administrador?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              {roleActionMember?.action === 'promote' 
-                ? `${roleActionMember?.name} tendrá permisos completos para gestionar eventos, canciones y otros miembros.`
-                : `${roleActionMember?.name} perderá los permisos de administrador.`
-              }
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleRoleAction}
-              className={roleActionMember?.action === 'promote' 
-                ? "bg-secondary text-secondary-foreground hover:bg-secondary/90" 
-                : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              }
+      {/* Role Management Dialog */}
+      <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+        <DialogContent className="sm:max-w-[425px] card-gradient border-secondary/20 rounded-[2rem] overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-secondary/10 to-transparent" />
+          
+          <DialogHeader className="relative z-10">
+            <div className="w-16 h-16 rounded-2xl bg-secondary/20 flex items-center justify-center mb-4 mx-auto border border-secondary/30 shadow-xl shadow-secondary/10">
+              <Shield className="w-8 h-8 text-secondary" />
+            </div>
+            <DialogTitle className="text-2xl font-black text-center tracking-tight">
+              Gestionar Rango
+            </DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground font-medium">
+              Asigna un rol específico para <span className="text-foreground font-bold">{editingMember?.full_name}</span>. 
+              Esto afectará sus permisos y cómo aparece en público.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="relative z-10 py-6 space-y-6">
+            <div className="space-y-3">
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-secondary ml-1">Seleccionar Rol</label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="h-14 bg-muted/30 border-border/50 rounded-2xl focus:ring-secondary/20 focus:border-secondary/30 transition-all">
+                  <SelectValue placeholder="Elige un rol..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-secondary/20 bg-neutral-900/95 backdrop-blur-xl">
+                  {AVAILABLE_ROLES.map((role) => (
+                    <SelectItem 
+                      key={role.value} 
+                      value={role.value}
+                      className="h-12 rounded-xl focus:bg-secondary/10 focus:text-secondary cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <role.icon className="w-4 h-4" />
+                        <span className="font-semibold">{role.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-secondary/5 border border-secondary/10 flex gap-4">
+              <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+                <Check className="w-5 h-5 text-secondary" />
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong className="text-secondary">Importante:</strong> Los roles de <span className="text-foreground">Pastor, Líder y Admin</span> otorgan permisos especiales para gestionar contenidos.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="relative z-10 gap-3 sm:gap-0">
+            <Button 
+              variant="ghost" 
+              onClick={() => setEditingMember(null)}
+              className="h-12 rounded-2xl font-bold"
             >
-              {roleActionMember?.action === 'promote' ? 'Confirmar' : 'Quitar rol'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleUpdateRole}
+              disabled={updateRoleMutation.isPending}
+              className="h-12 rounded-2xl bg-secondary text-white font-black uppercase tracking-widest px-8 shadow-xl shadow-secondary/20 hover:scale-105 active:scale-95 transition-all"
+            >
+              {updateRoleMutation.isPending ? "Guardando..." : "Confirmar Cambio"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
