@@ -32,6 +32,7 @@ interface EndSessionDialogProps {
   onConfirm: (data: FinalizeServiceData) => void;
   isEnding: boolean;
   setlistSongs: any[];
+  initialParticipants?: ServiceParticipantInput[];
 }
 
 const ROLES = ["Líder", "Cantante", "Guitarra", "Bajo", "Batería", "Teclado", "Sonido", "Multimedia", "Otro"];
@@ -42,40 +43,51 @@ export const EndSessionDialog = ({
   onConfirm,
   isEnding,
   setlistSongs,
+  initialParticipants = [],
 }: EndSessionDialogProps) => {
   const [step, setStep] = useState(0); // 0: warning, 1: participants, 2: songs, 3: notes
   
-  const [participants, setParticipants] = useState<ServiceParticipantInput[]>([
-    { name: "", role: "Cantante" }
-  ]);
+  const [participants, setParticipants] = useState<ServiceParticipantInput[]>([]);
   
   const [songs, setSongs] = useState<ServiceSongInput[]>([]);
   const [notes, setNotes] = useState("");
   const [attendance, setAttendance] = useState("");
   const [rating, setRating] = useState(0);
 
-  // Initialize songs when dialog opens
+  // Initialize data when dialog opens
   useEffect(() => {
-    if (isOpen && setlistSongs.length > 0 && songs.length === 0) {
-      setSongs(setlistSongs.map(s => ({
-        song_id: s.songs.id,
-        title: s.songs.title,
-        was_improvised: false,
-        played: true
-      })));
+    if (isOpen) {
+      if (setlistSongs.length > 0 && songs.length === 0) {
+        setSongs(setlistSongs.map(s => ({
+          song_id: s.songs.id,
+          title: s.songs.title,
+          was_improvised: false,
+          played: true
+        })));
+      }
+
+      if (participants.length === 0) {
+        if (initialParticipants.length > 0) {
+          setParticipants(initialParticipants);
+        } else {
+          setParticipants([{ name: "", role: "Cantante" }]);
+        }
+      }
     }
-  }, [isOpen, setlistSongs]);
+  }, [isOpen, setlistSongs, initialParticipants]);
 
   // Reset state when closed
   useEffect(() => {
     if (!isOpen) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setStep(0);
-        setParticipants([{ name: "", role: "Cantante" }]);
+        setParticipants([]);
+        setSongs([]);
         setNotes("");
         setAttendance("");
         setRating(0);
       }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 

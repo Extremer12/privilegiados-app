@@ -83,13 +83,29 @@ const RepertorioDetalle = () => {
         section: s.section || 'alabanza',
       })) as SetlistSong[];
 
-      return { setlist: formattedSetlist, songs: formattedSongs };
+      // Fetch participants
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('setlist_participants')
+        .select(`
+          *,
+          profiles (id, full_name, avatar_url)
+        `)
+        .eq('setlist_id', id);
+      
+      if (participantsError) throw participantsError;
+
+      return { 
+        setlist: formattedSetlist, 
+        songs: formattedSongs,
+        participants: participantsData || []
+      };
     },
     enabled: !!id && !!user,
   });
 
   const setlist = data?.setlist || null;
   const songs = data?.songs || [];
+  const participants = data?.participants || [];
 
   useEffect(() => {
     if (setlist) {
@@ -399,53 +415,81 @@ const RepertorioDetalle = () => {
               </div>
             )}
 
-            {/* Leadership */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
-                  Dirección de Culto
-                </h3>
-                {isEditing ? (
-                  <Input
-                    value={editForm.service_director}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, service_director: e.target.value }))}
-                    placeholder="Director del servicio"
-                    className="bg-white/[0.03] border-white/10 focus:border-secondary/40 rounded-xl h-11"
-                  />
-                ) : (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                    <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
-                      <Users className="h-4 w-4 text-secondary" />
+            {/* Leadership & Team */}
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
+                    Dirección de Culto
+                  </h3>
+                  {isEditing ? (
+                    <Input
+                      value={editForm.service_director}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, service_director: e.target.value }))}
+                      placeholder="Director del servicio"
+                      className="bg-white/[0.03] border-white/10 focus:border-secondary/40 rounded-xl h-11"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                      <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                        <Users className="h-4 w-4 text-secondary" />
+                      </div>
+                      <p className="text-base font-medium text-foreground/80">
+                        {setlist.service_director || '—'}
+                      </p>
                     </div>
-                    <p className="text-base font-medium text-foreground/80">
-                      {setlist.service_director || '—'}
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
+                    Palabra
+                  </h3>
+                  {isEditing ? (
+                    <Input
+                      value={editForm.preacher}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, preacher: e.target.value }))}
+                      placeholder="Persona que predica"
+                      className="bg-white/[0.03] border-white/10 focus:border-secondary/40 rounded-xl h-11"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                      <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                        <Mic2 className="h-4 w-4 text-secondary" />
+                      </div>
+                      <p className="text-base font-medium text-foreground/80">
+                        {setlist.preacher || '—'}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
-                  Palabra
-                </h3>
-                {isEditing ? (
-                  <Input
-                    value={editForm.preacher}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, preacher: e.target.value }))}
-                    placeholder="Persona que predica"
-                    className="bg-white/[0.03] border-white/10 focus:border-secondary/40 rounded-xl h-11"
-                  />
-                ) : (
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                    <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
-                      <MessageSquare className="h-4 w-4 text-secondary" />
-                    </div>
-                    <p className="text-base font-medium text-foreground/80">
-                      {setlist.preacher || '—'}
-                    </p>
+              {/* Team Participants */}
+              {participants.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
+                    Ministerio / Equipo
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
+                    {participants.map((p: any) => (
+                      <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/5 border border-white/5">
+                        <div className="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center overflow-hidden">
+                          {p.profiles?.avatar_url ? (
+                            <img src={p.profiles.avatar_url} alt={p.profiles.full_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold text-secondary">{p.profiles?.full_name?.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-white/90">{p.profiles?.full_name}</span>
+                          <span className="text-[9px] font-medium text-secondary/60 uppercase">{p.role_in_service}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -488,6 +532,7 @@ const RepertorioDetalle = () => {
             setlist={setlist}
             sections={sections}
             songsBySection={songsBySection}
+            participants={participants}
             onClose={() => setPrintMode(false)}
           />
         )}

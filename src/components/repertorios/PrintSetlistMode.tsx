@@ -11,10 +11,17 @@ interface PrintSetlistModeProps {
   setlist: Setlist;
   sections: SectionConfig[];
   songsBySection: Record<string, SetlistSong[]>;
+  participants?: any[];
   onClose: () => void;
 }
 
-export const PrintSetlistMode = ({ setlist, sections, songsBySection, onClose }: PrintSetlistModeProps) => {
+export const PrintSetlistMode = ({ 
+  setlist, 
+  sections, 
+  songsBySection, 
+  participants = [],
+  onClose 
+}: PrintSetlistModeProps) => {
   const [columns, setColumns] = useState(1);
 
   // Add fullscreen class to hide main app header
@@ -242,6 +249,27 @@ export const PrintSetlistMode = ({ setlist, sections, songsBySection, onClose }:
               );
             })}
           </div>
+
+          {/* Ministry Team Section */}
+          {participants.length > 0 && (
+            <div className="mt-12 pt-8 border-t border-gray-100 break-inside-avoid">
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-400 mb-6">
+                Ministerio / Equipo de Servicio
+              </h2>
+              <div className="grid grid-cols-3 gap-6">
+                {participants.map((p: any) => (
+                  <div key={p.id} className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                      {p.role_in_service}
+                    </span>
+                    <span className="text-sm font-bold text-black">
+                      {p.profiles?.full_name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
         </div>
       </div>

@@ -91,6 +91,7 @@ const EnVivo = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
+  const [initialParticipants, setInitialParticipants] = useState<any[]>([]);
 
   // Wake Lock state
   const wakeLockRef = useRef<any>(null);
@@ -170,7 +171,6 @@ const EnVivo = () => {
       if (songsError) throw songsError;
       setSongs(songsData as any || []);
 
-      // Fetch comments
       const { data: commentsData } = await supabase
         .from("live_comments")
         .select(`
@@ -184,6 +184,23 @@ const EnVivo = () => {
         .order("created_at", { ascending: true });
 
       setComments(commentsData as any || []);
+
+      // Fetch participants from setlist
+      const { data: participantsData } = await supabase
+        .from("setlist_participants")
+        .select(`
+          participant_name,
+          role_in_service,
+          profiles (full_name)
+        `)
+        .eq("setlist_id", sessionData.setlist_id);
+      
+      if (participantsData) {
+        setInitialParticipants(participantsData.map(p => ({
+          name: p.profiles?.full_name || p.participant_name || "",
+          role: p.role_in_service || "Cantante"
+        })));
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({
@@ -727,6 +744,7 @@ const EnVivo = () => {
           onConfirm={handleEndSession}
           isEnding={isEnding}
           setlistSongs={songs}
+          initialParticipants={initialParticipants}
         />
       </motion.div>
     </TooltipProvider>
