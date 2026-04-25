@@ -76,7 +76,7 @@ const AVAILABLE_ROLES = [
 
 const Miembros = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, assignRole } = useUserRole();
+  const { isAdmin, isModerator, assignRole, deleteUserCompletely } = useUserRole();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
@@ -110,6 +110,7 @@ const Miembros = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("");
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -159,6 +160,31 @@ const Miembros = () => {
     }
   });
 
+  const deleteMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const result = await deleteUserCompletely(userId);
+      if (result.error) throw new Error(result.error);
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Usuario eliminado",
+        description: "El usuario ha sido eliminado completamente del sistema.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['user_roles'] });
+      setMemberToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error al eliminar",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive",
+      });
+      setMemberToDelete(null);
+    }
+  });
+
   const handleUpdateRole = () => {
     if (!editingMember || !selectedRole) return;
     const roleObj = AVAILABLE_ROLES.find(r => r.value === selectedRole);
@@ -198,14 +224,14 @@ const Miembros = () => {
                   </p>
                 </div>
               </div>
-              {isAdmin && (
+              {(isAdmin || isModerator) && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/10 border border-secondary/20 backdrop-blur-sm">
                   <Shield className="w-4 h-4 text-secondary" aria-hidden="true" />
-                  <span className="text-sm text-secondary font-bold uppercase tracking-wider">Modo Admin</span>
+                  <span className="text-sm text-secondary font-bold uppercase tracking-wider">Modo Gestión</span>
                 </div>
               )}
             </div>
-
+            
             {/* Search Bar */}
             <div className="relative mt-6 group">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -243,11 +269,6 @@ const Miembros = () => {
                   ? "Prueba con otros términos como el instrumento o el apellido." 
                   : "Cuando los usuarios se registren, aparecerán mágicamente aquí."}
               </p>
-              {searchQuery && (
-                <Button variant="ghost" onClick={() => setSearchQuery("")} className="mt-6 text-secondary hover:bg-secondary/10">
-                  Limpiar búsqueda
-                </Button>
-              )}
             </Card>
           ) : (
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -307,21 +328,36 @@ const Miembros = () => {
                         </div>
                       </div>
 
-                      {/* Admin controls */}
-                      {isAdmin && member.id !== user.id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingMember(member);
-                            setSelectedRole(getMemberRole(member.id));
-                          }}
-                          className="w-full h-10 rounded-xl border-secondary/20 text-secondary hover:bg-secondary hover:text-white transition-all gap-2 group/btn font-bold text-xs uppercase tracking-tighter"
-                        >
-                          <Edit2 className="w-3.5 h-3.5 transition-transform group-hover/btn:rotate-12" />
-                          Gestionar Rol
-                        </Button>
+                      {/* Admin/Mod controls */}
+                      {(isAdmin || isModerator) && member.id !== user.id && (
+                        <div className="w-full space-y-2">
+                          {isAdmin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingMember(member);
+                                setSelectedRole(getMemberRole(member.id));
+                              }}
+                              className="w-full h-10 rounded-xl border-secondary/20 text-secondary hover:bg-secondary hover:text-white transition-all gap-2 group/btn font-bold text-xs uppercase tracking-tighter"
+                            >
+                              <Edit2 className="w-3.5 h-3.5 transition-transform group-hover/btn:rotate-12" />
+                              Gestionar Rol
+                            </Button>
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMemberToDelete(member);
+                            }}
+                            className="w-full h-10 rounded-xl border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500 hover:text-white transition-all gap-2 font-bold text-xs uppercase tracking-tighter"
+                          >
+                            Eliminar Usuario
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </Card>
@@ -346,7 +382,6 @@ const Miembros = () => {
             </DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">
               Asigna un rol específico para <span className="text-foreground font-bold">{editingMember?.full_name}</span>. 
-              Esto afectará sus permisos y cómo aparece en público.
             </DialogDescription>
           </DialogHeader>
 
@@ -373,35 +408,36 @@ const Miembros = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="p-4 rounded-2xl bg-secondary/5 border border-secondary/10 flex gap-4">
-              <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
-                <Check className="w-5 h-5 text-secondary" />
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-secondary">Importante:</strong> Los roles de <span className="text-foreground">Pastor, Líder y Admin</span> otorgan permisos especiales para gestionar contenidos.
-              </p>
-            </div>
           </div>
 
           <DialogFooter className="relative z-10 gap-3 sm:gap-0">
-            <Button 
-              variant="ghost" 
-              onClick={() => setEditingMember(null)}
-              className="h-12 rounded-2xl font-bold"
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleUpdateRole}
-              disabled={updateRoleMutation.isPending}
-              className="h-12 rounded-2xl bg-secondary text-white font-black uppercase tracking-widest px-8 shadow-xl shadow-secondary/20 hover:scale-105 active:scale-95 transition-all"
-            >
-              {updateRoleMutation.isPending ? "Guardando..." : "Confirmar Cambio"}
-            </Button>
+            <Button variant="ghost" onClick={() => setEditingMember(null)} className="h-12 rounded-2xl font-bold">Cancelar</Button>
+            <Button onClick={handleUpdateRole} disabled={updateRoleMutation.isPending} className="h-12 rounded-2xl bg-secondary text-white font-black uppercase tracking-widest px-8 shadow-xl shadow-secondary/20">Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+        <AlertDialogContent className="card-gradient border-red-500/20 rounded-[2rem]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-black text-red-500">¿Eliminar usuario?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-base">
+              Esta acción eliminará completamente a <strong className="text-foreground">{memberToDelete?.full_name}</strong> de la base de datos. 
+              Sus mensajes, participaciones y perfil desaparecerán permanentemente. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 mt-6">
+            <AlertDialogCancel className="h-12 rounded-2xl border-border font-bold">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => memberToDelete && deleteMemberMutation.mutate(memberToDelete.id)}
+              className="h-12 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest hover:bg-red-600 shadow-xl shadow-red-500/20"
+            >
+              {deleteMemberMutation.isPending ? "Eliminando..." : "Sí, Eliminar Todo"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

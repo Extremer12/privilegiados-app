@@ -9,6 +9,7 @@ export const useUserRole = () => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLeader, setIsLeader] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,6 +18,7 @@ export const useUserRole = () => {
       if (!user) {
         setIsAdmin(false);
         setIsLeader(false);
+        setIsModerator(false);
         setUserRole(null);
         setLoading(false);
         return;
@@ -33,21 +35,25 @@ export const useUserRole = () => {
           console.error('Error checking roles:', error);
           setIsAdmin(false);
           setIsLeader(false);
+          setIsModerator(false);
           setUserRole(null);
         } else if (roles && roles.length > 0) {
           const role = roles[0].role;
           setUserRole(role);
           setIsAdmin(role === 'admin');
+          setIsModerator(role === 'moderador' || role === 'admin');
           setIsLeader(LEADERSHIP_ROLES.includes(role));
         } else {
           setIsAdmin(false);
           setIsLeader(false);
+          setIsModerator(false);
           setUserRole(null);
         }
       } catch (error) {
         console.error('Error checking roles:', error);
         setIsAdmin(false);
         setIsLeader(false);
+        setIsModerator(false);
         setUserRole(null);
       } finally {
         setLoading(false);
@@ -132,5 +138,31 @@ export const useUserRole = () => {
     }
   };
 
-  return { isAdmin, isLeader, userRole, loading, promoteToAdmin, demoteFromAdmin, assignRole };
+  const deleteUserCompletely = async (userId: string) => {
+    if (!isAdmin && !isModerator) return { error: 'No tienes permisos para realizar esta acción' };
+
+    try {
+      const { error } = await supabase.rpc('delete_user_completely', {
+        user_id_to_delete: userId
+      });
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      return { error: error.message };
+    }
+  };
+
+  return { 
+    isAdmin, 
+    isLeader, 
+    isModerator, 
+    userRole, 
+    loading, 
+    promoteToAdmin, 
+    demoteFromAdmin, 
+    assignRole,
+    deleteUserCompletely 
+  };
 };
