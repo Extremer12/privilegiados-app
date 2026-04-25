@@ -32,59 +32,83 @@ export const PrintSetlistMode = ({ setlist, sections, songsBySection, onClose }:
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md print:bg-white print:items-start"
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 backdrop-blur-xl print:bg-white print:relative print:inset-auto print:block"
     >
+      <style>
+        {`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            .printable-content, .printable-content * {
+              visibility: visible;
+            }
+            .printable-content {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              padding: 0;
+              margin: 0;
+            }
+            @page {
+              margin: 1cm;
+              size: auto;
+            }
+          }
+        `}
+      </style>
+
       {/* Floating Toolbar (Hidden when printing) */}
       <motion.div 
         initial={{ y: 100, x: "-50%", opacity: 0 }}
         animate={{ y: 0, x: "-50%", opacity: 1 }}
         exit={{ y: 100, x: "-50%", opacity: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed bottom-10 left-1/2 z-[100] bg-neutral-900/90 backdrop-blur-2xl border border-white/10 p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-8 print:hidden min-w-[300px]"
+        className="fixed bottom-6 left-1/2 z-[1000] bg-neutral-900/95 backdrop-blur-2xl border border-white/10 p-3 md:p-5 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center gap-3 md:gap-8 print:hidden w-[90%] md:w-auto max-w-[400px] md:max-w-none"
       >
-        <div className="flex items-center gap-4 border-r border-white/10 pr-8">
+        <div className="flex items-center gap-3 md:gap-4 border-b md:border-b-0 md:border-r border-white/10 pb-3 md:pb-0 md:pr-8 w-full md:w-auto justify-center">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setColumns(1)}
-            className={`h-12 w-12 rounded-2xl transition-all ${columns === 1 ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+            className={`h-10 w-10 md:h-12 md:w-12 rounded-2xl transition-all ${columns === 1 ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
           >
-            <LayoutTemplate className="w-6 h-6" />
+            <LayoutTemplate className="w-5 h-5 md:w-6 md:h-6" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setColumns(2)}
-            className={`h-12 w-12 rounded-2xl transition-all ${columns === 2 ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+            className={`h-10 w-10 md:h-12 md:w-12 rounded-2xl transition-all ${columns === 2 ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
           >
             <div className="flex gap-0.5">
-              <div className="w-2.5 h-5 border-2 border-current rounded-[4px]" />
-              <div className="w-2.5 h-5 border-2 border-current rounded-[4px]" />
+              <div className="w-2 md:w-2.5 h-4 md:h-5 border-2 border-current rounded-[4px]" />
+              <div className="w-2 md:w-2.5 h-4 md:h-5 border-2 border-current rounded-[4px]" />
             </div>
           </Button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
           <Button
             onClick={onClose}
             variant="ghost"
-            className="h-12 px-6 rounded-2xl text-white/50 hover:text-red-400 hover:bg-red-400/10 font-medium tracking-wide transition-all"
+            className="flex-1 md:flex-none h-10 md:h-12 px-4 md:px-6 rounded-2xl text-white/50 hover:text-red-400 hover:bg-red-400/10 font-medium text-xs md:text-sm tracking-wide transition-all"
           >
-            <X className="w-5 h-5 mr-2" />
+            <X className="w-4 h-4 mr-2" />
             Cerrar
           </Button>
           <Button
             onClick={handlePrint}
-            className="h-12 px-8 rounded-2xl bg-secondary text-primary-foreground hover:bg-secondary/90 font-bold tracking-widest uppercase shadow-xl shadow-secondary/30 transition-all active:scale-95"
+            className="flex-1 md:flex-none h-10 md:h-12 px-6 md:px-8 rounded-2xl bg-secondary text-primary-foreground hover:bg-secondary/90 font-bold text-xs md:text-sm tracking-widest uppercase shadow-xl shadow-secondary/30 transition-all active:scale-95"
           >
-            <Printer className="w-5 h-5 mr-2" />
+            <Printer className="w-4 h-4 mr-2" />
             Imprimir
           </Button>
         </div>
       </motion.div>
 
       {/* Printable Area */}
-      <div className="bg-white text-black w-full h-full md:w-[800px] md:h-[90vh] md:rounded-2xl overflow-y-auto md:shadow-2xl print:w-full print:h-auto print:overflow-visible print:shadow-none print:rounded-none">
+      <div className="bg-white text-black w-full h-full md:w-[800px] md:h-[90vh] md:rounded-2xl overflow-y-auto md:shadow-2xl print:w-full print:h-auto print:overflow-visible print:shadow-none print:rounded-none printable-content">
         <div className="p-12 md:p-16 max-w-4xl mx-auto">
           
           {/* Document Header */}

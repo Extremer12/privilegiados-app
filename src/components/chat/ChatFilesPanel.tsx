@@ -1,13 +1,14 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { 
   FileText, Image as ImageIcon, Mic, Search, 
-  Download, ExternalLink, Filter, FolderOpen 
+  Download, ExternalLink, Filter, FolderOpen, X
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
 interface FileItem {
   id: string;
@@ -22,6 +23,8 @@ interface ChatFilesPanelProps {
 }
 
 export const ChatFilesPanel = ({ messages }: ChatFilesPanelProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
+
   const allFiles = useMemo(() => {
     return messages
       .filter(m => m.file_url)
@@ -34,14 +37,20 @@ export const ChatFilesPanel = ({ messages }: ChatFilesPanelProps) => {
       })) as FileItem[];
   }, [messages]);
 
+  const filteredFiles = useMemo(() => {
+    if (!searchTerm.trim()) return allFiles;
+    const term = searchTerm.toLowerCase();
+    return allFiles.filter(f => f.content.toLowerCase().includes(term));
+  }, [allFiles, searchTerm]);
+
   const categorizedFiles = useMemo(() => {
     return {
-      all: allFiles,
-      images: allFiles.filter(f => f.file_type === 'image'),
-      audio: allFiles.filter(f => f.file_type === 'audio'),
-      docs: allFiles.filter(f => f.file_type === 'file')
+      all: filteredFiles,
+      images: filteredFiles.filter(f => f.file_type === 'image'),
+      audio: filteredFiles.filter(f => f.file_type === 'audio'),
+      docs: filteredFiles.filter(f => f.file_type === 'file')
     };
-  }, [allFiles]);
+  }, [filteredFiles]);
 
   const FileCard = ({ file }: { file: FileItem }) => (
     <Card className="p-3 bg-white/5 border-white/10 hover:bg-white/10 transition-colors mb-3 group">
@@ -80,6 +89,27 @@ export const ChatFilesPanel = ({ messages }: ChatFilesPanelProps) => {
         <p className="text-xs text-muted-foreground mt-1">
           {allFiles.length} archivos compartidos en este chat
         </p>
+
+        {/* Search Input */}
+        <div className="relative mt-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder="Buscar por nombre..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-white/5 border-white/10 h-10 rounded-xl focus:border-secondary/40"
+          />
+          {searchTerm && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setSearchTerm("")}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden p-4">
