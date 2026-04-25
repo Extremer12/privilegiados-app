@@ -32,27 +32,59 @@ export const PrintSetlistMode = ({ setlist, sections, songsBySection, onClose }:
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 backdrop-blur-xl print:bg-white print:relative print:inset-auto print:block"
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 backdrop-blur-xl print:bg-white print:relative print:inset-auto print:block print-root"
     >
       <style>
         {`
           @media print {
-            body * {
-              visibility: hidden;
+            /* Hide everything by default */
+            body, html {
+              background: white !important;
+              color: black !important;
+              height: auto !important;
+              overflow: visible !important;
             }
-            .printable-content, .printable-content * {
-              visibility: visible;
+            
+            body > *:not(.print-root) {
+              display: none !important;
             }
+
+            #root {
+              display: none !important;
+            }
+
+            .print-root {
+              display: block !important;
+              position: static !important;
+              width: 100% !important;
+              height: auto !important;
+              overflow: visible !important;
+              visibility: visible !important;
+              background: white !important;
+              opacity: 1 !important;
+              transform: none !important;
+              filter: none !important;
+            }
+
             .printable-content {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-              padding: 0;
-              margin: 0;
+              display: block !important;
+              width: 100% !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              visibility: visible !important;
+              position: static !important;
+              box-shadow: none !important;
+              background: white !important;
+              color: black !important;
             }
+
+            /* Fix for Framer Motion and other overlays */
+            [style*="opacity: 0"] {
+              opacity: 1 !important;
+            }
+
             @page {
-              margin: 1cm;
+              margin: 1.5cm;
               size: auto;
             }
           }

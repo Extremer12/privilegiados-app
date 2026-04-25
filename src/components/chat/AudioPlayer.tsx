@@ -23,9 +23,15 @@ export const AudioPlayer = ({ src, isOwnMessage }: AudioPlayerProps) => {
     };
 
     const handleTimeUpdate = () => {
-      if (audio.duration) {
+      setCurrentTime(audio.currentTime);
+      if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
         setProgress((audio.currentTime / audio.duration) * 100);
-        setCurrentTime(audio.currentTime);
+      }
+    };
+
+    const handleDurationChange = () => {
+      if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
+        setDuration(audio.duration);
       }
     };
 
@@ -37,11 +43,13 @@ export const AudioPlayer = ({ src, isOwnMessage }: AudioPlayerProps) => {
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("durationchange", handleDurationChange);
     audio.addEventListener("ended", handleEnded);
 
     return () => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("durationchange", handleDurationChange);
       audio.removeEventListener("ended", handleEnded);
     };
   }, []);
@@ -59,6 +67,7 @@ export const AudioPlayer = ({ src, isOwnMessage }: AudioPlayerProps) => {
   };
 
   const formatTime = (seconds: number) => {
+    if (seconds === Infinity) return "--:--";
     if (!seconds || isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);

@@ -53,18 +53,18 @@ const Index = () => {
     enabled: !!user
   });
 
-  const { data: stats = { totalSongs: 0, totalMembers: 0, totalPosts: 0 } } = useQuery({
+  const { data: stats = { totalSongs: 0, totalMembers: 0, totalSetlists: 0 } } = useQuery({
     queryKey: ['stats'],
     queryFn: async () => {
-      const [songsResult, membersResult, postsResult] = await Promise.all([
+      const [songsResult, membersResult, setlistsResult] = await Promise.all([
         supabase.from("songs").select("id", { count: "exact" }),
         supabase.from("profiles").select("id", { count: "exact" }),
-        supabase.from("forum_posts").select("id", { count: "exact" }),
+        supabase.from("setlists").select("id", { count: "exact" }),
       ]);
       return {
         totalSongs: songsResult.count || 0,
         totalMembers: membersResult.count || 0,
-        totalPosts: postsResult.count || 0,
+        totalSetlists: setlistsResult.count || 0,
       };
     },
     enabled: !!user

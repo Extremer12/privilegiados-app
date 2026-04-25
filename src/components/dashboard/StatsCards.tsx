@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { Music, Users, MessageCircle, TrendingUp } from "lucide-react";
+import { Music, Users, CalendarDays, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface StatsCardsProps {
   stats: {
     totalSongs: number;
     totalMembers: number;
-    totalPosts: number;
+    totalSetlists: number;
   };
 }
 
@@ -32,12 +32,12 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
       path: "/miembros",
     },
     {
-      value: stats.totalPosts,
-      label: "Posts",
-      icon: MessageCircle,
+      value: stats.totalSetlists,
+      label: "Repertorios",
+      icon: CalendarDays,
       color: "text-purple-400",
       bgColor: "from-purple-500/20 to-purple-600/10",
-      path: "/foro",
+      path: "/repertorios",
     },
   ];
 
