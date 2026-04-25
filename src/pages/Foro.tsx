@@ -18,7 +18,14 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { AudioRecordingUI } from "@/components/chat/AudioRecordingUI";
+import { ChatFilesPanel } from "@/components/chat/ChatFilesPanel";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { FolderOpen } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -205,8 +212,6 @@ const Foro = () => {
         table: "chat_messages",
       }, (payload) => {
         const newMessage = payload.new as ChatMessageType;
-        
-        // Update React Query cache
         queryClient.setQueryData(['chat_messages'], (oldData: any) => {
           if (!oldData) return oldData;
           return {
@@ -216,14 +221,38 @@ const Foro = () => {
             )
           };
         });
-
-        if (newMessage.author_id !== user?.id) {
-          const author = profiles[newMessage.author_id];
-          toast({
-            title: `${author?.full_name || "Un usuario"}`,
-            description: newMessage.content || "Archivo compartido",
-          });
-        }
+      })
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "chat_messages",
+      }, (payload) => {
+        const updatedMessage = payload.new as ChatMessageType;
+        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => 
+              page.map((msg: any) => msg.id === updatedMessage.id ? updatedMessage : msg)
+            )
+          };
+        });
+      })
+      .on("postgres_changes", {
+        event: "DELETE",
+        schema: "public",
+        table: "chat_messages",
+      }, (payload) => {
+        const deletedId = payload.old.id;
+        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => 
+              page.filter((msg: any) => msg.id !== deletedId)
+            )
+          };
+        });
       });
 
     channel.subscribe(async (status) => {
@@ -274,6 +303,32 @@ const Foro = () => {
         description: error.message,
         variant: "destructive",
       });
+    }
+  });
+
+  const editMessageMutation = useMutation({
+    mutationFn: async ({ id, content }: { id: string, content: string }) => {
+      const { error } = await supabase
+        .from("chat_messages")
+        .update({ content })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Mensaje editado" });
+    }
+  });
+
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Mensaje eliminado" });
     }
   });
 
@@ -342,10 +397,30 @@ const Foro = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    if (file.size > 50 * 1024 * 1024) {
+    // Restrictions
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/',
+      'audio/'
+    ];
+    
+    const isAllowed = allowedTypes.some(type => file.type.startsWith(type));
+    
+    if (!isAllowed) {
       toast({
-        title: "Error",
-        description: "El archivo debe ser menor a 50MB",
+        title: "Archivo no permitido",
+        description: "Solo se permiten PDF, Word, Imágenes y Audios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) { // 15MB limit
+      toast({
+        title: "Archivo demasiado pesado",
+        description: "El límite es de 15MB.",
         variant: "destructive",
       });
       return;
@@ -424,40 +499,54 @@ const Foro = () => {
               </div>
 
               {/* Online Users Avatars - Sleek and Minimal */}
-              {onlineUsers.length > 0 && (
-                <motion.div
-                  className="flex items-center gap-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <div className="flex -space-x-3">
-                    {onlineUsers.slice(0, 5).map((userId, index) => {
-                      const profile = profiles[userId];
-                      return (
-                        <motion.div
-                          key={userId}
-                          initial={{ scale: 0, x: -10 }}
-                          animate={{ scale: 1, x: 0 }}
-                          transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
-                        >
-                          <Avatar className="w-10 h-10 squircle-sm border-4 border-[#0d1117] relative z-10 shadow-xl">
-                            <AvatarImage src={profile?.avatar_url || undefined} />
-                            <AvatarFallback className="bg-white/5 text-muted-foreground text-[10px] uppercase font-bold">
-                              {profile?.full_name?.charAt(0) || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                        </motion.div>
-                      );
-                    })}
-                    {onlineUsers.length > 5 && (
-                      <div className="w-10 h-10 squircle-sm bg-white/[0.03] border-4 border-[#0d1117] flex items-center justify-center relative z-0">
-                        <span className="text-[10px] text-muted-foreground/60 font-bold">+{onlineUsers.length - 5}</span>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
+              <div className="flex items-center gap-4">
+                {onlineUsers.length > 0 && (
+                  <motion.div
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <div className="flex -space-x-3">
+                      {onlineUsers.slice(0, 5).map((userId, index) => {
+                        const profile = profiles[userId];
+                        return (
+                          <motion.div
+                            key={userId}
+                            initial={{ scale: 0, x: -10 }}
+                            animate={{ scale: 1, x: 0 }}
+                            transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
+                          >
+                            <Avatar className="w-10 h-10 squircle-sm border-4 border-[#0d1117] relative z-10 shadow-xl">
+                              <AvatarImage src={profile?.avatar_url || undefined} />
+                              <AvatarFallback className="bg-white/5 text-muted-foreground text-[10px] uppercase font-bold">
+                                {profile?.full_name?.charAt(0) || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                          </motion.div>
+                        );
+                      })}
+                      {onlineUsers.length > 5 && (
+                        <div className="w-10 h-10 squircle-sm bg-white/[0.03] border-4 border-[#0d1117] flex items-center justify-center relative z-0">
+                          <span className="text-[10px] text-muted-foreground/60 font-bold">+{onlineUsers.length - 5}</span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Files Sidebar Toggle */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary hover:bg-secondary/20 transition-all border border-secondary/20">
+                      <FolderOpen className="w-5 h-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent className="p-0 border-l border-white/5 w-full sm:max-w-md bg-card">
+                    <ChatFilesPanel messages={messages} />
+                  </SheetContent>
+                </Sheet>
+              </div>
             </div>
           </motion.div>
 
@@ -537,6 +626,8 @@ const Foro = () => {
                             {...msg}
                             isOwnMessage={msg.author_id === user?.id}
                             author={profiles[msg.author_id]}
+                            onDelete={(id) => deleteMessageMutation.mutate(id)}
+                            onUpdate={(id, content) => editMessageMutation.mutate({ id, content })}
                           />
                         ))}
 

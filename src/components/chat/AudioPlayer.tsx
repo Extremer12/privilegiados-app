@@ -11,6 +11,7 @@ export const AudioPlayer = ({ src, isOwnMessage }: AudioPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -24,12 +25,14 @@ export const AudioPlayer = ({ src, isOwnMessage }: AudioPlayerProps) => {
     const handleTimeUpdate = () => {
       if (audio.duration) {
         setProgress((audio.currentTime / audio.duration) * 100);
+        setCurrentTime(audio.currentTime);
       }
     };
 
     const handleEnded = () => {
       setIsPlaying(false);
       setProgress(0);
+      setCurrentTime(0);
     };
 
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
@@ -106,8 +109,8 @@ export const AudioPlayer = ({ src, isOwnMessage }: AudioPlayerProps) => {
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="text-xs text-muted-foreground">
-          {formatTime(audioRef.current?.currentTime || 0)} / {formatTime(duration)}
+        <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+          {formatTime(currentTime)} / {formatTime(duration)}
         </span>
       </div>
     </div>
