@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { 
   Calendar as CalendarIcon, BookOpen, Users, MessageSquare, 
   Sparkles, X, ChevronLeft, UserPlus, Check, Trash2, 

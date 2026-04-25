@@ -39,6 +39,14 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
       bgColor: "from-purple-500/20 to-purple-600/10",
       path: "/repertorios",
     },
+    {
+      value: null,
+      label: "Estadísticas",
+      icon: TrendingUp,
+      color: "text-emerald-400",
+      bgColor: "from-emerald-500/20 to-emerald-600/10",
+      path: "/estadisticas",
+    },
   ];
 
   const containerVariants = {
@@ -58,7 +66,7 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
 
   return (
     <motion.div
-      className="grid grid-cols-3 gap-3"
+      className="grid grid-cols-2 gap-3"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -96,19 +104,29 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
             </motion.div>
 
             {/* Value with Counter Animation */}
-            <motion.div
-              className="relative z-10 text-3xl font-bold text-foreground mb-1"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3 + index * 0.1, type: "spring" }}
-            >
-              <CountUp value={stat.value} />
-            </motion.div>
+            {stat.value !== null ? (
+              <motion.div
+                className="relative z-10 text-3xl font-bold text-foreground mb-1"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3 + index * 0.1, type: "spring" }}
+              >
+                <CountUp value={stat.value} />
+              </motion.div>
+            ) : (
+              <motion.div
+                className="relative z-10 text-sm font-black text-secondary uppercase tracking-widest mb-4 mt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                VER REPORTES
+              </motion.div>
+            )}
 
             {/* Label */}
             <div className="relative z-10 text-xs text-muted-foreground font-medium flex items-center justify-center gap-1">
               {stat.label}
-              <TrendingUp className="w-3 h-3 text-green-400" aria-hidden="true" />
+              {stat.value !== null && <TrendingUp className="w-3 h-3 text-green-400" aria-hidden="true" />}
             </div>
           </Card>
         </motion.div>
