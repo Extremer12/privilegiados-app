@@ -53,17 +53,26 @@ const Repertorios = () => {
         .from('setlists')
         .select(`
           *,
-          setlist_songs (count)
+          setlist_songs (count),
+          service_feedback (rating)
         `)
         .order('service_date', { ascending: false });
 
       if (error) throw error;
 
-      return (setlistsData || []).map(item => ({
-        ...item,
-        status: (item.status as 'draft' | 'ready' | 'completed') || 'draft',
-        songsCount: (item.setlist_songs as any)?.[0]?.count || 0,
-      })) as SetlistWithCount[];
+      return (setlistsData || []).map(item => {
+        const feedbacks = (item.service_feedback as any[]) || [];
+        const avgRating = feedbacks.length > 0 
+          ? feedbacks.reduce((acc, curr) => acc + curr.rating, 0) / feedbacks.length 
+          : undefined;
+
+        return {
+          ...item,
+          status: (item.status as 'draft' | 'ready' | 'completed') || 'draft',
+          songsCount: (item.setlist_songs as any)?.[0]?.count || 0,
+          avgRating
+        };
+      }) as (SetlistWithCount & { avgRating?: number })[];
     },
     enabled: !!user,
   });
@@ -302,6 +311,7 @@ const Repertorios = () => {
                       onStartLive={() => handleStartLive(setlist)}
                       onDelete={() => handleDeleteSetlist(setlist.id)}
                       isOwner={setlist.created_by === user?.id}
+                      avgRating={(setlist as any).avgRating}
                     />
                   </motion.div>
                 ))}

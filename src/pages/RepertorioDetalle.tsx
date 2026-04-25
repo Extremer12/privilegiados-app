@@ -359,10 +359,11 @@ const RepertorioDetalle = () => {
                     <Button 
                       variant="ghost" 
                       onClick={() => setIsEditing(true)} 
-                      className="h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-semibold active:scale-[0.97] transition-all"
+                      disabled={setlist.status === 'completed'}
+                      className={`h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-semibold active:scale-[0.97] transition-all ${setlist.status === 'completed' ? 'opacity-50 grayscale' : ''}`}
                     >
                       <Edit3 className="h-4 w-4 mr-2" />
-                      Editar
+                      {setlist.status === 'completed' ? 'Cerrado' : 'Editar'}
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -374,10 +375,11 @@ const RepertorioDetalle = () => {
                     </Button>
                     <Button 
                       onClick={handleStartLive}
-                      className="h-11 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm shadow-lg shadow-secondary/20 active:scale-[0.97] transition-all"
+                      disabled={setlist.status === 'completed'}
+                      className={`h-11 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm shadow-lg shadow-secondary/20 active:scale-[0.97] transition-all ${setlist.status === 'completed' ? 'bg-muted text-muted-foreground shadow-none' : ''}`}
                     >
                       <Play className="h-4 w-4 mr-2" />
-                      En Vivo
+                      {setlist.status === 'completed' ? 'Finalizado' : 'En Vivo'}
                     </Button>
                   </>
                 )}
@@ -504,12 +506,13 @@ const RepertorioDetalle = () => {
               onUpdateSections={setSections}
               songsBySection={songsBySection}
               onAddSong={(section) => {
+                if (setlist.status === 'completed') return;
                 setSelectedSection(section as SectionType);
                 setAddSongDialogOpen(true);
               }}
               onRemoveSong={handleRemoveSong}
               onSongClick={(song) => navigate(`/canciones/${song.song_id}`)}
-              isEditing={isEditing}
+              isEditing={isEditing && setlist.status !== 'completed'}
             />
           </motion.div>
         </div>

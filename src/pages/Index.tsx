@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
@@ -9,9 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Music, ChevronRight, 
   CalendarDays, Bell, Clock,
-  MapPin, AlertCircle, Info, AlertTriangle, Zap
+  MapPin, AlertCircle, Info, AlertTriangle, Zap, Star, MessageSquare
 } from "lucide-react";
-import { format, formatDistanceToNow, isAfter, isBefore, addDays } from "date-fns";
+import { format, formatDistanceToNow, isAfter, isBefore, addDays, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
@@ -19,6 +19,8 @@ import { ProfileCard } from "@/components/dashboard/ProfileCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { ServiceFeedbackDialog } from "@/components/repertorios/ServiceFeedbackDialog";
 
 interface Event {
   id: string;
@@ -39,6 +41,9 @@ interface Announcement {
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<{id: string, title: string} | null>(null);
+
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
@@ -49,6 +54,38 @@ const Index = () => {
         .single();
       if (error) throw error;
       return data;
+    },
+    enabled: !!user
+  });
+
+  // Query for recently completed services that the user hasn't rated yet
+  const { data: pendingFeedback = [], isLoading: loadingFeedback } = useQuery({
+    queryKey: ['pending_feedback', user?.id],
+    queryFn: async () => {
+      // 1. Get completed setlists from the last 7 days
+      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+      const { data: setlists, error: setlistsError } = await supabase
+        .from('setlists')
+        .select('id, title, service_date')
+        .eq('status', 'completed')
+        .gte('service_date', sevenDaysAgo)
+        .order('service_date', { ascending: false });
+
+      if (setlistsError) throw setlistsError;
+      if (!setlists || setlists.length === 0) return [];
+
+      // 2. Get feedbacks already submitted by the user
+      const { data: feedbacks, error: feedbackError } = await supabase
+        .from('service_feedback')
+        .select('service_id')
+        .eq('user_id', user!.id);
+      
+      if (feedbackError) throw feedbackError;
+
+      const ratedIds = new Set(feedbacks?.map(f => f.service_id) || []);
+      
+      // 3. Return setlists that haven't been rated
+      return setlists.filter(s => !ratedIds.has(s.id));
     },
     enabled: !!user
   });
@@ -171,6 +208,45 @@ const Index = () => {
           
           {/* Welcome Banner */}
           <WelcomeCard />
+
+          {/* Pending Feedback Section */}
+          <AnimatePresence>
+            {pendingFeedback.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                className="relative overflow-hidden group"
+              >
+                <Card className="p-6 card-gradient border-secondary/30 shadow-2xl shadow-secondary/10 rounded-[2rem]">
+                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Star className="w-24 h-24 text-secondary rotate-12" />
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-6 relative z-10">
+                    <div className="w-20 h-20 rounded-3xl bg-secondary/20 flex items-center justify-center border border-secondary/30 shadow-xl shadow-secondary/10 flex-shrink-0 animate-bounce-subtle">
+                      <MessageSquare className="w-10 h-10 text-secondary" />
+                    </div>
+                    <div className="flex-1 text-center sm:text-left space-y-2">
+                      <h3 className="text-xl font-black text-foreground tracking-tight">Tu opinión nos importa</h3>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        Has participado en <span className="text-secondary font-bold">"{pendingFeedback[0].title}"</span>. 
+                        ¡Déjanos tu valoración para seguir mejorando!
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        setSelectedService({ id: pendingFeedback[0].id, title: pendingFeedback[0].title });
+                        setFeedbackOpen(true);
+                      }}
+                      className="h-12 px-8 rounded-2xl bg-secondary text-primary-foreground font-black uppercase tracking-widest hover:opacity-90 shadow-lg shadow-secondary/20 active:scale-95 transition-all w-full sm:w-auto"
+                    >
+                      Valorar Ahora
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Announcements Section */}
           {loadingAnnouncements ? (
@@ -411,6 +487,16 @@ const Index = () => {
 
         </div>
       </main>
+
+      {selectedService && (
+        <ServiceFeedbackDialog 
+          open={feedbackOpen}
+          onOpenChange={setFeedbackOpen}
+          serviceId={selectedService.id}
+          serviceTitle={selectedService.title}
+        />
+      )}
+
       <Footer />
     </>
   );

@@ -10,7 +10,7 @@ export const useUserRole = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLeader, setIsLeader] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,13 +19,13 @@ export const useUserRole = () => {
         setIsAdmin(false);
         setIsLeader(false);
         setIsModerator(false);
-        setUserRole(null);
+        setUserRoles([]);
         setLoading(false);
         return;
       }
 
       try {
-        // Get user's role from user_roles table
+        // Get user's roles from user_roles table
         const { data: roles, error } = await supabase
           .from('user_roles')
           .select('role')
@@ -36,25 +36,25 @@ export const useUserRole = () => {
           setIsAdmin(false);
           setIsLeader(false);
           setIsModerator(false);
-          setUserRole(null);
+          setUserRoles([]);
         } else if (roles && roles.length > 0) {
-          const role = roles[0].role;
-          setUserRole(role);
-          setIsAdmin(role === 'admin');
-          setIsModerator(role === 'moderador' || role === 'admin');
-          setIsLeader(LEADERSHIP_ROLES.includes(role));
+          const roleList = roles.map(r => r.role);
+          setUserRoles(roleList);
+          setIsAdmin(roleList.includes('admin'));
+          setIsModerator(roleList.includes('moderador') || roleList.includes('admin'));
+          setIsLeader(roleList.some(role => LEADERSHIP_ROLES.includes(role)));
         } else {
           setIsAdmin(false);
           setIsLeader(false);
           setIsModerator(false);
-          setUserRole(null);
+          setUserRoles([]);
         }
       } catch (error) {
         console.error('Error checking roles:', error);
         setIsAdmin(false);
         setIsLeader(false);
         setIsModerator(false);
-        setUserRole(null);
+        setUserRoles([]);
       } finally {
         setLoading(false);
       }
@@ -80,8 +80,7 @@ export const useUserRole = () => {
 
       const { error } = await supabase
         .from('user_roles')
-        .update({ role: 'admin' })
-        .eq('user_id', userId);
+        .insert({ user_id: userId, role: 'admin' });
 
       if (error) throw error;
       return { success: true };
@@ -97,8 +96,9 @@ export const useUserRole = () => {
     try {
       const { error } = await supabase
         .from('user_roles')
-        .update({ role: 'otro' })
-        .eq('user_id', userId);
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'admin');
 
       if (error) throw error;
       return { success: true };
@@ -108,32 +108,30 @@ export const useUserRole = () => {
     }
   };
 
-  const assignRole = async (userId: string, role: string) => {
+  const syncRoles = async (userId: string, roles: string[]) => {
     if (!isAdmin) return { error: 'Not authorized' };
 
     try {
-      const { data: existing } = await supabase
+      // 1. Delete all existing roles for the user
+      const { error: deleteError } = await supabase
         .from('user_roles')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .delete()
+        .eq('user_id', userId);
 
-      if (existing) {
-        const { error } = await supabase
+      if (deleteError) throw deleteError;
+
+      // 2. Insert new roles
+      if (roles.length > 0) {
+        const { error: insertError } = await supabase
           .from('user_roles')
-          .update({ role })
-          .eq('user_id', userId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role });
-        if (error) throw error;
+          .insert(roles.map(role => ({ user_id: userId, role })));
+        
+        if (insertError) throw insertError;
       }
 
       return { success: true };
     } catch (error: any) {
-      console.error('Error assigning role:', error);
+      console.error('Error syncing roles:', error);
       return { error: error.message };
     }
   };
@@ -158,11 +156,11 @@ export const useUserRole = () => {
     isAdmin, 
     isLeader, 
     isModerator, 
-    userRole, 
+    userRoles, 
     loading, 
     promoteToAdmin, 
     demoteFromAdmin, 
-    assignRole,
+    syncRoles,
     deleteUserCompletely 
   };
 };

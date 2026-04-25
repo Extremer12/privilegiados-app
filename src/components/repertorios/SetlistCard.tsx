@@ -52,11 +52,13 @@ export function SetlistCard({
   onView, 
   onStartLive, 
   onDelete, 
+  avgRating
 }: SetlistCardProps) {
   const status = statusConfig[setlist.status] || statusConfig.draft;
   const StatusIcon = status.icon;
   const serviceDate = new Date(setlist.service_date);
   const isToday = format(new Date(), 'yyyy-MM-dd') === format(serviceDate, 'yyyy-MM-dd');
+  const isCompleted = setlist.status === 'completed';
 
   return (
     <Card 
@@ -82,6 +84,12 @@ export function SetlistCard({
                 {isToday && (
                   <Badge className="bg-secondary text-primary-foreground font-black px-3 py-1 rounded-full text-[10px] animate-pulse">
                     HOY
+                  </Badge>
+                )}
+                {isCompleted && avgRating !== undefined && (
+                  <Badge className="bg-secondary/10 text-secondary border-secondary/20 font-black px-3 py-1 rounded-full text-[10px] flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-secondary" />
+                    {avgRating.toFixed(1)}
                   </Badge>
                 )}
               </div>
@@ -146,10 +154,11 @@ export function SetlistCard({
             
             <Button
               onClick={onStartLive}
-              className="flex-[1.2] h-14 rounded-2xl bg-secondary text-primary-foreground hover:opacity-90 font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95"
+              disabled={isCompleted}
+              className={`flex-[1.2] h-14 rounded-2xl bg-secondary text-primary-foreground hover:opacity-90 font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 ${isCompleted ? 'bg-muted text-muted-foreground shadow-none' : ''}`}
             >
               <Play className="w-5 h-5 mr-2 fill-current" />
-              INICIAR VIVO
+              {isCompleted ? 'FINALIZADO' : 'INICIAR VIVO'}
             </Button>
 
             {onDelete && (

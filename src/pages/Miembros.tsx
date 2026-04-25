@@ -76,11 +76,11 @@ const AVAILABLE_ROLES = [
 
 const Miembros = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, isModerator, assignRole, deleteUserCompletely } = useUserRole();
+  const { isAdmin, isModerator, syncRoles, deleteUserCompletely } = useUserRole();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
-  const { data: members = [], isLoading: loadingMembers } = useQuery({
+  const { data: membersRaw, isLoading: loadingMembers } = useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -93,7 +93,9 @@ const Miembros = () => {
     enabled: !!user,
   });
 
-  const { data: userRoles = [], isLoading: loadingRoles } = useQuery({
+  const members = membersRaw || [];
+
+  const { data: userRolesRaw, isLoading: loadingRoles } = useQuery({
     queryKey: ['user_roles'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -105,11 +107,13 @@ const Miembros = () => {
     enabled: !!user,
   });
 
+  const userRolesList = userRolesRaw || [];
+
   const loading = loadingMembers || loadingRoles;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [editingMember, setEditingMember] = useState<Member | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   useEffect(() => {
@@ -119,23 +123,27 @@ const Miembros = () => {
   }, [user, authLoading, navigate]);
 
   const isUserAdmin = (userId: string) => {
-    return userRoles.some(role => role.user_id === userId && role.role === 'admin');
+    return userRolesList.some(role => role.user_id === userId && role.role === 'admin');
   };
 
-  const getMemberRole = (userId: string) => {
-    return userRoles.find(role => role.user_id === userId)?.role || 'otro';
+  const getMemberRoles = (userId: string) => {
+    return userRolesList.filter(role => role.user_id === userId).map(r => r.role);
   };
 
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, role, roleLabel }: { userId: string, role: string, roleLabel: string }) => {
-      // 1. Update internal role for permissions
-      const roleResult = await assignRole(userId, role);
+  const updateRolesMutation = useMutation({
+    mutationFn: async ({ userId, roles }: { userId: string, roles: string[] }) => {
+      // 1. Sync internal roles for permissions
+      const roleResult = await syncRoles(userId, roles);
       if (roleResult.error) throw new Error(roleResult.error);
 
-      // 2. Update profile for public display
+      // 2. Generate display label (comma separated)
+      const roleLabels = roles.map(r => AVAILABLE_ROLES.find(ar => ar.value === r)?.label || r);
+      const roleLabel = roleLabels.join(", ");
+
+      // 3. Update profile for public display
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ role: roleLabel })
+        .update({ role: roleLabel || "Miembro" })
         .eq("id", userId);
       
       if (profileError) throw profileError;
@@ -144,8 +152,8 @@ const Miembros = () => {
     },
     onSuccess: () => {
       toast({
-        title: "Rol actualizado",
-        description: "El rol del miembro ha sido actualizado correctamente",
+        title: "Roles actualizados",
+        description: "Los roles del miembro han sido actualizados correctamente",
       });
       queryClient.invalidateQueries({ queryKey: ['user_roles'] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
@@ -154,7 +162,7 @@ const Miembros = () => {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo actualizar el rol",
+        description: error.message || "No se pudo actualizar los roles",
         variant: "destructive",
       });
     }
@@ -185,17 +193,23 @@ const Miembros = () => {
     }
   });
 
-  const handleUpdateRole = () => {
-    if (!editingMember || !selectedRole) return;
-    const roleObj = AVAILABLE_ROLES.find(r => r.value === selectedRole);
-    updateRoleMutation.mutate({ 
+  const toggleRole = (roleValue: string) => {
+    setSelectedRoles(prev => 
+      prev.includes(roleValue) 
+        ? prev.filter(r => r !== roleValue) 
+        : [...prev, roleValue]
+    );
+  };
+
+  const handleUpdateRoles = () => {
+    if (!editingMember) return;
+    updateRolesMutation.mutate({ 
       userId: editingMember.id, 
-      role: selectedRole,
-      roleLabel: roleObj?.label || selectedRole
+      roles: selectedRoles
     });
   };
 
-  const filteredMembers = (members || []).filter((member) =>
+  const filteredMembers = members.filter((member) =>
     member.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     member.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     member.instrument?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -274,7 +288,8 @@ const Miembros = () => {
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {filteredMembers.map((member, index) => {
                 const memberIsAdmin = isUserAdmin(member.id);
-                const currentRoleKey = getMemberRole(member.id).toLowerCase();
+                const memberRoles = getMemberRoles(member.id);
+                const primaryRole = memberRoles[0] || 'default';
                 
                 return (
                   <Card
@@ -307,7 +322,7 @@ const Miembros = () => {
                         
                         {/* Role Mini Badge */}
                         <div className="absolute -bottom-1 right-2 w-8 h-8 rounded-xl bg-background border-2 border-secondary/20 shadow-lg flex items-center justify-center transition-transform group-hover:scale-110">
-                          {ROLE_ICONS[currentRoleKey] || ROLE_ICONS.default}
+                          {ROLE_ICONS[primaryRole] || ROLE_ICONS.default}
                         </div>
                       </div>
                       
@@ -317,9 +332,13 @@ const Miembros = () => {
                           {member.full_name}
                         </h3>
                         <div className="flex flex-col items-center gap-1">
-                          <span className="text-xs font-black uppercase tracking-widest text-secondary/80 bg-secondary/5 px-2 py-0.5 rounded-full">
-                            {member.role || "Miembro"}
-                          </span>
+                          <div className="flex flex-wrap justify-center gap-1">
+                            {(member.role || "Miembro").split(", ").map((r, i) => (
+                              <span key={i} className="text-[10px] font-black uppercase tracking-widest text-secondary/80 bg-secondary/5 px-2 py-0.5 rounded-full border border-secondary/10">
+                                {r}
+                              </span>
+                            ))}
+                          </div>
                           {member.instrument && (
                             <span className="text-xs text-muted-foreground font-medium italic">
                               {member.instrument}
@@ -338,12 +357,12 @@ const Miembros = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingMember(member);
-                                setSelectedRole(getMemberRole(member.id));
+                                setSelectedRoles(getMemberRoles(member.id));
                               }}
                               className="w-full h-10 rounded-xl border-secondary/20 text-secondary hover:bg-secondary hover:text-white transition-all gap-2 group/btn font-bold text-xs uppercase tracking-tighter"
                             >
                               <Edit2 className="w-3.5 h-3.5 transition-transform group-hover/btn:rotate-12" />
-                              Gestionar Rol
+                              Gestionar Roles
                             </Button>
                           )}
                           <Button
@@ -370,7 +389,7 @@ const Miembros = () => {
 
       {/* Role Management Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
-        <DialogContent className="sm:max-w-[425px] card-gradient border-secondary/20 rounded-[2rem] overflow-hidden">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto card-gradient border-secondary/20 rounded-[2rem]">
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-secondary/10 to-transparent" />
           
           <DialogHeader className="relative z-10">
@@ -381,38 +400,40 @@ const Miembros = () => {
               Gestionar Rango
             </DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">
-              Asigna un rol específico para <span className="text-foreground font-bold">{editingMember?.full_name}</span>. 
+              Selecciona todos los roles que desempeña <span className="text-foreground font-bold">{editingMember?.full_name}</span>. 
             </DialogDescription>
           </DialogHeader>
 
-          <div className="relative z-10 py-6 space-y-6">
-            <div className="space-y-3">
-              <label className="text-xs font-black uppercase tracking-[0.2em] text-secondary ml-1">Seleccionar Rol</label>
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger className="h-14 bg-muted/30 border-border/50 rounded-2xl focus:ring-secondary/20 focus:border-secondary/30 transition-all">
-                  <SelectValue placeholder="Elige un rol..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border-secondary/20 bg-neutral-900/95 backdrop-blur-xl">
-                  {AVAILABLE_ROLES.map((role) => (
-                    <SelectItem 
-                      key={role.value} 
-                      value={role.value}
-                      className="h-12 rounded-xl focus:bg-secondary/10 focus:text-secondary cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <role.icon className="w-4 h-4" />
-                        <span className="font-semibold">{role.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="relative z-10 py-6 space-y-4">
+            <label className="text-xs font-black uppercase tracking-[0.2em] text-secondary ml-1">Seleccionar Roles</label>
+            <div className="grid grid-cols-2 gap-2">
+              {AVAILABLE_ROLES.map((role) => {
+                const isSelected = selectedRoles.includes(role.value);
+                return (
+                  <Button
+                    key={role.value}
+                    variant={isSelected ? "secondary" : "outline"}
+                    onClick={() => toggleRole(role.value)}
+                    className={`h-12 justify-start gap-2 rounded-xl transition-all ${isSelected ? 'shadow-lg shadow-secondary/20' : 'border-border/50 hover:border-secondary/30'}`}
+                  >
+                    <role.icon className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-secondary/50'}`} />
+                    <span className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-muted-foreground'}`}>{role.label}</span>
+                    {isSelected && <Check className="w-3 h-3 ml-auto text-white" />}
+                  </Button>
+                );
+              })}
             </div>
           </div>
 
-          <DialogFooter className="relative z-10 gap-3 sm:gap-0">
-            <Button variant="ghost" onClick={() => setEditingMember(null)} className="h-12 rounded-2xl font-bold">Cancelar</Button>
-            <Button onClick={handleUpdateRole} disabled={updateRoleMutation.isPending} className="h-12 rounded-2xl bg-secondary text-white font-black uppercase tracking-widest px-8 shadow-xl shadow-secondary/20">Confirmar</Button>
+          <DialogFooter className="relative z-10 gap-3 sm:gap-0 sticky bottom-0 bg-background/80 backdrop-blur-md py-2">
+            <Button variant="ghost" onClick={() => setEditingMember(null)} className="h-12 rounded-2xl font-bold flex-1">Cancelar</Button>
+            <Button 
+              onClick={handleUpdateRoles} 
+              disabled={updateRolesMutation.isPending} 
+              className="h-12 rounded-2xl bg-secondary text-white font-black uppercase tracking-widest px-8 shadow-xl shadow-secondary/20 flex-1"
+            >
+              {updateRolesMutation.isPending ? "Guardando..." : "Confirmar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
