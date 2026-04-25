@@ -3,7 +3,7 @@ import { es } from 'date-fns/locale';
 import { 
   Play, Eye, Trash2,
   CheckCircle2, Clock, FileEdit, Music, Calendar,
-  Mic2, User
+  Mic, User
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -127,7 +127,7 @@ export function SetlistCard({
           {/* Secondary Info */}
           {setlist.preacher && (
             <div className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] rounded-2xl border border-white/5">
-              <Mic2 className="w-4 h-4 text-secondary/80" />
+              <Mic className="w-4 h-4 text-secondary/80" />
               <p className="text-xs font-semibold text-white/70">
                 <span className="text-secondary/60 mr-1">Palabra:</span> {setlist.preacher}
               </p>

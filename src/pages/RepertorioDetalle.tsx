@@ -6,7 +6,7 @@ import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Edit3, Save, Play, Users, MessageSquare,
-  AlertCircle, FileDown, X
+  AlertCircle, FileDown, X, Mic
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -455,7 +455,7 @@ const RepertorioDetalle = () => {
                   ) : (
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
                       <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
-                        <Mic2 className="h-4 w-4 text-secondary" />
+                        <Mic className="h-4 w-4 text-secondary" />
                       </div>
                       <p className="text-base font-medium text-foreground/80">
                         {setlist.preacher || '—'}

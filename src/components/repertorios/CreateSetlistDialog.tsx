@@ -4,7 +4,7 @@ import { es } from 'date-fns/locale';
 import { 
   Calendar as CalendarIcon, BookOpen, Users, MessageSquare, 
   Sparkles, X, ChevronLeft, UserPlus, Check, Trash2, 
-  Search, Music, Mic2
+  Search, Music, Mic
 } from 'lucide-react';
 import {
   Dialog,
@@ -264,7 +264,7 @@ export function CreateSetlistDialog({
                     {/* Predicador */}
                     <div className="space-y-3">
                       <Label htmlFor="preacher" className="text-xs uppercase font-black tracking-widest text-muted-foreground/80 flex items-center gap-2">
-                        <Mic2 className="h-3 w-3" /> Predicador
+                        <Mic className="h-3 w-3" /> Predicador
                       </Label>
                       <Input
                         id="preacher"

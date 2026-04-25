@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3 } from "lucide-react";
+import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +32,19 @@ const Canciones = () => {
   const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const { data: songs = [], isLoading: loading, refetch: fetchSongs } = useQuery({
     queryKey: ['songs'],
     queryFn: async () => {
@@ -171,15 +184,15 @@ const Canciones = () => {
             </div>
 
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-              <TabsList className="flex overflow-x-auto no-scrollbar bg-transparent p-0 gap-2 h-auto border-none">
-                <TabsTrigger value="all" className="rounded-full px-5 py-2.5 data-[state=active]:bg-white/10 data-[state=active]:text-white bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all">Todas</TabsTrigger>
-                <TabsTrigger value="favorites" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 hover:text-amber-400 transition-all">
+              <TabsList className="flex overflow-x-auto no-scrollbar bg-transparent p-0 gap-2 h-auto border-none pb-2">
+                <TabsTrigger value="all" className="rounded-full px-6 py-2.5 data-[state=active]:bg-secondary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-secondary/20 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all font-bold">Todas</TabsTrigger>
+                <TabsTrigger value="favorites" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 hover:text-amber-400 transition-all font-bold">
                   <Star className="w-3.5 h-3.5 mr-1.5" /> Favoritos
                 </TabsTrigger>
-                <TabsTrigger value="alabanza" className="rounded-full px-5 py-2.5 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400 data-[state=active]:border-blue-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-blue-500/10 transition-all">Alabanza</TabsTrigger>
-                <TabsTrigger value="adoracion" className="rounded-full px-5 py-2.5 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 data-[state=active]:border-purple-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-purple-500/10 transition-all">Adoración</TabsTrigger>
-                <TabsTrigger value="especial" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 transition-all">Especial</TabsTrigger>
-                <TabsTrigger value="otro" className="rounded-full px-5 py-2.5 data-[state=active]:bg-white/10 data-[state=active]:text-white bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all">Otro</TabsTrigger>
+                <TabsTrigger value="alabanza" className="rounded-full px-5 py-2.5 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400 data-[state=active]:border-blue-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-blue-500/10 transition-all font-bold">Alabanza</TabsTrigger>
+                <TabsTrigger value="adoracion" className="rounded-full px-5 py-2.5 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 data-[state=active]:border-purple-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-purple-500/10 transition-all font-bold">Adoración</TabsTrigger>
+                <TabsTrigger value="especial" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 transition-all font-bold">Especial</TabsTrigger>
+                <TabsTrigger value="otro" className="rounded-full px-5 py-2.5 data-[state=active]:bg-white/10 data-[state=active]:text-white bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all font-bold">Otro</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -308,6 +321,22 @@ const Canciones = () => {
           )}
         </div>
       </main>
+
+      {/* Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            onClick={scrollToTop}
+            className="fixed bottom-24 right-6 z-50 w-12 h-12 rounded-2xl bg-secondary text-primary-foreground shadow-2xl shadow-secondary/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+            aria-label="Volver arriba"
+          >
+            <ArrowUp className="w-6 h-6" />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   );
 };
