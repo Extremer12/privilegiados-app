@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 
 // Icons and dependencies
-import { Trash2, Plus, Moon, Sun } from "lucide-react";
+import { Trash2, Plus, Moon, Sun, ZoomIn, ZoomOut, X, Minimize2 } from "lucide-react";
 import { SECTION_TYPES, SectionType } from "@/components/repertorios/types";
 import { AddSongToSetlistDialog } from "@/components/repertorios/AddSongToSetlistDialog";
 
@@ -107,6 +107,7 @@ const EnVivo = () => {
   const [selectedSection, setSelectedSection] = useState<SectionType>("alabanza");
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [presentationTheme, setPresentationTheme] = useState<"dark" | "light">("dark");
+  const [presentationFontSize, setPresentationFontSize] = useState(32);
 
   // Fetch initial data
   useEffect(() => {
@@ -561,58 +562,91 @@ const EnVivo = () => {
   if (isPresentationMode && currentSong) {
     return (
       <div 
-        className={`min-h-screen flex flex-col justify-center px-4 md:px-12 py-8 relative ${
-          presentationTheme === "dark" 
-            ? "bg-black text-white" 
-            : "bg-white text-black"
+        className={`fixed inset-0 z-50 flex flex-col ${
+          presentationTheme === "dark" ? "bg-black text-white" : "bg-white text-black"
         }`}
       >
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className={presentationTheme === "dark" ? "text-white/50 hover:text-white" : "text-black/50 hover:text-black"}
-                  onClick={() => setPresentationTheme(prev => prev === "dark" ? "light" : "dark")}
-                >
-                  {presentationTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Cambiar tema</TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className={presentationTheme === "dark" ? "text-white/50 hover:text-white" : "text-black/50 hover:text-black"}
-                  onClick={() => setIsPresentationMode(false)}
-                >
-                  <Minimize2 className="w-5 h-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Salir de modo presentación</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        {/* Control Bar */}
+        <div className="flex items-center justify-between p-4 bg-black/20 backdrop-blur-sm z-50 relative">
+          <h2 className="text-xl font-bold truncate max-w-md opacity-80">{currentSong.songs.title}</h2>
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPresentationFontSize((prev) => Math.max(prev - 4, 16))}
+                    className="text-current hover:bg-white/10"
+                  >
+                    <ZoomOut className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reducir tamaño</TooltipContent>
+              </Tooltip>
+
+              <span className="text-sm font-medium min-w-[3rem] text-center opacity-80">
+                {presentationFontSize}px
+              </span>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPresentationFontSize((prev) => Math.min(prev + 4, 100))}
+                    className="text-current hover:bg-white/10"
+                  >
+                    <ZoomIn className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Aumentar tamaño</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-current hover:bg-white/10"
+                    onClick={() => setPresentationTheme(prev => prev === "dark" ? "light" : "dark")}
+                  >
+                    {presentationTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Cambiar tema</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-current hover:bg-white/10 text-red-400 hover:text-red-500"
+                    onClick={() => setIsPresentationMode(false)}
+                  >
+                    <X className="w-6 h-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Salir</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
-        <motion.div
-          key={currentSong.songs.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-[1400px] w-full mx-auto"
-        >
-          <div className="text-4xl md:text-5xl font-bold mb-8 opacity-50">
-            {currentSong.songs.title}
+        <div className="flex-1 overflow-y-auto p-4 md:p-12 relative">
+          <div className="min-h-full flex flex-col justify-center">
+            <pre
+              className="font-sans font-black text-center whitespace-pre-wrap leading-[1.2] max-w-6xl mx-auto my-auto transition-all duration-300"
+              style={{ 
+                fontSize: `${presentationFontSize}px`,
+                textShadow: presentationTheme === "dark" ? '0 4px 24px rgba(0,0,0,0.5)' : 'none'
+              }}
+            >
+              {currentSong.songs.lyrics || "Sin letra disponible"}
+            </pre>
           </div>
-          <div className="text-[5vw] md:text-[4vw] lg:text-[4.5rem] leading-tight font-medium whitespace-pre-wrap">
-            {currentSong.songs.lyrics || "Sin letra disponible"}
-          </div>
-        </motion.div>
+        </div>
         
         {/* Invisible navigation zones for touch/click */}
         {isCreator && (
@@ -691,10 +725,10 @@ const EnVivo = () => {
             <AnimatePresence>
               {showSongList && (
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="lg:col-span-3 hidden lg:block"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="col-span-1 lg:col-span-3 mb-4 lg:mb-0"
                 >
                   <div className="h-full flex flex-col gap-2">
                     <SongListPanel

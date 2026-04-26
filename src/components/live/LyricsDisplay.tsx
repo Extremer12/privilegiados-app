@@ -100,7 +100,7 @@ export const LyricsDisplay = ({
               </motion.div>
 
               {/* View mode toggle */}
-              <div className="flex items-center gap-1 p-1 rounded-lg bg-background/30">
+              <div className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-background/30 justify-end">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
