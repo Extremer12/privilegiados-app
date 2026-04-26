@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Music, CheckCircle } from "lucide-react";
+import { Music, CheckCircle, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Song {
@@ -21,6 +21,7 @@ interface SongListPanelProps {
   currentPosition: number;
   onSongSelect?: (position: number) => void;
   isCreator: boolean;
+  onDeleteSong?: (songId: string, event: React.MouseEvent) => void;
 }
 
 export const SongListPanel = ({
@@ -28,6 +29,7 @@ export const SongListPanel = ({
   currentPosition,
   onSongSelect,
   isCreator,
+  onDeleteSong,
 }: SongListPanelProps) => {
   return (
     <div
@@ -63,7 +65,7 @@ export const SongListPanel = ({
                 whileHover={isCreator ? { x: 4 } : undefined}
                 onClick={() => onSongSelect?.(index)}
                 disabled={!isCreator}
-                className={`w-full text-left px-3 py-3 rounded-xl transition-all flex items-center gap-3 ${
+                className={`group w-full text-left px-3 py-3 rounded-xl transition-all flex items-center gap-3 ${
                   isCurrent
                     ? "bg-secondary/20 border border-secondary/40"
                     : isPast
@@ -107,6 +109,18 @@ export const SongListPanel = ({
                 {/* Current indicator */}
                 {isCurrent && (
                   <span className="flex-shrink-0 w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                )}
+                
+                {/* Delete button (only visible for creator on hover) */}
+                {isCreator && onDeleteSong && (
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                    <button
+                      onClick={(e) => onDeleteSong(song.id, e)}
+                      className="p-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 )}
               </motion.button>
             );

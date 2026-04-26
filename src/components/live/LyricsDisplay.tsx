@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Music, FileText, Guitar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Music, FileText, Guitar, MonitorPlay } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
@@ -31,6 +31,8 @@ interface LyricsDisplayProps {
   isCreator: boolean;
   onPrevious: () => void;
   onNext: () => void;
+  onPresentationMode?: () => void;
+  nextSong?: Song;
 }
 
 export const LyricsDisplay = ({
@@ -40,6 +42,8 @@ export const LyricsDisplay = ({
   isCreator,
   onPrevious,
   onNext,
+  onPresentationMode,
+  nextSong,
 }: LyricsDisplayProps) => {
   const [viewMode, setViewMode] = useState<"lyrics" | "chords">("lyrics");
 
@@ -134,6 +138,23 @@ export const LyricsDisplay = ({
                   </TooltipTrigger>
                   <TooltipContent>Ver acordes</TooltipContent>
                 </Tooltip>
+
+                {onPresentationMode && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onPresentationMode}
+                        className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-white/10"
+                      >
+                        <MonitorPlay className="w-4 h-4 mr-1" />
+                        Presentación
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Modo presentación (letras gigantes)</TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             </div>
 
@@ -234,7 +255,7 @@ export const LyricsDisplay = ({
                       size="lg"
                       onClick={onNext}
                       disabled={currentPosition >= totalSongs - 1}
-                      className="h-14 px-8 text-lg rounded-xl font-bold"
+                      className="h-14 px-8 text-lg rounded-xl font-bold flex flex-col justify-center items-center py-2"
                       style={{
                         background: currentPosition >= totalSongs - 1
                           ? undefined
@@ -242,8 +263,15 @@ export const LyricsDisplay = ({
                         color: currentPosition >= totalSongs - 1 ? undefined : "hsl(222 47% 7%)",
                       }}
                     >
-                      Siguiente
-                      <ChevronRight className="w-6 h-6 ml-2" />
+                      <div className="flex items-center">
+                        Siguiente
+                        <ChevronRight className="w-6 h-6 ml-2" />
+                      </div>
+                      {nextSong && (
+                        <span className="text-[10px] font-medium opacity-80 mt-0.5 truncate max-w-[200px]">
+                          {nextSong.songs.title}
+                        </span>
+                      )}
                     </Button>
                   </motion.div>
                 </TooltipTrigger>

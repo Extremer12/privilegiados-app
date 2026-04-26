@@ -22,6 +22,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Icons and dependencies
+import { Trash2, Plus, Moon, Sun } from "lucide-react";
+import { SECTION_TYPES, SectionType } from "@/components/repertorios/types";
+import { AddSongToSetlistDialog } from "@/components/repertorios/AddSongToSetlistDialog";
+
 // Live components
 import { LiveHeader } from "@/components/live/LiveHeader";
 import { LyricsDisplay } from "@/components/live/LyricsDisplay";
@@ -59,6 +64,7 @@ interface Setlist {
   id: string;
   title: string;
   theme_verse: string | null;
+  sections_config?: any;
 }
 
 interface Comment {
@@ -96,12 +102,19 @@ const EnVivo = () => {
   // Wake Lock state
   const wakeLockRef = useRef<any>(null);
 
+  // Add song state
+  const [showAddSong, setShowAddSong] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<SectionType>("alabanza");
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [presentationTheme, setPresentationTheme] = useState<"dark" | "light">("dark");
+
   // Fetch initial data
   useEffect(() => {
     if (user && id) {
       fetchAllData();
       const unsubSession = subscribeToSession();
       const unsubComments = subscribeToComments();
+      const unsubSongs = subscribeToSongs();
       
       // Request Wake Lock to keep screen on
       const requestWakeLock = async () => {
@@ -119,6 +132,7 @@ const EnVivo = () => {
       return () => {
         unsubSession();
         unsubComments();
+        unsubSongs();
         if (wakeLockRef.current) {
           wakeLockRef.current.release();
         }
@@ -143,7 +157,7 @@ const EnVivo = () => {
       // Fetch setlist info
       const { data: setlistData } = await supabase
         .from("setlists")
-        .select("id, title, theme_verse")
+        .select("id, title, theme_verse, sections_config")
         .eq("id", sessionData.setlist_id)
         .single();
       
@@ -169,7 +183,21 @@ const EnVivo = () => {
         .order("position");
 
       if (songsError) throw songsError;
-      setSongs(songsData as any || []);
+
+      // Sort songs strictly by section order
+      const sectionsConfig = setlistData?.sections_config || SECTION_TYPES;
+      const sortedSongs: any[] = [];
+      sectionsConfig.forEach((sec: any) => {
+        const sectionSongs = (songsData || [])
+          .filter(s => s.section === sec.id)
+          .sort((a, b) => a.position - b.position);
+        sortedSongs.push(...sectionSongs);
+      });
+      // Add any remaining songs that didn't match a section
+      const remainingSongs = (songsData || []).filter(s => !sectionsConfig.find((sec: any) => sec.id === s.section));
+      sortedSongs.push(...remainingSongs);
+
+      setSongs(sortedSongs || []);
 
       const { data: commentsData } = await supabase
         .from("live_comments")
@@ -283,6 +311,58 @@ const EnVivo = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+  };
+
+  const subscribeToSongs = () => {
+    // When songs change in the setlist (added/removed), we want to fetch the new list and sort it properly
+    const channel = supabase
+      .channel(`setlist_songs_${session?.setlist_id || id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "setlist_songs",
+          filter: session?.setlist_id ? `setlist_id=eq.${session.setlist_id}` : undefined,
+        },
+        () => {
+          // Re-fetch all data to ensure sorting is correct instead of manually handling inserts/deletes
+          fetchAllData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
+  const handleDeleteSong = async (songId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!isLeader && !isCreator) return;
+    
+    if (!confirm("¿Seguro que deseas remover esta canción del repertorio en vivo?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("setlist_songs")
+        .delete()
+        .eq("id", songId);
+
+      if (error) throw error;
+      toast({
+        title: "Canción removida",
+        description: "La canción fue removida del repertorio.",
+      });
+      // The realtime subscription will trigger a refetch
+    } catch (error) {
+      console.error("Error deleting song:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo remover la canción.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleNavigateSong = async (direction: "next" | "prev") => {
@@ -478,6 +558,81 @@ const EnVivo = () => {
   const isCreator = session?.created_by === user?.id;
   const canEndSession = isCreator || isLeader;
 
+  if (isPresentationMode && currentSong) {
+    return (
+      <div 
+        className={`min-h-screen flex flex-col justify-center px-4 md:px-12 py-8 relative ${
+          presentationTheme === "dark" 
+            ? "bg-black text-white" 
+            : "bg-white text-black"
+        }`}
+      >
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className={presentationTheme === "dark" ? "text-white/50 hover:text-white" : "text-black/50 hover:text-black"}
+                  onClick={() => setPresentationTheme(prev => prev === "dark" ? "light" : "dark")}
+                >
+                  {presentationTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Cambiar tema</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className={presentationTheme === "dark" ? "text-white/50 hover:text-white" : "text-black/50 hover:text-black"}
+                  onClick={() => setIsPresentationMode(false)}
+                >
+                  <Minimize2 className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Salir de modo presentación</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        <motion.div
+          key={currentSong.songs.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-[1400px] w-full mx-auto"
+        >
+          <div className="text-4xl md:text-5xl font-bold mb-8 opacity-50">
+            {currentSong.songs.title}
+          </div>
+          <div className="text-[5vw] md:text-[4vw] lg:text-[4.5rem] leading-tight font-medium whitespace-pre-wrap">
+            {currentSong.songs.lyrics || "Sin letra disponible"}
+          </div>
+        </motion.div>
+        
+        {/* Invisible navigation zones for touch/click */}
+        {isCreator && (
+          <>
+            <div 
+              className="fixed top-0 left-0 w-[20%] h-full cursor-pointer z-10" 
+              onClick={() => handleNavigateSong("prev")}
+              title="Anterior"
+            />
+            <div 
+              className="fixed top-0 right-0 w-[20%] h-full cursor-pointer z-10" 
+              onClick={() => handleNavigateSong("next")}
+              title="Siguiente"
+            />
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <TooltipProvider>
       <motion.div
@@ -541,12 +696,25 @@ const EnVivo = () => {
                   exit={{ opacity: 0, x: -20 }}
                   className="lg:col-span-3 hidden lg:block"
                 >
-                  <SongListPanel
-                    songs={songs}
-                    currentPosition={session?.current_position || 0}
-                    onSongSelect={isCreator ? handleJumpToSong : undefined}
-                    isCreator={isCreator}
-                  />
+                  <div className="h-full flex flex-col gap-2">
+                    <SongListPanel
+                      songs={songs}
+                      currentPosition={session?.current_position || 0}
+                      onSongSelect={isCreator ? handleJumpToSong : undefined}
+                      isCreator={isCreator}
+                      onDeleteSong={handleDeleteSong}
+                    />
+                    
+                    {isCreator && (
+                      <Button
+                        onClick={() => setShowAddSong(true)}
+                        className="w-full bg-secondary text-primary-foreground hover:bg-secondary/90 shadow-lg"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Añadir Canción
+                      </Button>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -560,6 +728,8 @@ const EnVivo = () => {
                 isCreator={isCreator}
                 onPrevious={() => handleNavigateSong("prev")}
                 onNext={() => handleNavigateSong("next")}
+                onPresentationMode={() => setIsPresentationMode(true)}
+                nextSong={songs[session?.current_position !== undefined ? session.current_position + 1 : 1]}
               />
             </div>
 
@@ -746,6 +916,21 @@ const EnVivo = () => {
           setlistSongs={songs}
           initialParticipants={initialParticipants}
         />
+
+        {/* Add Song Dialog */}
+        {session?.setlist_id && (
+          <AddSongToSetlistDialog
+            open={showAddSong}
+            onOpenChange={setShowAddSong}
+            section={selectedSection}
+            setlistId={session.setlist_id}
+            currentPosition={songs.filter(s => s.section === selectedSection).length + 1}
+            onSongAdded={() => {
+              // Realtime handles the list update, but we close dialog
+              setShowAddSong(false);
+            }}
+          />
+        )}
       </motion.div>
     </TooltipProvider>
   );
