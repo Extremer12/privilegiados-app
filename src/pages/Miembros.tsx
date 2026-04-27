@@ -76,13 +76,12 @@ const Miembros = () => {
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: true });
-      if (error) throw error;
       return data as Member[];
     },
     enabled: !!user,
   });
 
-  const members = membersRaw || [];
+  const members = Array.isArray(membersRaw) ? membersRaw : [];
 
   const { data: userRolesRaw, isLoading: loadingRoles } = useQuery({
     queryKey: ['user_roles'],
@@ -96,7 +95,7 @@ const Miembros = () => {
     enabled: !!user,
   });
 
-  const userRolesList = userRolesRaw || [];
+  const userRolesList = Array.isArray(userRolesRaw) ? userRolesRaw : [];
 
   const loading = loadingMembers || loadingRoles;
 
