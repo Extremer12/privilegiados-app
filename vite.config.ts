@@ -18,25 +18,22 @@ export default defineConfig(({ mode }) => ({
         name: "Privilegiados App",
         short_name: "Privilegiados",
         description: "Plataforma para el ministerio de alabanza",
-        theme_color: "#0b0e11",
-        background_color: "#0b0e11",
+        theme_color: "#0a0e17",
+        background_color: "#0a0e17",
         display: "standalone",
         orientation: "portrait",
         icons: [
           {
-            src: "pwa-64x64.png",
-            sizes: "64x64",
-            type: "image/png"
-          },
-          {
             src: "pwa-192x192.png",
             sizes: "192x192",
-            type: "image/png"
+            type: "image/png",
+            purpose: "any maskable"
           },
           {
             src: "pwa-512x512.png",
             sizes: "512x512",
-            type: "image/png"
+            type: "image/png",
+            purpose: "any maskable"
           },
           {
             src: "maskable-icon-512x512.png",
