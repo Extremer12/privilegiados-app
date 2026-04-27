@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp } from "lucide-react";
@@ -24,6 +26,8 @@ const Canciones = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [visibleCount, setVisibleCount] = useState(40);
+  const { isAdmin, isLeader, isModerator } = useUserRole();
+  const isAuthorized = isAdmin || isLeader || isModerator;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -131,11 +135,18 @@ const Canciones = () => {
                             (song.author && song.author.toLowerCase().includes(searchTerm.toLowerCase()));
       
       if (selectedCategory === "favorites") {
-        return matchesSearch && favorites.includes(song.id);
+        return matchesSearch && favorites.includes(song.id) && song.status === 'approved';
       }
       
+      if (selectedCategory === "suggestions") {
+        return matchesSearch && song.status === 'pending';
+      }
+
+      // Default: show only approved songs unless in suggestions tab
+      const isApproved = song.status === 'approved' || !song.status;
       const matchesCategory = selectedCategory === "all" || song.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      
+      return matchesSearch && matchesCategory && isApproved;
     });
   }, [songs, searchTerm, selectedCategory, favorites]);
 
@@ -199,6 +210,16 @@ const Canciones = () => {
                 <TabsTrigger value="adoracion" className="rounded-full px-5 py-2.5 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 data-[state=active]:border-purple-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-purple-500/10 transition-all font-bold">Adoración</TabsTrigger>
                 <TabsTrigger value="especial" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 transition-all font-bold">Especial</TabsTrigger>
                 <TabsTrigger value="otro" className="rounded-full px-5 py-2.5 data-[state=active]:bg-white/10 data-[state=active]:text-white bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all font-bold">Otro</TabsTrigger>
+                {isAuthorized && (
+                  <TabsTrigger value="suggestions" className="rounded-full px-5 py-2.5 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-emerald-500/10 transition-all font-bold relative">
+                    Sugerencias
+                    {songs.filter(s => s.status === 'pending').length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full text-[10px] flex items-center justify-center text-white border-2 border-primary animate-pulse">
+                        {songs.filter(s => s.status === 'pending').length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                )}
               </TabsList>
             </Tabs>
           </div>

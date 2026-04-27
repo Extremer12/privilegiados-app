@@ -33,7 +33,7 @@ export function PresentationView({
 }: PresentationViewProps) {
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col ${
+      className={`fixed inset-0 z-[200] flex flex-col ${
         theme === "dark" ? "bg-black text-white" : "bg-white text-black"
       }`}
     >

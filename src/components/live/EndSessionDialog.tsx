@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 export interface ServiceParticipantInput {
   name: string;
   role: string;
+  user_id?: string;
 }
 
 export interface ServiceSongInput {
@@ -32,7 +33,7 @@ interface EndSessionDialogProps {
   onConfirm: (data: FinalizeServiceData) => void;
   isEnding: boolean;
   setlistSongs: any[];
-  initialParticipants?: ServiceParticipantInput[];
+  sessionId: string;
 }
 
 const ROLES = ["Líder", "Cantante", "Guitarra", "Bajo", "Batería", "Teclado", "Sonido", "Multimedia", "Otro"];
@@ -43,11 +44,13 @@ export const EndSessionDialog = ({
   onConfirm,
   isEnding,
   setlistSongs,
-  initialParticipants = [],
+  sessionId,
 }: EndSessionDialogProps) => {
   const [step, setStep] = useState(0); // 0: warning, 1: participants, 2: songs, 3: notes
   
   const [participants, setParticipants] = useState<ServiceParticipantInput[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const [songs, setSongs] = useState<ServiceSongInput[]>([]);
   const [notes, setNotes] = useState("");
@@ -57,6 +60,8 @@ export const EndSessionDialog = ({
   // Initialize data when dialog opens
   useEffect(() => {
     if (isOpen) {
+      fetchProfiles();
+      fetchConfirmedParticipants();
       if (setlistSongs.length > 0 && songs.length === 0) {
         setSongs(setlistSongs.map(s => ({
           song_id: s.songs.id,
@@ -65,16 +70,34 @@ export const EndSessionDialog = ({
           played: true
         })));
       }
-
-      if (participants.length === 0) {
-        if (initialParticipants.length > 0) {
-          setParticipants(initialParticipants);
-        } else {
-          setParticipants([{ name: "", role: "Cantante" }]);
-        }
-      }
     }
-  }, [isOpen, setlistSongs, initialParticipants]);
+  }, [isOpen, setlistSongs, sessionId]);
+
+  const fetchConfirmedParticipants = async () => {
+    const { data } = await import("@/integrations/supabase/client").then(m => m.supabase)
+      .from('live_session_participants')
+      .select('user_id, role_in_service, profiles(full_name)')
+      .eq('session_id', sessionId)
+      .eq('status', 'confirmed');
+      
+    if (data && data.length > 0) {
+      setParticipants(data.map((p: any) => ({
+        user_id: p.user_id,
+        name: p.profiles?.full_name || '',
+        role: p.role_in_service || 'Cantante'
+      })));
+    } else {
+      setParticipants([]);
+    }
+  };
+
+  const fetchProfiles = async () => {
+    const { data } = await import("@/integrations/supabase/client").then(m => m.supabase)
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .order('full_name');
+    if (data) setProfiles(data);
+  };
 
   // Reset state when closed
   useEffect(() => {
@@ -91,18 +114,16 @@ export const EndSessionDialog = ({
     }
   }, [isOpen]);
 
-  const addParticipant = () => {
-    setParticipants([...participants, { name: "", role: "Cantante" }]);
+  const handleToggleParticipant = (profileId: string, name: string) => {
+    if (participants.some(p => p.user_id === profileId)) {
+      setParticipants(prev => prev.filter(p => p.user_id !== profileId));
+    } else {
+      setParticipants(prev => [...prev, { user_id: profileId, name, role: 'Cantante' }]);
+    }
   };
 
-  const updateParticipant = (index: number, field: string, value: string) => {
-    const newParts = [...participants];
-    newParts[index] = { ...newParts[index], [field]: value };
-    setParticipants(newParts);
-  };
-
-  const removeParticipant = (index: number) => {
-    setParticipants(participants.filter((_, i) => i !== index));
+  const handleUpdateRole = (profileId: string, role: string) => {
+    setParticipants(prev => prev.map(p => p.user_id === profileId ? { ...p, role } : p));
   };
 
   const toggleSongPlayed = (index: number) => {
@@ -129,6 +150,10 @@ export const EndSessionDialog = ({
     visible: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -20 }
   };
+
+  const filteredProfiles = profiles.filter(p => 
+    p.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <AnimatePresence>
@@ -212,40 +237,63 @@ export const EndSessionDialog = ({
                       </div>
 
                       <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
-                        {participants.map((p, i) => (
-                          <div key={i} className="flex gap-2 items-center bg-white/5 p-2 rounded-xl border border-white/10">
-                            <Input 
-                              placeholder="Nombre..." 
-                              value={p.name}
-                              onChange={(e) => updateParticipant(i, 'name', e.target.value)}
-                              className="bg-transparent border-none focus-visible:ring-0 h-10"
-                            />
-                            <select
-                              value={p.role}
-                              onChange={(e) => updateParticipant(i, 'role', e.target.value)}
-                              className="bg-black/40 border border-white/10 rounded-lg h-10 px-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-secondary min-w-[110px]"
-                            >
-                              {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => removeParticipant(i)}
-                              className="text-red-400 hover:text-red-500 hover:bg-red-500/20 shrink-0"
-                              disabled={participants.length === 1}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        
-                        <Button 
-                          variant="outline" 
-                          onClick={addParticipant}
-                          className="w-full border-dashed border-white/20 hover:bg-white/5 h-12 rounded-xl"
-                        >
-                          <Plus className="w-4 h-4 mr-2" /> Agregar Músico
-                        </Button>
+                        <div className="relative mb-4">
+                          <Input 
+                            placeholder="Buscar miembros..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="bg-white/5 border-white/10 h-10 rounded-xl"
+                          />
+                        </div>
+
+                        <div className="grid gap-2">
+                          {filteredProfiles.map(profile => {
+                            const isSelected = participants.some(p => p.user_id === profile.id);
+                            const currentParticipant = participants.find(p => p.user_id === profile.id);
+                            
+                            return (
+                              <div 
+                                key={profile.id}
+                                className={`flex flex-col gap-2 p-3 rounded-xl border transition-all duration-300 ${
+                                  isSelected ? "bg-secondary/10 border-secondary/30" : "bg-white/5 border-white/5"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold border border-white/10">
+                                      {profile.full_name.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-sm text-white">{profile.full_name}</p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleToggleParticipant(profile.id, profile.full_name)}
+                                    className={`rounded-lg h-8 w-8 transition-all ${
+                                      isSelected ? "bg-secondary text-primary-foreground" : "bg-white/5 text-white/40"
+                                    }`}
+                                  >
+                                    {isSelected ? <CheckCircle2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                  </Button>
+                                </div>
+
+                                {isSelected && (
+                                  <div className="flex items-center gap-2 pt-2 border-t border-secondary/20 mt-1">
+                                    <select
+                                      value={currentParticipant?.role || "Cantante"}
+                                      onChange={(e) => handleUpdateRole(profile.id, e.target.value)}
+                                      className="bg-black/40 border border-white/10 rounded-lg h-8 px-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-secondary w-full"
+                                    >
+                                      {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                    </select>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       <div className="flex gap-3 mt-8">

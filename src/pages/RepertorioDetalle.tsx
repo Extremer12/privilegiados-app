@@ -27,6 +27,7 @@ import { Setlist, SetlistSong, SECTION_TYPES, SectionType } from '@/components/r
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import * as liveSessionService from '@/services/liveSessionService';
 
 import { PrintSetlistMode } from '@/components/repertorios/PrintSetlistMode';
 
@@ -210,6 +211,17 @@ const RepertorioDetalle = () => {
 
       if (error) throw error;
       
+      try {
+        const participants = await liveSessionService.fetchSetlistParticipants(setlist.id);
+        const validParticipants = participants.filter(p => p.user_id).map(p => ({
+          user_id: p.user_id as string,
+          role: p.role
+        }));
+        await liveSessionService.insertLiveSessionParticipants(newSession.id, validParticipants);
+      } catch (e) {
+        console.error("Error setting up live participants:", e);
+      }
+
       navigate(`/en-vivo/${newSession.id}`);
     } catch (error) {
       console.error('Error starting live:', error);

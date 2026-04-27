@@ -17,6 +17,7 @@ import { VoiceChannel } from "@/components/live/VoiceChannel";
 import { EndSessionDialog } from "@/components/live/EndSessionDialog";
 import { PresentationView } from "@/components/live/PresentationView";
 import { BottomControls } from "@/components/live/BottomControls";
+import { LiveParticipantsPanel } from "@/components/live/LiveParticipantsPanel";
 
 // Hooks
 import { useLiveSession } from "@/hooks/useLiveSession";
@@ -63,6 +64,7 @@ const EnVivo = () => {
   const [showChat, setShowChat] = useState(false);
   const [showSongList, setShowSongList] = useState(true);
   const [showVoiceChannel, setShowVoiceChannel] = useState(true);
+  const [showParticipants, setShowParticipants] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   
@@ -169,7 +171,7 @@ const EnVivo = () => {
 
           {/* Right Panels (Song List & Chat & Voice) */}
           <AnimatePresence mode="wait">
-            {(showSongList || showChat || showVoiceChannel) && (
+            {(showSongList || showChat || showVoiceChannel || showParticipants) && (
               <motion.div 
                 initial={{ opacity: 0, x: 20, width: 0 }}
                 animate={{ opacity: 1, x: 0, width: "380px" }}
@@ -185,6 +187,17 @@ const EnVivo = () => {
                     className="shrink-0"
                   >
                     <VoiceChannel sessionId={session.id} />
+                  </motion.div>
+                )}
+
+                {/* Participants Panel */}
+                {showParticipants && session && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex-1 overflow-hidden max-h-[300px]"
+                  >
+                    <LiveParticipantsPanel sessionId={session.id} />
                   </motion.div>
                 )}
 
@@ -281,6 +294,8 @@ const EnVivo = () => {
           setShowVoiceChannel={setShowVoiceChannel}
           showChat={showChat}
           setShowChat={setShowChat}
+          showParticipants={showParticipants}
+          setShowParticipants={setShowParticipants}
           commentsCount={comments.length}
           songsCount={songs.length}
           isFullscreen={isFullscreen}
@@ -290,14 +305,16 @@ const EnVivo = () => {
         />
 
         {/* End session dialog */}
-        <EndSessionDialog
-          isOpen={showEndDialog}
-          onClose={() => setShowEndDialog(false)}
-          onConfirm={onConfirmEndSession}
-          isEnding={isEnding}
-          setlistSongs={songs}
-          initialParticipants={initialParticipants}
-        />
+        {session && (
+          <EndSessionDialog
+            isOpen={showEndDialog}
+            onClose={() => setShowEndDialog(false)}
+            onConfirm={onConfirmEndSession}
+            isEnding={isEnding}
+            setlistSongs={songs}
+            sessionId={session.id}
+          />
+        )}
 
         {/* Add Song Dialog */}
         {session?.setlist_id && (

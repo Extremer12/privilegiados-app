@@ -174,6 +174,7 @@ export async function fetchSetlistParticipants(setlistId: string) {
   const { data, error } = await supabase
     .from("setlist_participants")
     .select(`
+      user_id,
       participant_name,
       role_in_service,
       profiles (full_name)
@@ -183,9 +184,40 @@ export async function fetchSetlistParticipants(setlistId: string) {
   if (error) throw error;
 
   return (data || []).map((p: any) => ({
+    user_id: p.user_id,
     name: p.profiles?.full_name || p.participant_name || "",
     role: p.role_in_service || "Cantante",
   }));
+}
+
+export async function updateInviteStatus(sessionId: string, userId: string, status: 'confirmed' | 'rejected') {
+  const { error } = await supabase
+    .from("live_session_participants")
+    .update({ status })
+    .eq("session_id", sessionId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+}
+
+export async function insertLiveSessionParticipants(sessionId: string, participants: { user_id: string; role: string }[]) {
+  if (!participants || participants.length === 0) return;
+  
+  const { error } = await supabase
+    .from("live_session_participants")
+    .insert(
+      participants.map(p => ({
+        session_id: sessionId,
+        user_id: p.user_id,
+        role_in_service: p.role,
+        status: 'pending'
+      }))
+    );
+
+  if (error) {
+    console.error("Error inserting live session participants:", error);
+    // don't throw, we don't want to break the session start if this fails
+  }
 }
 
 // ── End-of-service Report ────────────────────
@@ -197,7 +229,7 @@ export interface ServiceReportPayload {
   startedAt: string;
   notes: string;
   attendanceCount: number;
-  participants: { name: string; role: string }[];
+  participants: { user_id?: string; name: string; role: string }[];
   songs: { song_id: string; played: boolean; was_improvised?: boolean }[];
   leaderRating: number;
 }
@@ -227,6 +259,7 @@ export async function createServiceReport(payload: ServiceReportPayload) {
     const { error } = await supabase.from("service_participants").insert(
       payload.participants.map((p) => ({
         service_report_id: report.id,
+        user_id: p.user_id || null,
         participant_name: p.name,
         role_in_service: p.role,
       })),

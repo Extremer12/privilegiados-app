@@ -35,7 +35,8 @@ const SongDetail = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isLeader, isModerator } = useUserRole();
+  const isAuthorized = isAdmin || isLeader || isModerator;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
@@ -160,6 +161,34 @@ const SongDetail = () => {
     deleteMutation.mutate();
   };
 
+  const approveMutation = useMutation({
+    mutationFn: async () => {
+      if (!song) throw new Error("No hay canción seleccionada");
+      const { error } = await supabase
+        .from("songs")
+        .update({ status: 'approved' })
+        .eq("id", song.id);
+
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: () => {
+      toast({
+        title: "¡Canción aprobada!",
+        description: "La canción ahora es visible para todos",
+      });
+      queryClient.invalidateQueries({ queryKey: ['song', id] });
+      queryClient.invalidateQueries({ queryKey: ['songs'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const handlePrint = () => {
     window.print();
   };
@@ -178,13 +207,11 @@ const SongDetail = () => {
 
   if (!song) {
     return (
-      <>
-        <main className="flex-1 pt-24 pb-20 px-4 w-full">
-          <div className="max-w-4xl mx-auto text-center">
-            <p className="text-muted-foreground">Canción no encontrada</p>
-          </div>
-        </main>
-      </>
+      <main className="flex-1 pt-24 pb-20 px-4 w-full">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-muted-foreground">Canción no encontrada</p>
+        </div>
+      </main>
     );
   }
 
@@ -240,6 +267,30 @@ const SongDetail = () => {
                 </Button>
             </div>
           </div>
+
+          {song.status === 'pending' && (
+            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <Music className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-emerald-400">Esta canción es una sugerencia</p>
+                  <p className="text-sm text-emerald-400/70">Solo los líderes pueden verla hasta que sea aprobada.</p>
+                </div>
+              </div>
+              {isAuthorized && (
+                <Button 
+                  onClick={() => approveMutation.mutate()}
+                  disabled={approveMutation.isPending}
+                  variant="hero"
+                  className="bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 w-full md:w-auto"
+                >
+                  {approveMutation.isPending ? "Aprobando..." : "Aprobar Canción"}
+                </Button>
+              )}
+            </div>
+          )}
 
           <Card className="p-6 md:p-8 card-gradient border-secondary/20 mb-6">
             <div className="flex items-start gap-4 mb-6">

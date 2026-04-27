@@ -58,6 +58,19 @@ export interface LiveSession {
   setlist_id: string;
 }
 
+export interface LiveSessionParticipant {
+  id: string;
+  session_id: string;
+  user_id: string;
+  role_in_service: string | null;
+  status: 'pending' | 'confirmed' | 'rejected';
+  created_at: string;
+  profiles?: {
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
+
 export interface LiveComment {
   id: string;
   user_id: string;
@@ -103,6 +116,7 @@ export interface Song {
   youtube_url: string | null;
   created_at?: string;
   created_by?: string;
+  status?: "approved" | "pending";
 }
 
 // ──────────────────────────────────────────────

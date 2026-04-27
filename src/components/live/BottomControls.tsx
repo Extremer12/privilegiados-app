@@ -12,6 +12,7 @@ import {
   Maximize2,
   Minimize2,
   StopCircle,
+  Users,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -22,6 +23,8 @@ interface BottomControlsProps {
   setShowVoiceChannel: (show: boolean) => void;
   showChat: boolean;
   setShowChat: (show: boolean) => void;
+  showParticipants: boolean;
+  setShowParticipants: (show: boolean) => void;
   commentsCount: number;
   songsCount: number;
   isFullscreen: boolean;
@@ -37,6 +40,8 @@ export function BottomControls({
   setShowVoiceChannel,
   showChat,
   setShowChat,
+  showParticipants,
+  setShowParticipants,
   commentsCount,
   songsCount,
   isFullscreen,
@@ -123,6 +128,24 @@ export function BottomControls({
                 </TooltipTrigger>
                 <TooltipContent>
                   {showChat ? "Ocultar chat" : "Mostrar chat"}
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowParticipants(!showParticipants)}
+                    className={
+                      showParticipants ? "text-secondary" : "text-muted-foreground"
+                    }
+                  >
+                    <Users className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {showParticipants ? "Ocultar participantes" : "Mostrar participantes"}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

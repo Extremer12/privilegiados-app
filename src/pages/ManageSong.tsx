@@ -12,11 +12,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Upload, ArrowLeft } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const ManageSong = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin, isLeader, isModerator } = useUserRole();
   const queryClient = useQueryClient();
   
   const editMode = !!id;
@@ -148,6 +150,9 @@ const ManageSong = () => {
         queryClient.invalidateQueries({ queryKey: ['song', id] });
         navigate(`/canciones/${id}`);
       } else {
+        const isAuthorized = isAdmin || isLeader || isModerator;
+        const initialStatus = isAuthorized ? 'approved' : 'pending';
+
         const { data: newSong, error } = await supabase.from("songs").insert({
           title: formData.title,
           author: formData.author || null,
@@ -157,17 +162,24 @@ const ManageSong = () => {
           youtube_url: formData.youtube_url || null,
           audio_url: audioUrl,
           created_by: user.id,
+          status: initialStatus,
         }).select('id').single();
 
         if (error) throw error;
 
-        toast({
-          title: "¡Canción agregada!",
-          description: "La canción se ha agregado correctamente",
-        });
-
         if (newSong) {
-          notificationService.notifyNewSong(formData.title, newSong.id);
+          if (initialStatus === 'approved') {
+            notificationService.notifyNewSong(formData.title, newSong.id);
+            toast({
+              title: "¡Canción agregada!",
+              description: "La canción se ha agregado correctamente",
+            });
+          } else {
+            toast({
+              title: "Sugerencia enviada",
+              description: "Tu canción ha sido enviada para revisión de los líderes",
+            });
+          }
           navigate(`/canciones/${newSong.id}`);
         } else {
           navigate("/canciones");
