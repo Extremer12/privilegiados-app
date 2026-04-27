@@ -11,7 +11,9 @@ interface LiveHeaderProps {
   setlistTitle?: string;
 }
 
-export const LiveHeader = ({
+import { memo } from "react";
+
+export const LiveHeader = memo(({
   onBack,
   startedAt,
   currentPosition,

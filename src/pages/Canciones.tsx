@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,17 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { Loader } from "@/components/ui/loader";
 
-interface Song {
-  id: string;
-  title: string;
-  author?: string | null;
-  category: "alabanza" | "adoracion" | "especial" | "otro";
-  lyrics: string | null;
-  chords: string | null;
-  audio_url: string | null;
-  youtube_url: string | null;
-  created_at: string;
-}
+import type { Song } from "@/types";
 
 const Canciones = () => {
   const navigate = useNavigate();
@@ -33,6 +23,7 @@ const Canciones = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(40);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,7 +71,7 @@ const Canciones = () => {
     );
   }
 
-  const categoryStyles: Record<string, { badge: string, iconColor: string, gradient: string, glow: string, textHover: string, dot: string, borderFocus: string }> = {
+  const categoryStyles = useMemo<Record<string, { badge: string, iconColor: string, gradient: string, glow: string, textHover: string, dot: string, borderFocus: string }>>(() => ({
     alabanza: {
       badge: "bg-[#0A2540]/80 text-[#3B82F6] border-[#3B82F6]/30",
       iconColor: "text-blue-500",
@@ -117,7 +108,7 @@ const Canciones = () => {
       dot: "bg-gray-500",
       borderFocus: "group-hover:border-gray-500/40"
     },
-  };
+  }), []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -134,17 +125,32 @@ const Canciones = () => {
     visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } },
   };
 
-  const filteredSongs = songs.filter((song) => {
-    const matchesSearch = song.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (song.author && song.author.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    if (selectedCategory === "favorites") {
-      return matchesSearch && favorites.includes(song.id);
-    }
-    
-    const matchesCategory = selectedCategory === "all" || song.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredSongs = useMemo(() => {
+    return songs.filter((song) => {
+      const matchesSearch = song.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            (song.author && song.author.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      if (selectedCategory === "favorites") {
+        return matchesSearch && favorites.includes(song.id);
+      }
+      
+      const matchesCategory = selectedCategory === "all" || song.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [songs, searchTerm, selectedCategory, favorites]);
+
+  // Reset visible count when search or category changes
+  useEffect(() => {
+    setVisibleCount(40);
+  }, [searchTerm, selectedCategory]);
+
+  const visibleSongs = useMemo(() => {
+    return filteredSongs.slice(0, visibleCount);
+  }, [filteredSongs, visibleCount]);
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 40);
+  };
 
   return (
     <>
@@ -233,7 +239,7 @@ const Canciones = () => {
               initial="hidden"
               animate="visible"
             >
-              {filteredSongs.map((song) => {
+              {visibleSongs.map((song) => {
                 const style = categoryStyles[song.category] || categoryStyles.otro;
                 const isFav = favorites.includes(song.id);
                 
@@ -318,6 +324,20 @@ const Canciones = () => {
                 );
               })}
             </motion.div>
+          )}
+
+          {/* Load More Button */}
+          {!loading && filteredSongs.length > visibleCount && (
+            <div className="flex justify-center mt-12 mb-8">
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={handleLoadMore}
+                className="rounded-full px-8 py-6 bg-white/[0.03] border-white/10 hover:bg-white/10 text-white font-medium shadow-xl shadow-black/20"
+              >
+                Cargar más canciones...
+              </Button>
+            </div>
           )}
         </div>
       </main>

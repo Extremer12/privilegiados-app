@@ -27,17 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface Event {
-  id: string;
-  title: string;
-  description: string | null;
-  event_date: string;
-  location: string | null;
-  created_by: string;
-  created_at: string;
-  songs_to_practice: string[] | null;
-  event_type: "ensayo" | "presentacion" | "reunion" | "servicio" | "otro";
-}
+import type { AppEvent as Event } from "@/types";
 
 const EVENT_TYPE_LABELS = {
   ensayo: "Ensayo",

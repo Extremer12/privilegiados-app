@@ -28,18 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface Song {
-  id: string;
-  title: string;
-  category: "alabanza" | "adoracion" | "especial" | "otro";
-  author: string | null;
-  lyrics: string | null;
-  chords: string | null;
-  audio_url: string | null;
-  youtube_url: string | null;
-  created_at: string;
-  created_by?: string;
-}
+import type { Song } from "@/types";
 
 const SongDetail = () => {
   const { id } = useParams();

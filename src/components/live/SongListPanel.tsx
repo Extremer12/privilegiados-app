@@ -2,29 +2,19 @@ import { motion } from "framer-motion";
 import { Music, CheckCircle, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface Song {
-  id: string;
-  position: number;
-  notes: string | null;
-  section?: string | null;
-  special_instructions?: string | null;
-  songs: {
-    id: string;
-    title: string;
-    lyrics: string | null;
-    chords: string | null;
-  };
-}
+import type { SetlistSong } from "@/types";
 
 interface SongListPanelProps {
-  songs: Song[];
+  songs: SetlistSong[];
   currentPosition: number;
   onSongSelect?: (position: number) => void;
   isCreator: boolean;
   onDeleteSong?: (songId: string, event: React.MouseEvent) => void;
 }
 
-export const SongListPanel = ({
+import { memo } from "react";
+
+export const SongListPanel = memo(({
   songs,
   currentPosition,
   onSongSelect,

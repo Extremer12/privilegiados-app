@@ -29,27 +29,7 @@ import { FolderOpen } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
-interface Profile {
-  id: string;
-  full_name: string;
-  avatar_url: string | null;
-}
-
-interface ChatMessageType {
-  id: string;
-  content: string;
-  file_url: string | null;
-  file_type: string | null;
-  created_at: string;
-  author_id: string;
-  status?: "sending" | "sent" | "error";
-}
-
-interface UserPresence {
-  user_id: string;
-  online_at: string;
-  typing?: boolean;
-}
+import type { Profile, ChatMessageType, UserPresence } from "@/types";
 
 const QUICK_REACTIONS = ["👍", "❤️", "🙏", "🎵", "🔥", "✨"];
 const MESSAGES_LIMIT = 50;

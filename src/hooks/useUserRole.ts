@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -7,61 +7,33 @@ const LEADERSHIP_ROLES = ['admin', 'lider', 'pastor', 'moderador'];
 
 export const useUserRole = () => {
   const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLeader, setIsLeader] = useState(false);
-  const [isModerator, setIsModerator] = useState(false);
-  const [userRoles, setUserRoles] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const checkRoles = async () => {
-      if (!user) {
-        setIsAdmin(false);
-        setIsLeader(false);
-        setIsModerator(false);
-        setUserRoles([]);
-        setLoading(false);
-        return;
-      }
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['userRoles', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
 
-      try {
-        // Get user's roles from user_roles table
-        const { data: roles, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
+      const { data: roles, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
 
-        if (error) {
-          console.error('Error checking roles:', error);
-          setIsAdmin(false);
-          setIsLeader(false);
-          setIsModerator(false);
-          setUserRoles([]);
-        } else if (roles && roles.length > 0) {
-          const roleList = roles.map(r => r.role);
-          setUserRoles(roleList);
-          setIsAdmin(roleList.includes('admin'));
-          setIsModerator(roleList.includes('moderador') || roleList.includes('admin'));
-          setIsLeader(roleList.some(role => LEADERSHIP_ROLES.includes(role)));
-        } else {
-          setIsAdmin(false);
-          setIsLeader(false);
-          setIsModerator(false);
-          setUserRoles([]);
-        }
-      } catch (error) {
+      if (error) {
         console.error('Error checking roles:', error);
-        setIsAdmin(false);
-        setIsLeader(false);
-        setIsModerator(false);
-        setUserRoles([]);
-      } finally {
-        setLoading(false);
+        return [];
       }
-    };
 
-    checkRoles();
-  }, [user]);
+      return roles?.map(r => r.role) || [];
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  const userRoles = data || [];
+  const isAdmin = userRoles.includes('admin');
+  const isModerator = userRoles.includes('moderador') || isAdmin;
+  const isLeader = userRoles.some(role => LEADERSHIP_ROLES.includes(role));
 
   const promoteToAdmin = async (userId: string) => {
     if (!isAdmin) return { error: 'Not authorized' };
@@ -83,6 +55,10 @@ export const useUserRole = () => {
         .insert({ user_id: userId, role: 'admin' });
 
       if (error) throw error;
+      
+      // Invalidate queries so UI updates immediately
+      queryClient.invalidateQueries({ queryKey: ['userRoles'] });
+      
       return { success: true };
     } catch (error: any) {
       console.error('Error promoting to admin:', error);
@@ -101,6 +77,9 @@ export const useUserRole = () => {
         .eq('role', 'admin');
 
       if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['userRoles'] });
+      
       return { success: true };
     } catch (error: any) {
       console.error('Error demoting from admin:', error);
@@ -128,6 +107,8 @@ export const useUserRole = () => {
         
         if (insertError) throw insertError;
       }
+
+      queryClient.invalidateQueries({ queryKey: ['userRoles'] });
 
       return { success: true };
     } catch (error: any) {

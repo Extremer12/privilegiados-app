@@ -37,18 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface Member {
-  id: string;
-  full_name: string;
-  avatar_url: string | null;
-  instrument: string | null;
-  role: string | null;
-}
-
-interface UserRole {
-  user_id: string;
-  role: string;
-}
+import type { Profile as Member, UserRole } from "@/types";
 
 const ROLE_ICONS: Record<string, React.ReactNode> = {
   admin: <Crown className="w-4 h-4 text-secondary" />,

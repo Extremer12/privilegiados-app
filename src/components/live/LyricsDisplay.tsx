@@ -10,32 +10,22 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-interface Song {
-  id: string;
-  position: number;
-  notes: string | null;
-  section?: string | null;
-  special_instructions?: string | null;
-  songs: {
-    id: string;
-    title: string;
-    lyrics: string | null;
-    chords: string | null;
-  };
-}
+import type { SetlistSong } from "@/types";
 
 interface LyricsDisplayProps {
-  currentSong: Song | null;
+  currentSong: SetlistSong | null;
   currentPosition: number;
   totalSongs: number;
   isCreator: boolean;
   onPrevious: () => void;
   onNext: () => void;
   onPresentationMode?: () => void;
-  nextSong?: Song;
+  nextSong?: SetlistSong;
 }
 
-export const LyricsDisplay = ({
+import { memo } from "react";
+
+export const LyricsDisplay = memo(({
   currentSong,
   currentPosition,
   totalSongs,
