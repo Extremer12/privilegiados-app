@@ -41,75 +41,65 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b0e11] relative overflow-hidden">
-      {/* Subtle ambient light */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-secondary/[0.04] rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Background Image with Overlay */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: "url('/login.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+      </div>
 
-      {/* Main content — vertically centered */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
-        {/* Logo */}
+      {/* Main Content */}
+      <div className="relative z-10 w-full max-w-sm px-6 flex flex-col items-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-center mb-12"
+        >
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2 drop-shadow-2xl">
+            PRIVILEGIADOS APP
+          </h1>
+          <div className="h-1 w-20 bg-secondary mx-auto rounded-full" />
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="mb-10"
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="w-full"
         >
-          <div className="relative">
-            <div className="absolute inset-0 bg-secondary/15 rounded-full blur-2xl scale-125" />
-            <img
-              src="/logo.jpg"
-              alt="Privilegiados App"
-              className="relative w-32 h-32 rounded-full object-cover ring-[3px] ring-white/10 shadow-2xl"
-            />
-          </div>
+          {/* Google Login Button */}
+          <button
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 h-[60px] rounded-2xl bg-white text-black font-bold text-base transition-all duration-300 active:scale-[0.97] hover:bg-gray-100 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] disabled:opacity-50 disabled:pointer-events-none shadow-2xl"
+          >
+            {loading ? (
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+            ) : (
+              <>
+                <GoogleIcon />
+                <span>INICIAR SESIÓN CON GOOGLE</span>
+              </>
+            )}
+          </button>
         </motion.div>
 
-        {/* Text */}
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.5 }}
+          transition={{ delay: 1 }}
+          className="mt-8 text-[10px] text-white uppercase tracking-[0.2em] font-medium"
         >
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
-            Privilegiados
-          </h1>
-          <p className="text-[15px] text-white/40 font-light">
-            Ministerio de Alabanza
-          </p>
-        </motion.div>
+          Ministerio de Alabanza
+        </motion.p>
       </div>
-
-      {/* Bottom section — Google button + footer */}
-      <motion.div
-        className="px-6 pb-10 pt-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-      >
-        {/* Google Login Button */}
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 h-[56px] rounded-2xl bg-white text-[#1f1f1f] font-medium text-[15px] transition-all duration-200 active:scale-[0.98] hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-black/20"
-        >
-          {loading ? (
-            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
-          ) : (
-            <>
-              <GoogleIcon />
-              <span>Continuar con Google</span>
-            </>
-          )}
-        </button>
-
-        {/* Terms */}
-        <p className="text-center text-[11px] text-white/25 mt-6 leading-relaxed">
-          Al continuar, aceptas los términos de uso
-          <br />
-          y la política de privacidad.
-        </p>
-      </motion.div>
     </div>
   );
 };
