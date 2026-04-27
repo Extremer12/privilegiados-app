@@ -14,6 +14,46 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const Particles = () => {
+  const particles = Array.from({ length: 25 }).map((_, i) => ({
+    id: i,
+    size: Math.random() * 4 + 2,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    duration: Math.random() * 20 + 15,
+    delay: Math.random() * 10,
+  }));
+
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full bg-yellow-500/50"
+          style={{
+            width: p.size,
+            height: p.size,
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            boxShadow: `0 0 ${p.size * 3}px rgba(234, 179, 8, 0.8)`,
+          }}
+          animate={{
+            y: [0, -800],
+            x: [0, Math.random() * 100 - 50],
+            opacity: [0, 1, 0],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            delay: p.delay,
+            ease: "linear",
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { signInWithGoogle, user } = useAuth();
@@ -41,35 +81,43 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background Image with Overlay */}
-      <div 
+    <div className="min-h-screen flex flex-col items-center justify-end pb-16 relative overflow-hidden bg-black">
+      {/* Background Image with Slow Zoom & Gradient Overlay */}
+      <motion.div 
         className="absolute inset-0 z-0"
+        initial={{ scale: 1.15 }}
+        animate={{ scale: 1.05 }}
+        transition={{ duration: 25, ease: "linear", repeat: Infinity, repeatType: "mirror" }}
         style={{
           backgroundImage: "url('/login.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-      </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0e17] via-[#0a0e17]/60 to-transparent" />
+      </motion.div>
+
+      {/* Gold Particles */}
+      <Particles />
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-sm px-6 flex flex-col items-center">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center mb-12"
+          className="text-center mb-10"
         >
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2 drop-shadow-2xl">
-            PRIVILEGIADOS APP
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-3 drop-shadow-2xl">
+            PRIVILEGIADOS
+            <br/>
+            APP
           </h1>
-          <div className="h-1 w-20 bg-secondary mx-auto rounded-full" />
+          <div className="h-1 w-20 bg-secondary mx-auto rounded-full shadow-[0_0_15px_rgba(251,191,36,0.6)]" />
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
           className="w-full"
@@ -78,8 +126,11 @@ const Auth = () => {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 h-[60px] rounded-2xl bg-white text-black font-bold text-base transition-all duration-300 active:scale-[0.97] hover:bg-gray-100 hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] disabled:opacity-50 disabled:pointer-events-none shadow-2xl"
+            className="w-full flex items-center justify-center gap-3 h-[60px] rounded-2xl bg-white text-black font-bold text-[15px] transition-all duration-300 active:scale-[0.97] hover:bg-gray-100 hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] disabled:opacity-50 disabled:pointer-events-none shadow-2xl relative overflow-hidden group"
           >
+            {/* Subtle button shine effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-black/5 to-transparent skew-x-12" />
+            
             {loading ? (
               <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
             ) : (
@@ -93,9 +144,9 @@ const Auth = () => {
 
         <motion.p 
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.5 }}
-          transition={{ delay: 1 }}
-          className="mt-8 text-[10px] text-white uppercase tracking-[0.2em] font-medium"
+          animate={{ opacity: 0.6 }}
+          transition={{ delay: 0.8 }}
+          className="mt-8 text-[10px] text-white uppercase tracking-[0.25em] font-bold"
         >
           Ministerio de Alabanza
         </motion.p>
