@@ -3,7 +3,7 @@ import { es } from 'date-fns/locale';
 import { 
   Play, Eye, Trash2,
   CheckCircle2, Clock, FileEdit, Music, Calendar,
-  Mic, User
+  Mic, User, Star
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
