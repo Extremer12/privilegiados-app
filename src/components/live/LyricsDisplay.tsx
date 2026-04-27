@@ -273,4 +273,4 @@ export const LyricsDisplay = memo(({
       </motion.div>
     </TooltipProvider>
   );
-};
+});
