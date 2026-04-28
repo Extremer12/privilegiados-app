@@ -7,11 +7,23 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Song } from "@/types";
 
-export async function fetchSongs() {
+export async function fetchSongs(options?: { orderBy?: string; ascending?: boolean }) {
+  const { orderBy = "title", ascending = true } = options || {};
   const { data, error } = await supabase
     .from("songs")
     .select("*")
-    .order("title", { ascending: true });
+    .order(orderBy, { ascending });
+
+  if (error) throw error;
+  return data as Song[];
+}
+
+export async function fetchSongsWithProfiles(options?: { orderBy?: string; ascending?: boolean }) {
+  const { orderBy = "created_at", ascending = false } = options || {};
+  const { data, error } = await supabase
+    .from("songs")
+    .select("*, creator_profile:profiles!songs_created_by_fkey(full_name, avatar_url)")
+    .order(orderBy, { ascending });
 
   if (error) throw error;
   return data as Song[];
@@ -20,7 +32,7 @@ export async function fetchSongs() {
 export async function fetchSongById(id: string) {
   const { data, error } = await supabase
     .from("songs")
-    .select("*")
+    .select("*, creator_profile:profiles!songs_created_by_fkey(full_name, avatar_url)")
     .eq("id", id)
     .maybeSingle();
 

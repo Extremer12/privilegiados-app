@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchSongById } from "@/services/songService";
 import { ArrowLeft, Music, ExternalLink, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, Printer, Youtube, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
@@ -53,21 +54,7 @@ const SongDetail = () => {
 
   const { data: song, isLoading: loading } = useQuery({
     queryKey: ['song', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("songs")
-        .select("*, creator_profile:profiles!songs_created_by_fkey(full_name, avatar_url)")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      if (!data) {
-        throw new Error("Canción no encontrada");
-      }
-      
-      return data as Song;
-    },
+    queryFn: () => fetchSongById(id!),
     enabled: !!id && !!user,
   });
 

@@ -1,61 +1,72 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  MessageCircle, Send, Paperclip, Loader2, Users, Image as ImageIcon, 
-  Smile, Hash, ArrowDown, Sparkles, Wifi, WifiOff
+  MessageCircle, Send, Paperclip, Loader2, Image as ImageIcon, 
+  Smile, ArrowDown, FolderOpen
 } from "lucide-react";
 import { toast } from "sonner";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { AudioRecordingUI } from "@/components/chat/AudioRecordingUI";
 import { ChatFilesPanel } from "@/components/chat/ChatFilesPanel";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { useForoMessages } from "@/hooks/useForoMessages";
+import { useForoRealtime } from "@/hooks/useForoRealtime";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { FolderOpen } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 
-import type { Profile, ChatMessageType, UserPresence } from "@/types";
+import type { Profile } from "@/types";
 
 const QUICK_REACTIONS = ["👍", "❤️", "🙏", "🎵", "🔥", "✨"];
-const MESSAGES_LIMIT = 50;
 
 const Foro = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   
   const [message, setMessage] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
   const [showEmojis, setShowEmojis] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { isRecording, recordingTime, startRecording, stopRecording, cancelRecording } =
     useAudioRecorder();
+
+  const {
+    messages,
+    isLoading: messagesLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    uploading,
+    sendMessage,
+    isSending,
+    editMessage,
+    deleteMessage,
+    sendFile
+  } = useForoMessages(user?.id);
+
+  const {
+    onlineUsers,
+    typingUsers,
+    isConnected,
+    handleTyping,
+    trackStatus
+  } = useForoRealtime(user?.id);
 
   // Profiles query
   const { data: profilesData } = useQuery({
@@ -76,54 +87,11 @@ const Foro = () => {
 
   const profiles = profilesData || {};
 
-  // Messages infinite query
-  const {
-    data: infiniteMessages,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading: messagesLoading,
-  } = useInfiniteQuery({
-    queryKey: ['chat_messages'],
-    queryFn: async ({ pageParam = 0 }) => {
-      const { data, error } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .range(pageParam * MESSAGES_LIMIT, (pageParam + 1) * MESSAGES_LIMIT - 1);
-
-      if (error) throw error;
-      return data as ChatMessageType[];
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === MESSAGES_LIMIT ? allPages.length : undefined;
-    },
-    enabled: !!user,
-  });
-
-  // Flatten messages and reverse for display (oldest first)
-  const messages = useMemo(() => {
-    if (!infiniteMessages) return [];
-    return [...infiniteMessages.pages].reverse().flatMap(page => [...page].reverse());
-  }, [infiniteMessages]);
-
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
-
-  useEffect(() => {
-    if (user) {
-      setupRealtimeChannel();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-      }
-    };
-  }, [user]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -134,9 +102,8 @@ const Foro = () => {
         scrollToBottom();
       }
     }
-  }, [messages.length]); // Only on new messages
+  }, [messages.length]);
 
-  // Handle scroll to show/hide scroll button
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -161,242 +128,36 @@ const Foro = () => {
     }
   };
 
-  const setupRealtimeChannel = () => {
-    if (!user) return;
-
-    const channel = supabase.channel("forum_room", {
-      config: {
-        presence: {
-          key: user.id,
-        },
-      },
-    });
-
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState<UserPresence>();
-        const online = Object.keys(state);
-        setOnlineUsers(online);
-
-        const typing = new Set<string>();
-        Object.entries(state).forEach(([userId, presences]) => {
-          if (presences[0]?.typing && userId !== user.id) {
-            typing.add(userId);
-          }
-        });
-        setTypingUsers(typing);
-      })
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_messages",
-      }, (payload) => {
-        const newMessage = payload.new as ChatMessageType;
-        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page: any, i: number) => 
-              i === 0 ? [newMessage, ...page] : page
-            )
-          };
-        });
-      })
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "chat_messages",
-      }, (payload) => {
-        const updatedMessage = payload.new as ChatMessageType;
-        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page: any) => 
-              page.map((msg: any) => msg.id === updatedMessage.id ? updatedMessage : msg)
-            )
-          };
-        });
-      })
-      .on("postgres_changes", {
-        event: "DELETE",
-        schema: "public",
-        table: "chat_messages",
-      }, (payload) => {
-        const deletedId = payload.old.id;
-        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page: any) => 
-              page.filter((msg: any) => msg.id !== deletedId)
-            )
-          };
-        });
-      });
-
-    channel.subscribe(async (status) => {
-      if (status === "SUBSCRIBED") {
-        setIsConnected(true);
-        await channel.track({
-          user_id: user.id,
-          online_at: new Date().toISOString(),
-          typing: false,
-        });
-      } else if (status === "CHANNEL_ERROR") {
-        setIsConnected(false);
-        toast.error("Conexión perdida", {
-          description: "Reintentando conectar...",
-        });
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim() || !user) return;
+    sendMessage(message, {
+      onSuccess: () => {
+        setMessage("");
+        setShowEmojis(false);
+        trackStatus(false);
       }
     });
-
-    channelRef.current = channel;
   };
-
-  const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const { error } = await supabase.from("chat_messages").insert({
-        content: content,
-        author_id: user!.id
-      });
-      if (error) throw error;
-      return true;
-    },
-    onSuccess: () => {
-      setMessage("");
-      setShowEmojis(false);
-      queryClient.invalidateQueries({ queryKey: ['chat_messages'] });
-      if (channelRef.current) {
-        channelRef.current.track({
-          user_id: user!.id,
-          online_at: new Date().toISOString(),
-          typing: false,
-        });
-      }
-    },
-    onError: (error: any) => {
-      toast.error("Error al enviar mensaje", {
-        description: error.message,
-      });
-    }
-  });
-
-  const editMessageMutation = useMutation({
-    mutationFn: async ({ id, content }: { id: string, content: string }) => {
-      const { error } = await supabase
-        .from("chat_messages")
-        .update({ content })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Mensaje editado");
-    }
-  });
-
-  const deleteMessageMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("chat_messages")
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Mensaje eliminado");
-    }
-  });
-
-  const sendFileMutation = useMutation({
-    mutationFn: async ({ file, fileName }: { file: File | Blob, fileName: string }) => {
-      setUploading(true);
-      const fileExt = fileName.split(".").pop() || "webm";
-      const uploadName = `${user!.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("chat-files")
-        .upload(uploadName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from("chat-files").getPublicUrl(uploadName);
-
-      const fileType = fileName.includes("audio_") ? "audio" : (file instanceof File && file.type.startsWith("image/") ? "image" : "file");
-
-      const { error } = await supabase.from("chat_messages").insert({
-        content: fileName.includes("audio_") ? "Mensaje de voz" : fileName,
-        file_url: publicUrl,
-        file_type: fileType,
-        author_id: user!.id
-      });
-
-      if (error) throw error;
-      return true;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chat_messages'] });
-    },
-    onSettled: () => setUploading(false),
-    onError: (error: any) => {
-      toast.error("Error al subir archivo", {
-        description: error.message,
-      });
-    }
-  });
-
-  const handleTyping = useCallback(() => {
-    if (!user || !channelRef.current) return;
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    channelRef.current.track({
-      user_id: user.id,
-      online_at: new Date().toISOString(),
-      typing: true,
-    });
-
-    typingTimeoutRef.current = setTimeout(() => {
-      channelRef.current?.track({
-        user_id: user.id,
-        online_at: new Date().toISOString(),
-        typing: false,
-      });
-    }, 2000);
-  }, [user]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Restrictions
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/',
-      'audio/'
-    ];
-    
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/', 'audio/'];
     const isAllowed = allowedTypes.some(type => file.type.startsWith(type));
     
     if (!isAllowed) {
-      toast.error("Archivo no permitido", {
-        description: "Solo se permiten PDF, Word, Imágenes y Audios.",
-      });
+      toast.error("Archivo no permitido", { description: "Solo se permiten PDF, Word, Imágenes y Audios." });
       return;
     }
 
-    if (file.size > 15 * 1024 * 1024) { // 15MB limit
-      toast.error("Archivo demasiado pesado", {
-        description: "El límite es de 15MB.",
-      });
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("Archivo demasiado pesado", { description: "El límite es de 15MB." });
       return;
     }
 
-    sendFileMutation.mutate({ file, fileName: file.name });
+    sendFile({ file, fileName: file.name });
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
@@ -404,22 +165,14 @@ const Foro = () => {
   const handleStopRecording = async () => {
     const audioBlob = await stopRecording();
     if (!audioBlob || !user) return;
-    sendFileMutation.mutate({ file: audioBlob, fileName: `audio_${Date.now()}.webm` });
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() || !user) return;
-    sendMessageMutation.mutate(message);
+    sendFile({ file: audioBlob, fileName: `audio_${Date.now()}.webm` });
   };
 
   const handleStartRecording = async () => {
     try {
       await startRecording();
     } catch (error) {
-      toast.error("Error", {
-        description: "No se pudo acceder al micrófono",
-      });
+      toast.error("Error", { description: "No se pudo acceder al micrófono" });
     }
   };
 
@@ -437,16 +190,10 @@ const Foro = () => {
       <main className="flex-1 pt-20 pb-4 px-3 sm:px-4 flex flex-col w-full">
         <div className="max-w-4xl mx-auto w-full flex flex-col h-[calc(100vh-120px)]">
           {/* Header */}
-          <motion.div
-            className="mb-8"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div className="mb-8" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
               <div>
-                <h1 className="text-4xl md:text-5xl font-light tracking-tight text-foreground">
-                  Comunidad
-                </h1>
+                <h1 className="text-4xl md:text-5xl font-light tracking-tight text-foreground">Comunidad</h1>
                 <div className="flex items-center gap-3 mt-3">
                   <div className="flex items-center gap-1.5">
                     <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
@@ -456,35 +203,20 @@ const Foro = () => {
                   </div>
                   <span className="text-muted-foreground/20 text-xs">•</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">
-                      {onlineUsers.length}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">
-                      Conectados
-                    </span>
+                    <span className="text-[10px] uppercase tracking-widest text-secondary font-bold">{onlineUsers.length}</span>
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">Conectados</span>
                   </div>
                 </div>
               </div>
 
-              {/* Online Users Avatars - Sleek and Minimal */}
               <div className="flex items-center gap-4">
                 {onlineUsers.length > 0 && (
-                  <motion.div
-                    className="flex items-center gap-3"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
+                  <motion.div className="flex items-center gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                     <div className="flex -space-x-3">
                       {onlineUsers.slice(0, 5).map((userId, index) => {
                         const profile = profiles[userId];
                         return (
-                          <motion.div
-                            key={userId}
-                            initial={{ scale: 0, x: -10 }}
-                            animate={{ scale: 1, x: 0 }}
-                            transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}
-                          >
+                          <motion.div key={userId} initial={{ scale: 0, x: -10 }} animate={{ scale: 1, x: 0 }} transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}>
                             <Avatar className="w-10 h-10 squircle-sm border-4 border-[#0d1117] relative z-10 shadow-xl">
                               <AvatarImage src={profile?.avatar_url || undefined} />
                               <AvatarFallback className="bg-white/5 text-muted-foreground text-[10px] uppercase font-bold">
@@ -503,7 +235,6 @@ const Foro = () => {
                   </motion.div>
                 )}
 
-                {/* Files Sidebar Toggle */}
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary hover:bg-secondary/20 transition-all border border-secondary/20">
@@ -519,12 +250,7 @@ const Foro = () => {
           </motion.div>
 
           {/* Chat Container */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="flex-1 flex flex-col overflow-hidden"
-          >
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="flex-1 flex flex-col overflow-hidden">
             <Card className="flex-1 flex flex-col bg-gradient-to-b from-card/95 to-card/80 backdrop-blur-xl border-secondary/20 overflow-hidden shadow-2xl">
               {messagesLoading ? (
                 <div className="flex-1 flex items-center justify-center">
@@ -535,38 +261,17 @@ const Foro = () => {
                 </div>
               ) : (
                 <>
-                  {/* Messages Area */}
-                  <div
-                    ref={messagesContainerRef}
-                    className="flex-1 overflow-y-auto p-4 space-y-1 relative"
-                  >
+                  <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1 relative">
                     {messages.length === 0 ? (
-                      <motion.div
-                        className="flex flex-col items-center justify-center h-full text-center"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                      >
-                        <div
-                          className="w-24 h-24 rounded-full bg-gradient-to-br from-secondary/20 to-purple-500/10 flex items-center justify-center mb-6 shadow-xl"
-                        >
+                      <motion.div className="flex flex-col items-center justify-center h-full text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-secondary/20 to-purple-500/10 flex items-center justify-center mb-6 shadow-xl">
                           <MessageCircle className="w-12 h-12 text-secondary" />
                         </div>
-                        <h3 className="text-2xl font-bold text-foreground mb-3">
-                          ¡Inicia la conversación!
-                        </h3>
-                        <p className="text-muted-foreground max-w-xs mb-6">
-                          Sé el primero en enviar un mensaje al grupo
-                        </p>
+                        <h3 className="text-2xl font-bold text-foreground mb-3">¡Inicia la conversación!</h3>
+                        <p className="text-muted-foreground max-w-xs mb-6">Sé el primero en enviar un mensaje al grupo</p>
                         <div className="flex gap-2">
                           {QUICK_REACTIONS.map((emoji) => (
-                            <motion.button
-                              key={emoji}
-                              className="text-2xl p-2 rounded-xl bg-secondary/10 hover:bg-secondary/20 transition-colors"
-                              whileHover={{ scale: 1.2 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => addEmoji(emoji)}
-                              aria-label={`Reaccionar con ${emoji}`}
-                            >
+                            <motion.button key={emoji} className="text-2xl p-2 rounded-xl bg-secondary/10 hover:bg-secondary/20 transition-colors" whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} onClick={() => addEmoji(emoji)}>
                               {emoji}
                             </motion.button>
                           ))}
@@ -576,14 +281,7 @@ const Foro = () => {
                       <>
                         {hasNextPage && (
                           <div className="flex justify-center py-4">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={loadMore} 
-                              disabled={isFetchingNextPage}
-                              className="bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20"
-                              aria-label="Cargar mensajes anteriores"
-                            >
+                            <Button variant="outline" size="sm" onClick={loadMore} disabled={isFetchingNextPage} className="bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20">
                               {isFetchingNextPage ? "Cargando..." : "Cargar mensajes anteriores"}
                             </Button>
                           </div>
@@ -594,55 +292,30 @@ const Foro = () => {
                             {...msg}
                             isOwnMessage={msg.author_id === user?.id}
                             author={profiles[msg.author_id]}
-                            onDelete={(id) => deleteMessageMutation.mutate(id)}
-                            onUpdate={(id, content) => editMessageMutation.mutate({ id, content })}
+                            onDelete={(id) => deleteMessage(id)}
+                            onUpdate={(id, content) => editMessage({ id, content })}
                           />
                         ))}
-
                         <TypingIndicator typingUsers={typingUsers} profiles={profiles} />
                       </>
                     )}
                     <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Scroll to Bottom Button */}
                   <AnimatePresence>
                     {showScrollButton && (
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                        className="absolute bottom-24 right-6 w-12 h-12 rounded-full bg-secondary text-secondary-foreground shadow-lg flex items-center justify-center z-10"
-                        onClick={scrollToBottom}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        aria-label="Desplazarse hacia abajo"
-                      >
-                        <ArrowDown className="w-5 h-5" aria-hidden="true" />
+                      <motion.button initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} className="absolute bottom-24 right-6 w-12 h-12 rounded-full bg-secondary text-secondary-foreground shadow-lg flex items-center justify-center z-10" onClick={scrollToBottom} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                        <ArrowDown className="w-5 h-5" />
                       </motion.button>
                     )}
                   </AnimatePresence>
 
-                  {/* Input Area */}
                   <div className="border-t border-border/30 p-4 bg-gradient-to-t from-background/60 to-transparent backdrop-blur-md">
-                    {/* Quick Reactions */}
                     <AnimatePresence>
                       {showEmojis && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="flex gap-2 mb-3 p-2 bg-card/80 rounded-xl border border-border/30"
-                        >
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="flex gap-2 mb-3 p-2 bg-card/80 rounded-xl border border-border/30">
                           {QUICK_REACTIONS.map((emoji) => (
-                            <motion.button
-                              key={emoji}
-                              className="text-2xl p-2 rounded-lg hover:bg-secondary/20 transition-colors"
-                              whileHover={{ scale: 1.2 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => addEmoji(emoji)}
-                              aria-label={`Añadir emoji ${emoji}`}
-                            >
+                            <motion.button key={emoji} className="text-2xl p-2 rounded-lg hover:bg-secondary/20 transition-colors" whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} onClick={() => addEmoji(emoji)}>
                               {emoji}
                             </motion.button>
                           ))}
@@ -651,112 +324,43 @@ const Foro = () => {
                     </AnimatePresence>
 
                     <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                       {/* Hidden File Inputs */}
-                       <input
-                        ref={fileInputRef}
-                        type="file"
-                        onChange={(e) => handleFileSelect(e)}
-                        className="hidden"
-                        accept=".pdf,.doc,.docx,.txt,.zip,.rar"
-                        aria-hidden="true"
-                        tabIndex={-1}
-                      />
-                      <input
-                        ref={imageInputRef}
-                        type="file"
-                        onChange={(e) => handleFileSelect(e)}
-                        className="hidden"
-                        accept="image/*"
-                        aria-hidden="true"
-                        tabIndex={-1}
-                      />
+                       <input ref={fileInputRef} type="file" onChange={handleFileSelect} className="hidden" accept=".pdf,.doc,.docx,.txt,.zip,.rar" />
+                       <input ref={imageInputRef} type="file" onChange={handleFileSelect} className="hidden" accept="image/*" />
 
                       {!isRecording && (
                         <>
-                          {/* Emoji Button */}
                           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setShowEmojis(!showEmojis)}
-                              className={`h-11 w-11 rounded-full transition-all ${
-                                showEmojis ? "bg-secondary/20 text-secondary" : "hover:bg-secondary/20 hover:text-secondary"
-                              }`}
-                              aria-label="Abrir panel de emojis"
-                            >
-                              <Smile className="w-5 h-5" aria-hidden="true" />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => setShowEmojis(!showEmojis)} className={`h-11 w-11 rounded-full transition-all ${showEmojis ? "bg-secondary/20 text-secondary" : "hover:bg-secondary/20 hover:text-secondary"}`}>
+                              <Smile className="w-5 h-5" />
                             </Button>
                           </motion.div>
 
-                          {/* Image Button */}
                           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => imageInputRef.current?.click()}
-                              disabled={uploading}
-                              className="h-11 w-11 rounded-full hover:bg-secondary/20 hover:text-secondary transition-all"
-                              aria-label="Adjuntar imagen"
-                            >
-                              <ImageIcon className="w-5 h-5" aria-hidden="true" />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={uploading} className="h-11 w-11 rounded-full hover:bg-secondary/20 hover:text-secondary transition-all">
+                              <ImageIcon className="w-5 h-5" />
                             </Button>
                           </motion.div>
 
-                          {/* File Button */}
                           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => fileInputRef.current?.click()}
-                              disabled={uploading}
-                              className="h-11 w-11 rounded-full hover:bg-secondary/20 hover:text-secondary transition-all"
-                              aria-label="Adjuntar archivo"
-                            >
-                              {uploading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-                              ) : (
-                                <Paperclip className="w-5 h-5" aria-hidden="true" />
-                              )}
+                            <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="h-11 w-11 rounded-full hover:bg-secondary/20 hover:text-secondary transition-all">
+                              {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
                             </Button>
                           </motion.div>
 
-                          {/* Message Input */}
                           <div className="flex-1 relative">
                             <Input
                               value={message}
-                              onChange={(e) => {
-                                setMessage(e.target.value);
-                                handleTyping();
-                              }}
+                              onChange={(e) => { setMessage(e.target.value); handleTyping(); }}
                               placeholder="Escribe un mensaje..."
                               className="h-12 bg-background/60 backdrop-blur-sm border-border/50 focus:border-secondary/50 rounded-2xl px-5 pr-12 transition-all text-base"
                               disabled={uploading}
-                              aria-label="Campo de mensaje"
                             />
                           </div>
 
-                          {/* Send or Mic Button */}
                           {message.trim() ? (
-                            <motion.div
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              <Button
-                                type="submit"
-                                variant="hero"
-                                size="icon"
-                                disabled={uploading || sendMessageMutation.isPending}
-                                className="h-12 w-12 rounded-full shadow-lg shadow-secondary/30"
-                                aria-label="Enviar mensaje"
-                              >
-                                {sendMessageMutation.isPending ? (
-                                  <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-                                ) : (
-                                  <Send className="w-5 h-5" aria-hidden="true" />
-                                )}
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                              <Button type="submit" variant="hero" size="icon" disabled={uploading || isSending} className="h-12 w-12 rounded-full shadow-lg shadow-secondary/30">
+                                {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                               </Button>
                             </motion.div>
                           ) : (

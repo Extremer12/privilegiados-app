@@ -263,9 +263,6 @@ export function useLiveSession(sessionId: string | undefined) {
       event.stopPropagation();
       const isSessionCreator = session?.created_by === user?.id;
       if (!isLeader && !isSessionCreator) return;
-      if (!confirm("¿Seguro que deseas remover esta canción del repertorio en vivo?"))
-        return;
-
       try {
         await liveService.deleteSetlistSong(songId);
         toast.success("Canción removida", {

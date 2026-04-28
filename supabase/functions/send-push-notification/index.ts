@@ -23,13 +23,58 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization')!;
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!;
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!;
 
     if (!vapidPublicKey || !vapidPrivateKey) {
-      throw new Error('VAPID keys not configured in Edge Function secrets');
+      throw new Error('VAPID keys not configured');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Validate request
+    const payload: PushPayload = await req.json();
+    if (!payload.title || !payload.body || !payload.type) {
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Check authorization
+    // If it's the service role key (from a trigger), skip user validation
+    const isServiceRole = authHeader === `Bearer ${supabaseServiceKey}`;
+    
+    if (!isServiceRole) {
+      const { data: { user }, error: authError } = await createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!)
+        .auth.getUser(authHeader.replace('Bearer ', ''));
+
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Check if user is admin/moderator for global announcements
+      if (!payload.targetUserIds || payload.targetUserIds.length === 0) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const authorizedRoles = ['admin', 'moderador', 'lider'];
+        if (!roleData || !authorizedRoles.includes(roleData.role)) {
+          return new Response(JSON.stringify({ error: 'Forbidden: Insufficient permissions for global notifications' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      }
     }
 
     webpush.setVapidDetails(
@@ -38,10 +83,7 @@ serve(async (req) => {
       vapidPrivateKey
     );
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const payload: PushPayload = await req.json();
-    
-    console.log('Push Request:', payload);
+    console.log('Sending push:', payload.type, payload.title);
 
     // Get subscriptions
     let query = supabase.from('push_subscriptions').select('*');

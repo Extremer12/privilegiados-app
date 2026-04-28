@@ -18,6 +18,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { SetlistCard } from '@/components/repertorios/SetlistCard';
 import { CreateSetlistDialog } from '@/components/repertorios/CreateSetlistDialog';
 import { Setlist } from '@/components/repertorios/types';
@@ -45,6 +55,7 @@ const Repertorios = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [setlistToDelete, setSetlistToDelete] = useState<string | null>(null);
 
   const { data: setlists = [], isLoading: loading } = useQuery({
     queryKey: ['setlists'],
@@ -133,9 +144,15 @@ const Repertorios = () => {
     }
   });
 
-  const handleDeleteSetlist = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este repertorio? Esta acción no se puede deshacer.')) return;
-    deleteMutation.mutate(id);
+  const handleDeleteSetlist = (id: string) => {
+    setSetlistToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (setlistToDelete) {
+      deleteMutation.mutate(setlistToDelete);
+      setSetlistToDelete(null);
+    }
   };
 
   const filteredSetlists = setlists.filter(setlist => {
@@ -391,6 +408,23 @@ const Repertorios = () => {
           </Button>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!setlistToDelete} onOpenChange={(open) => !open && setSetlistToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El repertorio será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

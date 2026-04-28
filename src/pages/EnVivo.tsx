@@ -18,6 +18,16 @@ import { EndSessionDialog } from "@/components/live/EndSessionDialog";
 import { PresentationView } from "@/components/live/PresentationView";
 import { BottomControls } from "@/components/live/BottomControls";
 import { LiveParticipantsPanel } from "@/components/live/LiveParticipantsPanel";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Hooks
 import { useLiveSession } from "@/hooks/useLiveSession";
@@ -71,6 +81,7 @@ const EnVivo = () => {
   // Dialog state for adding songs
   const [showAddSong, setShowAddSong] = useState(false);
   const [selectedSection, setSelectedSection] = useState<SectionType>("alabanza");
+  const [songToDelete, setSongToDelete] = useState<string | null>(null);
 
   // Handle saving the report and navigating
   const onConfirmEndSession = async (data: any) => {
@@ -213,7 +224,7 @@ const EnVivo = () => {
                       currentPosition={session?.current_position || 0}
                       onSongSelect={isCreator ? handleJumpToSong : undefined}
                       isCreator={isCreator}
-                      onDeleteSong={handleDeleteSong}
+                      onDeleteSong={(id) => setSongToDelete(id)}
                       onAddSong={(section) => {
                         setSelectedSection(section as SectionType);
                         setShowAddSong(true);
@@ -258,7 +269,7 @@ const EnVivo = () => {
                       setShowSongList(false);
                     }}
                     isCreator={isCreator}
-                    onDeleteSong={handleDeleteSong}
+                    onDeleteSong={(id) => setSongToDelete(id)}
                     onAddSong={(section) => {
                       setSelectedSection(section as SectionType);
                       setShowAddSong(true);
@@ -331,6 +342,31 @@ const EnVivo = () => {
           />
         )}
       </motion.div>
+
+      <AlertDialog open={!!songToDelete} onOpenChange={(open) => !open && setSongToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Remover canción?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas remover esta canción del repertorio en vivo? Esta acción se sincronizará con todos los participantes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                if (songToDelete) {
+                  handleDeleteSong(songToDelete, e as any);
+                  setSongToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   );
 };

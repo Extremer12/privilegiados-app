@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 
 import { supabase } from "@/integrations/supabase/client";
+import { fetchSongsWithProfiles } from "@/services/songService";
 
 import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -43,15 +44,7 @@ const Canciones = () => {
   };
   const { data: songs = [], isLoading: loading, refetch: fetchSongs } = useQuery({
     queryKey: ['songs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("songs")
-        .select("*, creator_profile:profiles!songs_created_by_fkey(full_name, avatar_url)")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as Song[];
-    },
+    queryFn: () => fetchSongsWithProfiles(),
     enabled: !!user,
   });
 
