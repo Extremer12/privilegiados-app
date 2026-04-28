@@ -47,6 +47,21 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key: string
+          value: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           author_id: string
@@ -112,6 +127,35 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      favorite_songs: {
+        Row: {
+          created_at: string
+          id: string
+          song_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          song_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          song_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_songs_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       forum_posts: {
         Row: {
@@ -209,6 +253,48 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "live_comments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_session_participants: {
+        Row: {
+          created_at: string | null
+          id: string
+          role_in_service: string | null
+          session_id: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role_in_service?: string | null
+          session_id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role_in_service?: string | null
+          session_id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_session_participants_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "live_sessions"
@@ -360,46 +446,245 @@ export type Database = {
         }
         Relationships: []
       }
-      service_sections: {
+      service_feedback: {
         Row: {
-          assigned_person: string | null
-          bible_verse: string | null
+          comment: string | null
           created_at: string | null
           id: string
-          notes: string | null
-          section_order: number
-          section_type: string
-          setlist_id: string
-          title: string
+          rating: number
+          service_id: string | null
+          user_id: string | null
         }
         Insert: {
-          assigned_person?: string | null
-          bible_verse?: string | null
+          comment?: string | null
           created_at?: string | null
           id?: string
-          notes?: string | null
-          section_order: number
-          section_type: string
-          setlist_id: string
-          title: string
+          rating: number
+          service_id?: string | null
+          user_id?: string | null
         }
         Update: {
-          assigned_person?: string | null
-          bible_verse?: string | null
+          comment?: string | null
           created_at?: string | null
           id?: string
-          notes?: string | null
-          section_order?: number
-          section_type?: string
-          setlist_id?: string
-          title?: string
+          rating?: number
+          service_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "service_sections_setlist_id_fkey"
+            foreignKeyName: "service_feedback_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "setlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_participants: {
+        Row: {
+          created_at: string | null
+          id: string
+          participant_name: string
+          role_in_service: string
+          service_report_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          participant_name: string
+          role_in_service?: string
+          service_report_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          participant_name?: string
+          role_in_service?: string
+          service_report_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_participants_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
+            referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          rating: number
+          service_report_id: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating: number
+          service_report_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number
+          service_report_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_ratings_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
+            referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_reports: {
+        Row: {
+          attendance_count: number | null
+          created_at: string | null
+          duration_minutes: number | null
+          finalized_by: string
+          id: string
+          live_session_id: string | null
+          notes: string | null
+          service_date: string
+          setlist_id: string
+        }
+        Insert: {
+          attendance_count?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          finalized_by: string
+          id?: string
+          live_session_id?: string | null
+          notes?: string | null
+          service_date: string
+          setlist_id: string
+        }
+        Update: {
+          attendance_count?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          finalized_by?: string
+          id?: string
+          live_session_id?: string | null
+          notes?: string | null
+          service_date?: string
+          setlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_reports_live_session_id_fkey"
+            columns: ["live_session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_reports_setlist_id_fkey"
             columns: ["setlist_id"]
             isOneToOne: false
             referencedRelation: "setlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_songs: {
+        Row: {
+          created_at: string | null
+          id: string
+          key_played: string | null
+          position: number
+          service_report_id: string
+          song_id: string
+          was_improvised: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key_played?: string | null
+          position?: number
+          service_report_id: string
+          song_id: string
+          was_improvised?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key_played?: string | null
+          position?: number
+          service_report_id?: string
+          song_id?: string
+          was_improvised?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_songs_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
+            referencedRelation: "service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_songs_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      setlist_participants: {
+        Row: {
+          created_at: string | null
+          id: string
+          participant_name: string | null
+          role_in_service: string | null
+          setlist_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          participant_name?: string | null
+          role_in_service?: string | null
+          setlist_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          participant_name?: string | null
+          role_in_service?: string | null
+          setlist_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setlist_participants_setlist_id_fkey"
+            columns: ["setlist_id"]
+            isOneToOne: false
+            referencedRelation: "setlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "setlist_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -463,6 +748,7 @@ export type Database = {
           event_id: string | null
           id: string
           preacher: string | null
+          sections_config: Json | null
           service_date: string
           service_director: string | null
           status: string | null
@@ -477,6 +763,7 @@ export type Database = {
           event_id?: string | null
           id?: string
           preacher?: string | null
+          sections_config?: Json | null
           service_date: string
           service_director?: string | null
           status?: string | null
@@ -491,6 +778,7 @@ export type Database = {
           event_id?: string | null
           id?: string
           preacher?: string | null
+          sections_config?: Json | null
           service_date?: string
           service_director?: string | null
           status?: string | null
@@ -543,36 +831,42 @@ export type Database = {
       songs: {
         Row: {
           audio_url: string | null
+          author: string | null
           category: Database["public"]["Enums"]["song_category"]
           chords: string | null
           created_at: string | null
           created_by: string | null
           id: string
           lyrics: string | null
+          status: string | null
           title: string
           updated_at: string | null
           youtube_url: string | null
         }
         Insert: {
           audio_url?: string | null
+          author?: string | null
           category?: Database["public"]["Enums"]["song_category"]
           chords?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
           lyrics?: string | null
+          status?: string | null
           title: string
           updated_at?: string | null
           youtube_url?: string | null
         }
         Update: {
           audio_url?: string | null
+          author?: string | null
           category?: Database["public"]["Enums"]["song_category"]
           chords?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
           lyrics?: string | null
+          status?: string | null
           title?: string
           updated_at?: string | null
           youtube_url?: string | null
@@ -602,6 +896,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bytea_to_text: { Args: { data: string }; Returns: string }
+      delete_user_completely: {
+        Args: { user_id_to_delete: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -609,13 +908,150 @@ export type Database = {
         }
         Returns: boolean
       }
+      http: {
+        Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "http_request"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_delete:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_get:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_head: {
+        Args: { uri: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_header: {
+        Args: { field: string; value: string }
+        Returns: Database["public"]["CompositeTypes"]["http_header"]
+        SetofOptions: {
+          from: "*"
+          to: "http_header"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_list_curlopt: {
+        Args: never
+        Returns: {
+          curlopt: string
+          value: string
+        }[]
+      }
+      http_patch: {
+        Args: { content: string; content_type: string; uri: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_post:
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_put: {
+        Args: { content: string; content_type: string; uri: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      http_reset_curlopt: { Args: never; Returns: boolean }
+      http_set_curlopt: {
+        Args: { curlopt: string; value: string }
+        Returns: boolean
+      }
+      text_to_bytea: { Args: { data: string }; Returns: string }
+      urlencode:
+        | { Args: { data: Json }; Returns: string }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
     }
     Enums: {
       app_role:
         | "admin"
-        | "lider"
-        | "pastor"
-        | "moderador"
         | "vocalista"
         | "guitarrista"
         | "baterista"
@@ -623,11 +1059,30 @@ export type Database = {
         | "bajista"
         | "sonidista"
         | "otro"
+        | "lider"
+        | "pastor"
+        | "moderador"
       event_type: "ensayo" | "presentacion" | "reunion" | "servicio" | "otro"
       song_category: "alabanza" | "adoracion" | "especial" | "otro"
     }
     CompositeTypes: {
-      [_ in never]: never
+      http_header: {
+        field: string | null
+        value: string | null
+      }
+      http_request: {
+        method: unknown
+        uri: string | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+        content_type: string | null
+        content: string | null
+      }
+      http_response: {
+        status: number | null
+        content_type: string | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+        content: string | null
+      }
     }
   }
 }
@@ -754,9 +1209,6 @@ export const Constants = {
     Enums: {
       app_role: [
         "admin",
-        "lider",
-        "pastor",
-        "moderador",
         "vocalista",
         "guitarrista",
         "baterista",
@@ -764,6 +1216,9 @@ export const Constants = {
         "bajista",
         "sonidista",
         "otro",
+        "lider",
+        "pastor",
+        "moderador",
       ],
       event_type: ["ensayo", "presentacion", "reunion", "servicio", "otro"],
       song_category: ["alabanza", "adoracion", "especial", "otro"],
