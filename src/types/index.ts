@@ -117,6 +117,11 @@ export interface Song {
   created_at?: string;
   created_by?: string;
   status?: "approved" | "pending";
+  /** Joined from profiles table via created_by FK */
+  creator_profile?: {
+    full_name: string;
+    avatar_url: string | null;
+  } | null;
 }
 
 // ──────────────────────────────────────────────

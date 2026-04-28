@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import * as liveService from "@/services/liveSessionService";
 import type {
   LiveSession,
@@ -80,10 +80,8 @@ export function useLiveSession(sessionId: string | undefined) {
       setInitialParticipants(participants);
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo cargar la sesión",
-        variant: "destructive",
       });
       navigate("/repertorios");
     } finally {
@@ -134,8 +132,7 @@ export function useLiveSession(sessionId: string | undefined) {
           const newSession = payload.new as LiveSession;
           setSession(newSession);
           if (!newSession.is_active) {
-            toast({
-              title: "Sesión finalizada",
+            toast.success("Sesión finalizada", {
               description: "La sesión en vivo ha terminado",
             });
             navigate("/repertorios");
@@ -235,10 +232,8 @@ export function useLiveSession(sessionId: string | undefined) {
           songs[newPos].songs.id,
         );
       } catch {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "No se pudo cambiar de canción",
-          variant: "destructive",
         });
       }
     },
@@ -273,15 +268,12 @@ export function useLiveSession(sessionId: string | undefined) {
 
       try {
         await liveService.deleteSetlistSong(songId);
-        toast({
-          title: "Canción removida",
+        toast.success("Canción removida", {
           description: "La canción fue removida del repertorio.",
         });
       } catch {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "No se pudo remover la canción.",
-          variant: "destructive",
         });
       }
     },
@@ -305,8 +297,7 @@ export function useLiveSession(sessionId: string | undefined) {
           leaderRating: data.leader_rating,
         });
 
-        toast({
-          title: "🎉 ¡Culto Finalizado!",
+        toast.success("🎉 ¡Culto Finalizado!", {
           description:
             "Se guardaron las estadísticas del servicio exitosamente.",
         });
@@ -315,11 +306,9 @@ export function useLiveSession(sessionId: string | undefined) {
         return true;
       } catch (error) {
         console.error("Error ending session:", error);
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description:
             "No se pudo finalizar la sesión y guardar las estadísticas.",
-          variant: "destructive",
         });
         return false;
       }

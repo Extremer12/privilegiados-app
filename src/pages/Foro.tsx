@@ -13,7 +13,7 @@ import {
   MessageCircle, Send, Paperclip, Loader2, Users, Image as ImageIcon, 
   Smile, Hash, ArrowDown, Sparkles, Wifi, WifiOff
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
@@ -245,10 +245,8 @@ const Foro = () => {
         });
       } else if (status === "CHANNEL_ERROR") {
         setIsConnected(false);
-        toast({
-          title: "Conexión perdida",
+        toast.error("Conexión perdida", {
           description: "Reintentando conectar...",
-          variant: "destructive",
         });
       }
     });
@@ -278,10 +276,8 @@ const Foro = () => {
       }
     },
     onError: (error: any) => {
-      toast({
-        title: "Error al enviar mensaje",
+      toast.error("Error al enviar mensaje", {
         description: error.message,
-        variant: "destructive",
       });
     }
   });
@@ -295,7 +291,7 @@ const Foro = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Mensaje editado" });
+      toast.success("Mensaje editado");
     }
   });
 
@@ -308,7 +304,7 @@ const Foro = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Mensaje eliminado" });
+      toast.success("Mensaje eliminado");
     }
   });
 
@@ -343,10 +339,8 @@ const Foro = () => {
     },
     onSettled: () => setUploading(false),
     onError: (error: any) => {
-      toast({
-        title: "Error al subir archivo",
+      toast.error("Error al subir archivo", {
         description: error.message,
-        variant: "destructive",
       });
     }
   });
@@ -389,19 +383,15 @@ const Foro = () => {
     const isAllowed = allowedTypes.some(type => file.type.startsWith(type));
     
     if (!isAllowed) {
-      toast({
-        title: "Archivo no permitido",
+      toast.error("Archivo no permitido", {
         description: "Solo se permiten PDF, Word, Imágenes y Audios.",
-        variant: "destructive",
       });
       return;
     }
 
     if (file.size > 15 * 1024 * 1024) { // 15MB limit
-      toast({
-        title: "Archivo demasiado pesado",
+      toast.error("Archivo demasiado pesado", {
         description: "El límite es de 15MB.",
-        variant: "destructive",
       });
       return;
     }
@@ -427,10 +417,8 @@ const Foro = () => {
     try {
       await startRecording();
     } catch (error) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo acceder al micrófono",
-        variant: "destructive",
       });
     }
   };

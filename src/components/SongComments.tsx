@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageCircle, Send } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -84,8 +84,7 @@ export const SongComments = ({ songId }: SongCommentsProps) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Comentario agregado",
+      toast.success("Comentario agregado", {
         description: "Tu comentario se ha publicado correctamente",
       });
 
@@ -93,10 +92,8 @@ export const SongComments = ({ songId }: SongCommentsProps) => {
       fetchComments();
     } catch (error) {
       console.error("Error adding comment:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo agregar el comentario",
-        variant: "destructive",
       });
     }
   };

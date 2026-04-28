@@ -10,7 +10,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Search, Users, Music, Mic, Shield, ShieldOff, Edit2, Check, UserCircle, Star, Crown, MessageSquare } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -139,8 +139,7 @@ const Miembros = () => {
       return { success: true };
     },
     onSuccess: () => {
-      toast({
-        title: "Roles actualizados",
+      toast.success("Roles actualizados", {
         description: "Los roles del miembro han sido actualizados correctamente",
       });
       queryClient.invalidateQueries({ queryKey: ['user_roles'] });
@@ -148,10 +147,8 @@ const Miembros = () => {
       setEditingMember(null);
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.message || "No se pudo actualizar los roles",
-        variant: "destructive",
       });
     }
   });
@@ -163,8 +160,7 @@ const Miembros = () => {
       return { success: true };
     },
     onSuccess: () => {
-      toast({
-        title: "Usuario eliminado",
+      toast.success("Usuario eliminado", {
         description: "El usuario ha sido eliminado completamente del sistema.",
       });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
@@ -172,10 +168,8 @@ const Miembros = () => {
       setMemberToDelete(null);
     },
     onError: (error: any) => {
-      toast({
-        title: "Error al eliminar",
+      toast.error("Error al eliminar", {
         description: error.message || "Ocurrió un error inesperado.",
-        variant: "destructive",
       });
       setMemberToDelete(null);
     }

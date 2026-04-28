@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface Comment {
   id: string;
@@ -83,10 +83,8 @@ export const LiveChat = ({
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo enviar el mensaje",
-        variant: "destructive",
       });
     } finally {
       setIsSending(false);

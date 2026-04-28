@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, Upload, ArrowLeft } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -69,10 +69,8 @@ const ManageSong = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > 50 * 1024 * 1024) {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "El archivo de audio debe ser menor a 50MB",
-          variant: "destructive",
         });
         return;
       }
@@ -100,10 +98,8 @@ const ManageSong = () => {
 
       return publicUrl;
     } catch (error: any) {
-      toast({
-        title: "Error al subir audio",
+      toast.error("Error al subir audio", {
         description: error.message,
-        variant: "destructive",
       });
       return null;
     } finally {
@@ -143,8 +139,7 @@ const ManageSong = () => {
 
         if (error) throw error;
 
-        toast({
-          title: "¡Canción actualizada!",
+        toast.success("¡Canción actualizada!", {
           description: "La canción se ha actualizado correctamente",
         });
         queryClient.invalidateQueries({ queryKey: ['song', id] });
@@ -170,13 +165,11 @@ const ManageSong = () => {
         if (newSong) {
           if (initialStatus === 'approved') {
             notificationService.notifyNewSong(formData.title, newSong.id);
-            toast({
-              title: "¡Canción agregada!",
+            toast.success("¡Canción agregada!", {
               description: "La canción se ha agregado correctamente",
             });
           } else {
-            toast({
-              title: "Sugerencia enviada",
+            toast.success("Sugerencia enviada", {
               description: "Tu canción ha sido enviada para revisión de los líderes",
             });
           }
@@ -186,10 +179,8 @@ const ManageSong = () => {
         }
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       setLoading(false);

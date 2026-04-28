@@ -10,8 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Music, ExternalLink, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, Printer, Youtube, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { PresentationMode } from "@/components/PresentationMode";
 import { PrintPreviewMode } from "@/components/PrintPreviewMode";
 import { SongComments } from "@/components/SongComments";
@@ -55,7 +56,7 @@ const SongDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("songs")
-        .select("*")
+        .select("*, creator_profile:profiles!songs_created_by_fkey(full_name, avatar_url)")
         .eq("id", id)
         .maybeSingle();
 
@@ -115,16 +116,13 @@ const SongDetail = () => {
     },
     onSuccess: () => {
       refetchFavorite();
-      toast({
-        title: isFavorite ? "Quitado de favoritos" : "Añadido a favoritos",
+      toast.success(isFavorite ? "Quitado de favoritos" : "Añadido a favoritos", {
         description: isFavorite ? "La canción ya no está en tus favoritos" : "La canción se ha guardado en tus favoritos",
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.message,
-        variant: "destructive",
       });
     }
   });
@@ -141,18 +139,15 @@ const SongDetail = () => {
       return true;
     },
     onSuccess: () => {
-      toast({
-        title: "Canción eliminada",
+      toast.success("Canción eliminada", {
         description: "La canción se ha eliminado correctamente",
       });
       queryClient.invalidateQueries({ queryKey: ['songs'] });
       navigate("/canciones");
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.message,
-        variant: "destructive",
       });
     }
   });
@@ -173,18 +168,15 @@ const SongDetail = () => {
       return true;
     },
     onSuccess: () => {
-      toast({
-        title: "¡Canción aprobada!",
+      toast.success("¡Canción aprobada!", {
         description: "La canción ahora es visible para todos",
       });
       queryClient.invalidateQueries({ queryKey: ['song', id] });
       queryClient.invalidateQueries({ queryKey: ['songs'] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.message,
-        variant: "destructive",
       });
     }
   });
@@ -306,12 +298,26 @@ const SongDetail = () => {
                     <span className="opacity-75">Por</span> {song.author}
                   </p>
                 )}
-                <Badge
-                  variant="outline"
-                  className={`${categoryColors[song.category] || categoryColors.otro} ${!song.author ? 'mt-2' : ''}`}
-                >
-                  {song.category}
-                </Badge>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <Badge
+                    variant="outline"
+                    className={`${categoryColors[song.category] || categoryColors.otro} ${!song.author ? 'mt-2' : ''}`}
+                  >
+                    {song.category}
+                  </Badge>
+                  {song.creator_profile && (
+                    <div className="flex items-center gap-2 mt-2 sm:mt-0 text-sm text-muted-foreground border-l border-white/10 pl-3">
+                      <span>Agregada por</span>
+                      <Avatar className="w-6 h-6 border border-white/10">
+                        <AvatarImage src={song.creator_profile.avatar_url || undefined} />
+                        <AvatarFallback className="text-[10px] bg-white/5">
+                          {song.creator_profile.full_name?.charAt(0) || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium text-foreground">{song.creator_profile.full_name}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

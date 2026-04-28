@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -71,10 +71,8 @@ const Auth = () => {
       await signInWithGoogle();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Ocurrió un error inesperado";
-      toast({
-        title: "Error de autenticación",
+      toast.error("Error de autenticación", {
         description: message,
-        variant: "destructive",
       });
       setLoading(false);
     }

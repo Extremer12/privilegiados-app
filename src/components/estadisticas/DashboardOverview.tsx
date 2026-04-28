@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Users, Music, Star, TrendingUp, AlertCircle, Lightbulb } from "lucide-react";
+import { Users, Music, Star, TrendingUp, AlertCircle, Lightbulb, Trophy } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const DashboardOverview = ({ data }: { data: any }) => {
   const stats = useMemo(() => {
@@ -35,7 +36,24 @@ export const DashboardOverview = ({ data }: { data: any }) => {
     
     const topSong = Object.entries(songCounts).sort((a: any, b: any) => b[1] - a[1])[0] || ["Ninguna", 0];
 
-    return { totalServices, avgRating, avgAttendance, topSong: topSong[0], topSongCount: topSong[1] };
+    // Calculate Top Uploaders
+    const { allSongs } = data;
+    const uploadersMap = (allSongs || []).reduce((acc: any, song: any) => {
+      if (song.profiles) {
+        const name = song.profiles.full_name;
+        if (!acc[name]) {
+          acc[name] = { count: 0, profile: song.profiles };
+        }
+        acc[name].count += 1;
+      }
+      return acc;
+    }, {});
+    
+    const topUploaders = Object.values(uploadersMap)
+      .sort((a: any, b: any) => b.count - a.count)
+      .slice(0, 5); // Top 5
+
+    return { totalServices, avgRating, avgAttendance, topSong: topSong[0], topSongCount: topSong[1], topUploaders };
   }, [data]);
 
   // Generate Insights
@@ -143,6 +161,51 @@ export const DashboardOverview = ({ data }: { data: any }) => {
           </motion.div>
         ))}
       </div>
+
+      {/* Top Uploaders Section */}
+      {stats.topUploaders && stats.topUploaders.length > 0 && (
+        <>
+          <h2 className="text-xl font-bold text-white mt-10 mb-4 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-400" /> Top Contribuidores
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stats.topUploaders.map((uploader: any, i: number) => (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 + (i * 0.1) }}
+                key={uploader.profile.full_name}
+                className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Avatar className="w-10 h-10 border border-white/10">
+                      <AvatarImage src={uploader.profile.avatar_url || undefined} />
+                      <AvatarFallback className="text-[12px] bg-white/5 font-bold">
+                        {uploader.profile.full_name?.charAt(0) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    {i === 0 && (
+                      <div className="absolute -top-2 -right-2 bg-amber-500 rounded-full p-1 border-2 border-[#131722]">
+                        <Trophy className="w-3 h-3 text-[#131722]" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white text-sm">
+                      {uploader.profile.full_name.split(' ')[0]}
+                    </h4>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Music className="w-3 h-3" />
+                      {uploader.count} canciones
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };

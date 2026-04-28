@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, isSameDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Plus, Calendar as CalendarIcon, MapPin, Clock, Trash2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader } from "@/components/ui/loader";
 import { notificationService } from "@/services/notificationService";
 import {
@@ -115,8 +115,7 @@ const Eventos = () => {
       return data;
     },
     onSuccess: (data) => {
-      toast({
-        title: "Evento creado",
+      toast.success("Evento creado", {
         description: "El evento se ha creado exitosamente",
       });
 
@@ -138,20 +137,16 @@ const Eventos = () => {
     },
     onError: (error) => {
       console.error("Error creating event:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo crear el evento",
-        variant: "destructive",
       });
     }
   });
 
   const handleCreateEvent = async () => {
     if (!user || !newEvent.title) {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "El título es requerido",
-        variant: "destructive",
       });
       return;
     }
@@ -173,8 +168,7 @@ const Eventos = () => {
       return id;
     },
     onSuccess: () => {
-      toast({
-        title: "Evento eliminado",
+      toast.success("Evento eliminado", {
         description: "El evento se ha eliminado exitosamente",
       });
       setDeleteEventId(null);
@@ -182,10 +176,8 @@ const Eventos = () => {
     },
     onError: (error: any) => {
       console.error("Error deleting event:", error);
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: error.message || "No se pudo eliminar el evento. Verifica que seas el creador.",
-        variant: "destructive",
       });
     }
   });

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { toast } from "@/hooks/use-toast";
+
 import { supabase } from "@/integrations/supabase/client";
 
 import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp } from "lucide-react";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/EmptyState";
 import { Loader } from "@/components/ui/loader";
 
@@ -45,7 +46,7 @@ const Canciones = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("songs")
-        .select("*")
+        .select("*, creator_profile:profiles!songs_created_by_fkey(full_name, avatar_url)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -309,9 +310,22 @@ const Canciones = () => {
                           </h3>
                           
                           {song.author && (
-                            <p className="text-sm text-white/40 font-medium flex items-center gap-2">
+                            <p className="text-sm text-white/40 font-medium flex items-center gap-2 mb-2">
                               {song.author}
                             </p>
+                          )}
+                          {song.creator_profile && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Avatar className="w-5 h-5 border border-white/10">
+                                <AvatarImage src={song.creator_profile.avatar_url || undefined} />
+                                <AvatarFallback className="text-[8px] bg-white/5">
+                                  {song.creator_profile.full_name?.charAt(0) || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-white/50 truncate max-w-[120px]">
+                                Agregada por {song.creator_profile.full_name.split(' ')[0]}
+                              </span>
+                            </div>
                           )}
                         </div>
                            
