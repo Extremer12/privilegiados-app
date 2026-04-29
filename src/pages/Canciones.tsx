@@ -10,7 +10,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSongsWithProfiles } from "@/services/songService";
 
-import { Plus, Music, Play, ExternalLink, Search, Loader2, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp } from "lucide-react";
+import { Plus, Music, Search, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -159,102 +159,75 @@ const Canciones = () => {
 
   return (
     <>
-      <main className="flex-1 pt-24 pb-20 px-4 safe-top safe-bottom w-full bg-gradient-to-b from-background to-background/50">
+      <main className="flex-1 pt-20 pb-20 px-4 w-full">
         <div className="max-w-7xl mx-auto">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-2"
-            >
-              <div className="flex items-center gap-3 mb-1">
-                <div className="p-2 bg-secondary/20 rounded-xl">
-                  <Music className="w-6 h-6 text-secondary" />
-                </div>
-                <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-                  Canciones
-                </h1>
-              </div>
-              <p className="text-muted-foreground text-lg font-medium flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+          {/* Header Section - Minimalist */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-white tracking-tight">
+                Canciones
+              </h1>
+              <p className="text-muted-foreground text-sm font-medium">
                 Biblioteca musical del grupo
               </p>
-            </motion.div>
+            </div>
             
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <Button 
+              variant="hero" 
+              size="sm"
+              className="h-10 px-5 rounded-xl shadow-md font-bold text-sm"
+              onClick={() => navigate('/canciones/nueva')}
             >
-              <Button 
-                variant="hero" 
-                size="lg"
-                className="h-14 px-8 rounded-2xl shadow-2xl shadow-secondary/20 font-black text-lg group"
-                onClick={() => navigate('/canciones/nueva')}
-              >
-                <Plus className="w-6 h-6 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-                Nueva Canción
-              </Button>
-            </motion.div>
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Canción
+            </Button>
           </div>
 
-          <div className="mb-10 space-y-6">
-            {/* Search Bar - Premium Style */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative group max-w-2xl"
-            >
-              <div className="absolute inset-0 bg-secondary/5 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-              <div className="relative">
-                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-muted-foreground w-6 h-6 group-focus-within:text-secondary transition-colors" />
-                <Input
-                  type="text"
-                  placeholder="Busca por título, autor o letra..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-14 h-16 text-lg rounded-[1.5rem] bg-white/[0.03] backdrop-blur-md border-white/10 focus-visible:ring-secondary/30 focus-visible:border-secondary/50 transition-all placeholder:text-muted-foreground/50 shadow-inner"
-                />
-              </div>
-            </motion.div>
+          <div className="mb-8 space-y-4">
+            {/* Search Bar - Professional & Subtle */}
+            <div className="relative group max-w-xl">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground/50 w-5 h-5 group-focus-within:text-secondary transition-colors" />
+              <Input
+                type="text"
+                placeholder="Busca por título o autor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-11 h-12 text-base rounded-xl bg-white/[0.02] border-white/10 focus-visible:ring-secondary/20 transition-all placeholder:text-muted-foreground/30"
+              />
+            </div>
 
-            {/* Premium Categories - Custom Pills */}
-            <div className="flex overflow-x-auto no-scrollbar gap-3 pb-4">
+            {/* Professional Categories - Clean Tabs */}
+            <div className="flex overflow-x-auto no-scrollbar gap-2 pb-2">
               {[
-                { id: "all", label: "Todas", icon: Music, color: "secondary" },
-                { id: "favorites", label: "Favoritos", icon: Star, color: "amber" },
-                { id: "alabanza", label: "Alabanza", icon: Headphones, color: "blue" },
-                { id: "adoracion", label: "Adoración", icon: Headphones, color: "purple" },
-                { id: "especial", label: "Especial", icon: Star, color: "amber" },
-                { id: "otro", label: "Otro", icon: Disc3, color: "gray" },
-                ...(isAuthorized ? [{ id: "suggestions", label: "Sugerencias", icon: AlertCircle, color: "emerald" }] : [])
+                { id: "all", label: "Todas" },
+                { id: "favorites", label: "Favoritos" },
+                { id: "alabanza", label: "Alabanza" },
+                { id: "adoracion", label: "Adoración" },
+                { id: "especial", label: "Especial" },
+                { id: "otro", label: "Otro" },
+                ...(isAuthorized ? [{ id: "suggestions", label: "Sugerencias" }] : [])
               ].map((cat) => {
                 const isActive = selectedCategory === cat.id;
                 const hasSuggestions = cat.id === 'suggestions' && songs.filter(s => s.status === 'pending').length > 0;
                 
                 return (
-                  <motion.button
+                  <button
                     key={cat.id}
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`
-                      relative flex items-center gap-3 px-6 py-3.5 rounded-2xl font-bold whitespace-nowrap transition-all duration-300
+                      px-5 py-2 rounded-lg text-sm font-bold transition-all duration-200
                       ${isActive 
-                        ? `bg-secondary text-primary shadow-[0_10px_25px_rgba(251,191,36,0.3)]` 
-                        : `bg-white/[0.03] text-muted-foreground hover:bg-white/10 border border-white/5`}
+                        ? `bg-secondary text-primary shadow-sm` 
+                        : `text-muted-foreground hover:text-white hover:bg-white/5 border border-transparent`}
                     `}
                   >
-                    <cat.icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
-                    {cat.label}
-                    {hasSuggestions && (
-                      <span className="w-5 h-5 bg-emerald-500 text-white rounded-full text-[10px] flex items-center justify-center animate-bounce shadow-lg">
-                        {songs.filter(s => s.status === 'pending').length}
-                      </span>
-                    )}
-                  </motion.button>
+                    <span className="flex items-center gap-2">
+                      {cat.label}
+                      {hasSuggestions && (
+                        <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                      )}
+                    </span>
+                  </button>
                 );
               })}
             </div>
