@@ -82,35 +82,44 @@ export const ServiceFeedbackDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative z-10 py-8 space-y-8">
+        <div className="relative z-10 py-6 space-y-8">
           {/* Star Rating */}
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onMouseEnter={() => setHoveredRating(star)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  onClick={() => handleRating(star)}
-                  className="p-1 transition-all duration-300 transform hover:scale-125 active:scale-95"
-                >
-                  <Star 
-                    className={`w-10 h-10 transition-all duration-300 ${
-                      (hoveredRating || rating) >= star 
-                        ? 'text-secondary fill-secondary drop-shadow-[0_0_8px_rgba(var(--secondary-rgb),0.5)]' 
-                        : 'text-muted-foreground/30 fill-transparent'
-                    }`}
-                  />
-                </button>
-              ))}
+          <div className="flex flex-col items-center gap-5">
+            <div className="flex gap-1 sm:gap-2 p-4 rounded-3xl bg-black/20 border border-white/5 backdrop-blur-sm shadow-inner">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const isActive = (hoveredRating || rating) >= star;
+                return (
+                  <button
+                    key={star}
+                    onMouseEnter={() => setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    onClick={() => handleRating(star)}
+                    className="p-2 transition-all duration-300 transform hover:scale-110 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-secondary rounded-full"
+                  >
+                    <Star 
+                      className={`w-10 h-10 sm:w-12 sm:h-12 transition-all duration-500 ${
+                        isActive 
+                          ? 'text-secondary fill-secondary drop-shadow-[0_0_15px_rgba(251,191,36,0.6)] scale-110' 
+                          : 'text-muted-foreground/20 fill-transparent hover:text-muted-foreground/40'
+                      }`}
+                    />
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-xs font-black uppercase tracking-widest text-secondary/60 h-4">
-              {rating === 1 && "Pudo ser mejor"}
-              {rating === 2 && "Regular"}
-              {rating === 3 && "Bueno"}
-              {rating === 4 && "Muy Bueno"}
-              {rating === 5 && "¡Excelente / Gloria a Dios!"}
-            </p>
+            
+            {/* Dynamic Label */}
+            <div className="h-8 flex items-center justify-center">
+              <p className={`text-sm sm:text-base font-black uppercase tracking-widest transition-all duration-300 ${
+                rating > 0 || hoveredRating > 0 ? 'text-secondary/90 scale-100 opacity-100' : 'scale-95 opacity-0'
+              }`}>
+                {(hoveredRating || rating) === 1 && "Pudo ser mejor"}
+                {(hoveredRating || rating) === 2 && "Regular"}
+                {(hoveredRating || rating) === 3 && "Bueno"}
+                {(hoveredRating || rating) === 4 && "Muy Bueno"}
+                {(hoveredRating || rating) === 5 && "¡Excelente / Gloria a Dios!"}
+              </p>
+            </div>
           </div>
 
           {/* Comment */}

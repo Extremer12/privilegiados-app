@@ -5,28 +5,42 @@ import { Badge } from "@/components/ui/badge";
 
 export const MembersParticipation = ({ data }: { data: any }) => {
   const members = useMemo(() => {
-    const { participants, reports } = data;
+    const { participants, reports, allSongs = [] } = data;
     const totalCultos = reports.length || 1;
     
-    // Group by member name
-    const grouped = participants.reduce((acc: any, p: any) => {
+    const grouped: Record<string, any> = {};
+
+    // Group by service participation
+    participants.forEach((p: any) => {
       const name = p.participant_name.trim();
-      if (!acc[name]) {
-        acc[name] = { count: 0, roles: new Set() };
+      if (!grouped[name]) {
+        grouped[name] = { count: 0, roles: new Set(), songsAdded: 0 };
       }
-      acc[name].count += 1;
-      acc[name].roles.add(p.role_in_service);
-      return acc;
-    }, {});
+      grouped[name].count += 1;
+      grouped[name].roles.add(p.role_in_service);
+    });
+
+    // Group by songs added
+    allSongs.forEach((song: any) => {
+      const name = song.creator_profile?.full_name?.trim();
+      if (name) {
+        if (!grouped[name]) {
+          grouped[name] = { count: 0, roles: new Set(), songsAdded: 0 };
+        }
+        grouped[name].songsAdded += 1;
+      }
+    });
 
     const ranked = Object.entries(grouped)
       .map(([name, info]: [string, any]) => ({
         name,
         count: info.count,
+        songsAdded: info.songsAdded,
         roles: Array.from(info.roles) as string[],
         percentage: Math.round((info.count / totalCultos) * 100)
       }))
-      .sort((a, b) => b.count - a.count);
+      // Sort primarily by cultos count, secondarily by songs added
+      .sort((a, b) => b.count - a.count || b.songsAdded - a.songsAdded);
 
     return ranked;
   }, [data]);
@@ -73,9 +87,17 @@ export const MembersParticipation = ({ data }: { data: any }) => {
               </div>
             </div>
             
-            <div className="text-right">
-              <p className="text-xl font-black text-white">{member.count}</p>
-              <p className="text-xs text-muted-foreground">cultos</p>
+            <div className="flex gap-4 text-right">
+              {member.songsAdded > 0 && (
+                <div className="flex flex-col items-center justify-center">
+                  <p className="text-xl font-black text-emerald-400">{member.songsAdded}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-emerald-400/70">Canciones</p>
+                </div>
+              )}
+              <div className="flex flex-col items-center justify-center border-l border-white/10 pl-4">
+                <p className="text-xl font-black text-white">{member.count}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Cultos</p>
+              </div>
             </div>
           </motion.div>
         ))}

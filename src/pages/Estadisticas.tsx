@@ -62,7 +62,7 @@ const Estadisticas = () => {
       // 4. Fetch all available songs to find the ones never played and get top uploaders
       const { data: allSongs } = await supabase
         .from("songs")
-        .select("id, title, category, profiles!songs_created_by_fkey(full_name, avatar_url)");
+        .select("id, title, category, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)");
 
       return {
         reports: reports || [],

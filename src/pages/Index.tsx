@@ -11,7 +11,7 @@ import {
   CalendarDays, Bell, Clock,
   MapPin, AlertCircle, Info, AlertTriangle, Zap, Star, MessageSquare
 } from "lucide-react";
-import { format, formatDistanceToNow, isAfter, isBefore, addDays, subDays } from "date-fns";
+import { format, formatDistanceToNow, isAfter, isBefore, addDays, subDays, subHours } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
@@ -62,13 +62,13 @@ const Index = () => {
   const { data: pendingFeedback = [], isLoading: loadingFeedback } = useQuery({
     queryKey: ['pending_feedback', user?.id],
     queryFn: async () => {
-      // 1. Get completed setlists from the last 7 days
-      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+      // 1. Get completed setlists from the last 24 hours
+      const twentyFourHoursAgo = subHours(new Date(), 24).toISOString();
       const { data: setlists, error: setlistsError } = await supabase
         .from('setlists')
         .select('id, title, service_date')
         .eq('status', 'completed')
-        .gte('service_date', sevenDaysAgo)
+        .gte('service_date', twentyFourHoursAgo)
         .order('service_date', { ascending: false });
 
       if (setlistsError) throw setlistsError;

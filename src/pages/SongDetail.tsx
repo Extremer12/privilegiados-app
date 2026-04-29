@@ -272,40 +272,41 @@ const SongDetail = () => {
           )}
 
           <Card className="p-6 md:p-8 card-gradient border-secondary/20 mb-6">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="w-16 h-16 rounded-xl bg-secondary/20 flex items-center justify-center flex-shrink-0">
-                <Music className="w-8 h-8 text-secondary" aria-hidden="true" />
+            <div className="flex flex-col gap-4 mb-8">
+              <div className="flex items-center gap-3">
+                <Badge
+                  variant="outline"
+                  className={`${categoryColors[song.category] || categoryColors.otro} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider`}
+                >
+                  {song.category}
+                </Badge>
               </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 break-words">
+              
+              <div>
+                <h1 className="text-3xl md:text-5xl font-black text-foreground mb-2 break-words tracking-tight">
                   {song.title}
                 </h1>
                 {song.author && (
-                  <p className="text-muted-foreground font-medium mb-3 flex items-center gap-1.5">
-                    <span className="opacity-75">Por</span> {song.author}
+                  <p className="text-xl text-muted-foreground font-medium">
+                    Por <span className="text-foreground">{song.author}</span>
                   </p>
                 )}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <Badge
-                    variant="outline"
-                    className={`${categoryColors[song.category] || categoryColors.otro} ${!song.author ? 'mt-2' : ''}`}
-                  >
-                    {song.category}
-                  </Badge>
-                  {song.creator_profile && (
-                    <div className="flex items-center gap-2 mt-2 sm:mt-0 text-sm text-muted-foreground border-l border-white/10 pl-3">
-                      <span>Agregada por</span>
-                      <Avatar className="w-6 h-6 border border-white/10">
-                        <AvatarImage src={song.creator_profile.avatar_url || undefined} />
-                        <AvatarFallback className="text-[10px] bg-white/5">
-                          {song.creator_profile.full_name?.charAt(0) || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium text-foreground">{song.creator_profile.full_name}</span>
-                    </div>
-                  )}
-                </div>
               </div>
+
+              {song.creator_profile && (
+                <div className="flex items-center gap-3 mt-2 pt-4 border-t border-white/5">
+                  <Avatar className="w-8 h-8 border border-white/10">
+                    <AvatarImage src={song.creator_profile.avatar_url || undefined} />
+                    <AvatarFallback className="bg-secondary/20 text-secondary font-bold">
+                      {song.creator_profile.full_name?.charAt(0) || "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Agregada por</span>
+                    <span className="text-sm font-medium text-foreground">{song.creator_profile.full_name}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
