@@ -76,7 +76,8 @@ const Miembros = () => {
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: true });
-      return data as Member[];
+      if (error) throw error;
+      return (data || []) as Member[];
     },
     enabled: !!user,
   });

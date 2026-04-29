@@ -22,7 +22,7 @@ export async function fetchSongsWithProfiles(options?: { orderBy?: string; ascen
   const { orderBy = "created_at", ascending = false } = options || {};
   const { data, error } = await supabase
     .from("songs")
-    .select("*, creator_profile:profiles!songs_created_by_fkey(full_name, avatar_url)")
+    .select("*, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)")
     .order(orderBy, { ascending });
 
   if (error) throw error;
@@ -32,7 +32,7 @@ export async function fetchSongsWithProfiles(options?: { orderBy?: string; ascen
 export async function fetchSongById(id: string) {
   const { data, error } = await supabase
     .from("songs")
-    .select("*, creator_profile:profiles!songs_created_by_fkey(full_name, avatar_url)")
+    .select("*, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)")
     .eq("id", id)
     .maybeSingle();
 
