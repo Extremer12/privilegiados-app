@@ -26,6 +26,7 @@ const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ManageSong = lazy(() => import("./pages/ManageSong"));
 const Estadisticas = lazy(() => import("./pages/Estadisticas"));
+const Premium = lazy(() => import("./pages/Premium"));
 
 // Optimized QueryClient
 const queryClient = new QueryClient({
@@ -89,6 +90,7 @@ const App = () => {
                     <Route path="/miembros" element={<ProtectedRoute><Miembros /></ProtectedRoute>} />
                     <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
                     <Route path="/estadisticas" element={<ProtectedRoute><Estadisticas /></ProtectedRoute>} />
+                    <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
                     <Route path="/repertorios" element={<ProtectedRoute><Repertorios /></ProtectedRoute>} />
                     <Route path="/repertorios/:id" element={<ProtectedRoute><RepertorioDetalle /></ProtectedRoute>} />
                     <Route path="/en-vivo/:id" element={<ProtectedRoute><EnVivo /></ProtectedRoute>} />
