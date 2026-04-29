@@ -159,63 +159,105 @@ const Canciones = () => {
 
   return (
     <>
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
+      <main className="flex-1 pt-24 pb-20 px-4 safe-top safe-bottom w-full bg-gradient-to-b from-background to-background/50">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 tracking-tight">
-                Canciones
-              </h1>
-              <p className="text-muted-foreground font-medium">
-                Biblioteca de música del grupo
-              </p>
-            </div>
-            
-            <Button 
-              variant="hero" 
-              size="lg"
-              className="rounded-2xl shadow-lg shadow-secondary/20"
-              onClick={() => navigate('/canciones/nueva')}
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="space-y-2"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Agregar Canción
-            </Button>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2 bg-secondary/20 rounded-xl">
+                  <Music className="w-6 h-6 text-secondary" />
+                </div>
+                <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
+                  Canciones
+                </h1>
+              </div>
+              <p className="text-muted-foreground text-lg font-medium flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                Biblioteca musical del grupo
+              </p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Button 
+                variant="hero" 
+                size="lg"
+                className="h-14 px-8 rounded-2xl shadow-2xl shadow-secondary/20 font-black text-lg group"
+                onClick={() => navigate('/canciones/nueva')}
+              >
+                <Plus className="w-6 h-6 mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                Nueva Canción
+              </Button>
+            </motion.div>
           </div>
 
-          <div className="mb-8 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="Buscar por título o autor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 h-14 text-base rounded-2xl bg-white/[0.03] border-white/10 focus-visible:ring-secondary/50"
-              />
-            </div>
+          <div className="mb-10 space-y-6">
+            {/* Search Bar - Premium Style */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative group max-w-2xl"
+            >
+              <div className="absolute inset-0 bg-secondary/5 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+              <div className="relative">
+                <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-muted-foreground w-6 h-6 group-focus-within:text-secondary transition-colors" />
+                <Input
+                  type="text"
+                  placeholder="Busca por título, autor o letra..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-14 h-16 text-lg rounded-[1.5rem] bg-white/[0.03] backdrop-blur-md border-white/10 focus-visible:ring-secondary/30 focus-visible:border-secondary/50 transition-all placeholder:text-muted-foreground/50 shadow-inner"
+                />
+              </div>
+            </motion.div>
 
-            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-              <TabsList className="flex overflow-x-auto no-scrollbar bg-transparent p-0 gap-2 h-auto border-none pb-2">
-                <TabsTrigger value="all" className="rounded-full px-6 py-2.5 data-[state=active]:bg-secondary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-secondary/20 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all font-bold">Todas</TabsTrigger>
-                <TabsTrigger value="favorites" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 hover:text-amber-400 transition-all font-bold">
-                  <Star className="w-3.5 h-3.5 mr-1.5" /> Favoritos
-                </TabsTrigger>
-                <TabsTrigger value="alabanza" className="rounded-full px-5 py-2.5 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400 data-[state=active]:border-blue-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-blue-500/10 transition-all font-bold">Alabanza</TabsTrigger>
-                <TabsTrigger value="adoracion" className="rounded-full px-5 py-2.5 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 data-[state=active]:border-purple-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-purple-500/10 transition-all font-bold">Adoración</TabsTrigger>
-                <TabsTrigger value="especial" className="rounded-full px-5 py-2.5 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:border-amber-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-amber-500/10 transition-all font-bold">Especial</TabsTrigger>
-                <TabsTrigger value="otro" className="rounded-full px-5 py-2.5 data-[state=active]:bg-white/10 data-[state=active]:text-white bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-white/5 transition-all font-bold">Otro</TabsTrigger>
-                {isAuthorized && (
-                  <TabsTrigger value="suggestions" className="rounded-full px-5 py-2.5 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/30 bg-white/[0.03] text-muted-foreground border border-white/5 hover:bg-emerald-500/10 transition-all font-bold relative">
-                    Sugerencias
-                    {songs.filter(s => s.status === 'pending').length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full text-[10px] flex items-center justify-center text-white border-2 border-primary animate-pulse">
+            {/* Premium Categories - Custom Pills */}
+            <div className="flex overflow-x-auto no-scrollbar gap-3 pb-4">
+              {[
+                { id: "all", label: "Todas", icon: Music, color: "secondary" },
+                { id: "favorites", label: "Favoritos", icon: Star, color: "amber" },
+                { id: "alabanza", label: "Alabanza", icon: Headphones, color: "blue" },
+                { id: "adoracion", label: "Adoración", icon: Headphones, color: "purple" },
+                { id: "especial", label: "Especial", icon: Star, color: "amber" },
+                { id: "otro", label: "Otro", icon: Disc3, color: "gray" },
+                ...(isAuthorized ? [{ id: "suggestions", label: "Sugerencias", icon: AlertCircle, color: "emerald" }] : [])
+              ].map((cat) => {
+                const isActive = selectedCategory === cat.id;
+                const hasSuggestions = cat.id === 'suggestions' && songs.filter(s => s.status === 'pending').length > 0;
+                
+                return (
+                  <motion.button
+                    key={cat.id}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`
+                      relative flex items-center gap-3 px-6 py-3.5 rounded-2xl font-bold whitespace-nowrap transition-all duration-300
+                      ${isActive 
+                        ? `bg-secondary text-primary shadow-[0_10px_25px_rgba(251,191,36,0.3)]` 
+                        : `bg-white/[0.03] text-muted-foreground hover:bg-white/10 border border-white/5`}
+                    `}
+                  >
+                    <cat.icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                    {cat.label}
+                    {hasSuggestions && (
+                      <span className="w-5 h-5 bg-emerald-500 text-white rounded-full text-[10px] flex items-center justify-center animate-bounce shadow-lg">
                         {songs.filter(s => s.status === 'pending').length}
                       </span>
                     )}
-                  </TabsTrigger>
-                )}
-              </TabsList>
-            </Tabs>
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
 
           {loading ? (
