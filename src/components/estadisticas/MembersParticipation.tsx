@@ -5,27 +5,16 @@ import { Badge } from "@/components/ui/badge";
 
 export const MembersParticipation = ({ data }: { data: any }) => {
   const members = useMemo(() => {
-    const { participants, reports, allSongs = [] } = data;
-    const totalCultos = reports.length || 1;
+    const { allSongs = [] } = data;
     
     const grouped: Record<string, any> = {};
-
-    // Group by service participation
-    participants.forEach((p: any) => {
-      const name = p.participant_name.trim();
-      if (!grouped[name]) {
-        grouped[name] = { count: 0, roles: new Set(), songsAdded: 0 };
-      }
-      grouped[name].count += 1;
-      grouped[name].roles.add(p.role_in_service);
-    });
 
     // Group by songs added
     allSongs.forEach((song: any) => {
       const name = song.creator_profile?.full_name?.trim();
       if (name) {
         if (!grouped[name]) {
-          grouped[name] = { count: 0, roles: new Set(), songsAdded: 0 };
+          grouped[name] = { songsAdded: 0, avatar: song.creator_profile.avatar_url };
         }
         grouped[name].songsAdded += 1;
       }
@@ -34,13 +23,10 @@ export const MembersParticipation = ({ data }: { data: any }) => {
     const ranked = Object.entries(grouped)
       .map(([name, info]: [string, any]) => ({
         name,
-        count: info.count,
         songsAdded: info.songsAdded,
-        roles: Array.from(info.roles) as string[],
-        percentage: Math.round((info.count / totalCultos) * 100)
+        avatar: info.avatar
       }))
-      // Sort primarily by cultos count, secondarily by songs added
-      .sort((a, b) => b.count - a.count || b.songsAdded - a.songsAdded);
+      .sort((a, b) => b.songsAdded - a.songsAdded);
 
     return ranked;
   }, [data]);
@@ -52,58 +38,54 @@ export const MembersParticipation = ({ data }: { data: any }) => {
     }}>
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-500/20 rounded-xl">
-            <Users className="w-5 h-5 text-emerald-400" />
+          <div className="p-2 bg-secondary/20 rounded-xl">
+            <Award className="w-5 h-5 text-secondary" />
           </div>
-          <h2 className="text-xl font-bold text-white">Participación por Miembro</h2>
+          <h2 className="text-xl font-bold text-white">Contribución de Canciones</h2>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {members.map((member, i) => (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
             key={member.name}
-            className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-colors"
+            className="p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-secondary/5"
           >
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary/40 to-secondary/10 flex items-center justify-center font-bold text-secondary border border-secondary/20">
-                {member.name.substring(0, 1).toUpperCase()}
+              <div className="relative">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary/40 to-secondary/10 flex items-center justify-center font-bold text-secondary border border-secondary/20 overflow-hidden shadow-lg">
+                  {member.avatar ? (
+                    <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                  ) : (
+                    member.name.substring(0, 1).toUpperCase()
+                  )}
+                </div>
+                {i < 3 && (
+                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[10px] font-black text-primary shadow-lg border border-primary/20">
+                    {i + 1}
+                  </div>
+                )}
               </div>
               <div>
-                <h3 className="font-bold text-white flex items-center gap-2">
+                <h3 className="font-bold text-white text-lg">
                   {member.name}
-                  {i === 0 && <Award className="w-4 h-4 text-amber-400" />}
                 </h3>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {member.roles.map(role => (
-                    <Badge key={role} variant="outline" className="text-[10px] bg-black/20 border-white/10">
-                      {role}
-                    </Badge>
-                  ))}
-                </div>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-60">Colaborador</p>
               </div>
             </div>
             
-            <div className="flex gap-4 text-right">
-              {member.songsAdded > 0 && (
-                <div className="flex flex-col items-center justify-center">
-                  <p className="text-xl font-black text-emerald-400">{member.songsAdded}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-emerald-400/70">Canciones</p>
-                </div>
-              )}
-              <div className="flex flex-col items-center justify-center border-l border-white/10 pl-4">
-                <p className="text-xl font-black text-white">{member.count}</p>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Cultos</p>
-              </div>
+            <div className="text-right">
+              <p className="text-3xl font-black text-secondary tracking-tighter">{member.songsAdded}</p>
+              <p className="text-[10px] uppercase tracking-tighter text-muted-foreground font-black">Canciones</p>
             </div>
           </motion.div>
         ))}
         {members.length === 0 && (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
-            Aún no hay miembros registrados en los cultos finalizados.
+          <div className="col-span-full text-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
+            <p className="text-muted-foreground font-medium">Aún no hay registros de canciones agregadas.</p>
           </div>
         )}
       </div>
