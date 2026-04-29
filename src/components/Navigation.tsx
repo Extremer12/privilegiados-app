@@ -2,16 +2,28 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
-import { Menu, X, User, Home, Music, ListMusic, MessageCircle, Users, CalendarDays, BarChart3, ChevronRight, Diamond } from "lucide-react";
+import { Menu, X, User, Home, Music, ListMusic, MessageCircle, Users, CalendarDays, BarChart3, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalSearch } from "./GlobalSearch";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { Switch } from "./ui/switch";
+import { Bell, BellOff } from "lucide-react";
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isSupported, isSubscribed, subscribe, unsubscribe, loading } = usePushNotifications();
+
+  const handleNotificationToggle = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
+    } else {
+      await subscribe();
+    }
+  };
 
   const navLinks = [
     { name: "Inicio", path: "/", icon: Home },
@@ -19,7 +31,6 @@ export const Navigation = () => {
     { name: "Repertorios", path: "/repertorios", icon: ListMusic },
     { name: "Foro", path: "/foro", icon: MessageCircle },
     { name: "Miembros", path: "/miembros", icon: Users },
-    { name: "Premium", path: "/premium", icon: Diamond },
     { name: "Estadísticas", path: "/estadisticas", icon: BarChart3 },
     { name: "Eventos", path: "/eventos", icon: CalendarDays },
   ];
@@ -245,11 +256,23 @@ export const Navigation = () => {
             {/* Divider */}
             <div className="my-6 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
 
-            {/* Notifications */}
-            {user && (
-              <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.03] mb-4">
-                <span className="text-sm font-semibold text-muted-foreground">Notificaciones</span>
-                <NotificationBell />
+            {/* Notifications Toggle - Mobile Native */}
+            {user && isSupported && (
+              <div className="flex items-center justify-between px-5 py-4 rounded-2xl bg-white/[0.03] mb-4 border border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isSubscribed ? "bg-secondary/20" : "bg-white/5"}`}>
+                    {isSubscribed ? <Bell className="w-5 h-5 text-secondary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-foreground block">Notificaciones</span>
+                    <span className="text-[10px] text-muted-foreground font-medium">{isSubscribed ? "Activadas" : "Desactivadas"}</span>
+                  </div>
+                </div>
+                <Switch 
+                  checked={isSubscribed} 
+                  onCheckedChange={handleNotificationToggle}
+                  disabled={loading}
+                />
               </div>
             )}
 

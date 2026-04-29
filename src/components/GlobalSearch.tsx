@@ -81,34 +81,34 @@ export const GlobalSearch = () => {
 
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4">
+          <div className="fixed inset-0 z-[100] flex items-start justify-center sm:pt-[10vh]">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
             />
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
-              className="relative w-full max-w-2xl bg-neutral-900/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden shadow-secondary/10"
+              className="relative w-full h-full sm:h-auto sm:max-w-2xl bg-[#0d1117] sm:bg-neutral-900/90 sm:backdrop-blur-2xl border-x-0 sm:border border-white/10 sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col"
             >
-              <div className="p-4 border-b border-white/5 flex items-center gap-4">
-                <Search className="w-5 h-5 text-secondary" />
+              <div className="p-4 border-b border-white/5 flex items-center gap-3">
+                <Search className="w-5 h-5 text-secondary shrink-0" />
                 <input
                   ref={inputRef}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Busca canciones, repertorios o miembros..."
-                  className="flex-1 bg-transparent border-none outline-none text-lg text-foreground placeholder:text-muted-foreground"
+                  placeholder="Busca canciones, repertorios..."
+                  className="flex-1 bg-transparent border-none outline-none text-base text-foreground placeholder:text-muted-foreground/50"
                 />
-                {isLoading && <Loader2 className="w-5 h-5 animate-spin text-secondary" />}
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin text-secondary shrink-0" />}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-xl hover:bg-white/5 text-muted-foreground transition-colors"
+                  className="p-2 rounded-lg bg-white/5 text-muted-foreground transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -187,7 +187,7 @@ export const GlobalSearch = () => {
                 )}
               </div>
               
-              <div className="p-4 border-t border-white/5 bg-white/[0.02] flex items-center justify-between text-[10px] text-muted-foreground font-medium px-6">
+              <div className="hidden sm:flex p-4 border-t border-white/5 bg-white/[0.02] items-center justify-between text-[10px] text-muted-foreground font-medium px-6">
                 <div className="flex gap-4">
                   <span className="flex items-center gap-1"><span className="px-1 py-0.5 rounded bg-black/40 border border-white/10 text-foreground">↑↓</span> Navegar</span>
                   <span className="flex items-center gap-1"><span className="px-1 py-0.5 rounded bg-black/40 border border-white/10 text-foreground">Enter</span> Abrir</span>
