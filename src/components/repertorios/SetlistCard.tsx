@@ -154,8 +154,14 @@ export function SetlistCard({
             
             <Button
               onClick={onStartLive}
-              disabled={isCompleted}
-              className={`flex-[1.2] h-14 rounded-2xl bg-secondary text-primary-foreground hover:opacity-90 font-black text-sm shadow-xl shadow-secondary/20 transition-all active:scale-95 ${isCompleted ? 'bg-muted text-muted-foreground shadow-none' : ''}`}
+              disabled={isCompleted || songsCount === 0}
+              className={`flex-[1.2] h-14 rounded-2xl bg-secondary text-primary-foreground font-black text-sm shadow-xl transition-all active:scale-95 ${
+                isCompleted 
+                  ? 'bg-muted text-muted-foreground shadow-none' 
+                  : songsCount === 0 
+                    ? 'opacity-50 cursor-not-allowed shadow-none' 
+                    : 'hover:opacity-90 shadow-secondary/20'
+              }`}
             >
               <Play className="w-5 h-5 mr-2 fill-current" />
               {isCompleted ? 'FINALIZADO' : 'INICIAR VIVO'}

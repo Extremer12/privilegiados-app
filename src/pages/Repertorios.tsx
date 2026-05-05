@@ -56,11 +56,13 @@ const Repertorios = () => {
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [setlistToDelete, setSetlistToDelete] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   const { data: setlists = [], isLoading: loading } = useQuery({
-    queryKey: ['setlists'],
+    queryKey: ['setlists', activeTab, page],
     queryFn: async () => {
-      const { data: setlistsData, error } = await supabase
+      let query = supabase
         .from('setlists')
         .select(`
           *,
@@ -68,7 +70,13 @@ const Repertorios = () => {
           service_feedback (rating)
         `)
         .order('service_date', { ascending: false })
-        .limit(100);
+        .limit(page * ITEMS_PER_PAGE);
+
+      if (activeTab !== 'all') {
+        query = query.eq('status', activeTab);
+      }
+
+      const { data: setlistsData, error } = await query;
 
       if (error) throw error;
 
@@ -171,10 +179,8 @@ const Repertorios = () => {
     }
   };
 
-  const filteredSetlists = setlists.filter(setlist => {
-    if (activeTab === 'all') return true;
-    return setlist.status === activeTab;
-  });
+  // setlists ya están filtrados por el servidor según el tab activo
+  const filteredSetlists = setlists;
 
   const upcomingSetlists = setlists.filter(
     s => new Date(s.service_date) >= new Date()
@@ -280,7 +286,10 @@ const Repertorios = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setPage(1);
+                  }}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all active:scale-[0.97] ${
                     isActive
                       ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20'
@@ -351,6 +360,20 @@ const Repertorios = () => {
               </AnimatePresence>
             </motion.div>
           )}
+
+          {/* Load More Button */}
+          {!loading && filteredSetlists.length >= page * ITEMS_PER_PAGE && (
+            <div className="mt-8 flex justify-center">
+              <Button 
+                variant="outline" 
+                onClick={() => setPage(p => p + 1)}
+                className="rounded-xl border-white/10 hover:bg-white/5 font-bold px-8"
+              >
+                Cargar más
+              </Button>
+            </div>
+          )}
+
         </div>
       </main>
 

@@ -389,8 +389,14 @@ const RepertorioDetalle = () => {
                     </Button>
                     <Button 
                       onClick={handleStartLive}
-                      disabled={setlist.status === 'completed'}
-                      className={`h-11 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm shadow-lg shadow-secondary/20 active:scale-[0.97] transition-all ${setlist.status === 'completed' ? 'bg-muted text-muted-foreground shadow-none' : ''}`}
+                      disabled={setlist.status === 'completed' || songs.length === 0}
+                      className={`h-11 px-6 rounded-xl bg-secondary text-primary-foreground font-bold text-sm shadow-lg active:scale-[0.97] transition-all ${
+                        setlist.status === 'completed' 
+                          ? 'bg-muted text-muted-foreground shadow-none' 
+                          : songs.length === 0 
+                            ? 'opacity-50 cursor-not-allowed hover:opacity-50 shadow-none' 
+                            : 'hover:opacity-90 shadow-secondary/20'
+                      }`}
                     >
                       <Play className="h-4 w-4 mr-2" />
                       {setlist.status === 'completed' ? 'Finalizado' : 'En Vivo'}
