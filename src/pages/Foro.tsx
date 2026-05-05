@@ -13,6 +13,7 @@ import {
   Smile, ArrowDown, FolderOpen
 } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/EmptyState";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { AudioRecordingUI } from "@/components/chat/AudioRecordingUI";
@@ -263,20 +264,22 @@ const Foro = () => {
                 <>
                   <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1 relative">
                     {messages.length === 0 ? (
-                      <motion.div className="flex flex-col items-center justify-center h-full text-center" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-secondary/20 to-purple-500/10 flex items-center justify-center mb-6 shadow-xl">
-                          <MessageCircle className="w-12 h-12 text-secondary" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-foreground mb-3">¡Inicia la conversación!</h3>
-                        <p className="text-muted-foreground max-w-xs mb-6">Sé el primero en enviar un mensaje al grupo</p>
-                        <div className="flex gap-2">
-                          {QUICK_REACTIONS.map((emoji) => (
-                            <motion.button key={emoji} className="text-2xl p-2 rounded-xl bg-secondary/10 hover:bg-secondary/20 transition-colors" whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} onClick={() => addEmoji(emoji)}>
-                              {emoji}
-                            </motion.button>
-                          ))}
-                        </div>
-                      </motion.div>
+                      <div className="h-full flex items-center justify-center">
+                        <EmptyState
+                          icon={MessageCircle}
+                          title="¡Inicia la conversación!"
+                          description="Sé el primero en enviar un mensaje al grupo"
+                          action={
+                            <div className="flex gap-2 justify-center mt-4">
+                              {QUICK_REACTIONS.map((emoji) => (
+                                <motion.button key={emoji} className="text-2xl p-2 rounded-xl bg-secondary/10 hover:bg-secondary/20 transition-colors" whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} onClick={() => addEmoji(emoji)}>
+                                  {emoji}
+                                </motion.button>
+                              ))}
+                            </div>
+                          }
+                        />
+                      </div>
                     ) : (
                       <>
                         {hasNextPage && (

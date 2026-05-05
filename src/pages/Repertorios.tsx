@@ -67,7 +67,8 @@ const Repertorios = () => {
           setlist_songs (count),
           service_feedback (rating)
         `)
-        .order('service_date', { ascending: false });
+        .order('service_date', { ascending: false })
+        .limit(100);
 
       if (error) throw error;
 
@@ -107,6 +108,11 @@ const Repertorios = () => {
         return;
       }
 
+      if (setlist.songsCount === 0) {
+        toast.error('El repertorio no tiene canciones. Agrega al menos una canción antes de iniciar.');
+        return;
+      }
+
       const { data: newSession, error } = await supabase
         .from('live_sessions')
         .insert({
@@ -120,6 +126,16 @@ const Repertorios = () => {
         .single();
 
       if (error) throw error;
+      
+      try {
+        await notificationService.notifyAnnouncement(
+          'Culto en vivo iniciado',
+          `El servicio "${setlist.title}" ha comenzado en vivo. ¡Únete ahora!`,
+          'high'
+        );
+      } catch (e) {
+        console.error('Error al enviar notificacion', e);
+      }
       
       navigate(`/en-vivo/${newSession.id}`);
     } catch (error) {

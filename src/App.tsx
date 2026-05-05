@@ -48,17 +48,26 @@ const PageLoader = () => (
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(() => {
-    // Only show splash on first visit per session
-    return !sessionStorage.getItem("splash_shown");
+    const lastVisit = localStorage.getItem("last_visit");
+    if (!lastVisit) return true;
+    
+    // Check if 24 hours have passed
+    const timeDiff = new Date().getTime() - new Date(lastVisit).getTime();
+    const hoursPassed = timeDiff / (1000 * 60 * 60);
+    return hoursPassed > 24;
   });
 
   useEffect(() => {
     if (showSplash) {
       const timer = setTimeout(() => {
         setShowSplash(false);
-        sessionStorage.setItem("splash_shown", "true");
+        localStorage.setItem("last_visit", new Date().toISOString());
       }, 1500);
       return () => clearTimeout(timer);
+    } else {
+      // Still update the timestamp for active users so they don't get the splash screen 
+      // if they just refresh the page frequently
+      localStorage.setItem("last_visit", new Date().toISOString());
     }
   }, [showSplash]);
 

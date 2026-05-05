@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { WifiOff } from "lucide-react";
+import confetti from "canvas-confetti";
 
 // UI Components
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -73,6 +75,18 @@ const EnVivo = () => {
   const [activePanel, setActivePanel] = useState<"songs" | "chat" | "participants" | null>("songs");
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
   
   // Dialog state for adding songs
   const [showAddSong, setShowAddSong] = useState(false);
@@ -88,8 +102,17 @@ const EnVivo = () => {
   const onConfirmEndSession = async (data: any) => {
     setIsEnding(true);
     const success = await handleEndSession(data);
-    if (!success) setIsEnding(false);
-    // If success, hook navigates away
+    if (!success) {
+      setIsEnding(false);
+    } else {
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#FFD700', '#F59E0B', '#3B82F6', '#10B981'],
+        zIndex: 9999
+      });
+    }
   };
 
   if (loading) {
@@ -155,6 +178,20 @@ const EnVivo = () => {
         </div>
 
         {/* Header */}
+        <AnimatePresence>
+          {!isOnline && (
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              className="absolute top-0 left-0 right-0 z-[100] bg-red-500/90 text-white px-4 py-2 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg"
+            >
+              <WifiOff className="w-4 h-4 animate-pulse" />
+              <span className="font-semibold text-sm">Sin conexión a Internet. Reconectando...</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="sticky top-0 z-50 px-4 pt-3 pb-2 max-w-7xl mx-auto">
           <LiveHeader 
             setlistTitle={setlist?.title || "Cargando..."}

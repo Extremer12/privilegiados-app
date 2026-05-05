@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSongById } from "@/services/songService";
-import { ArrowLeft, Music, ExternalLink, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, Printer, Youtube, Star } from "lucide-react";
+import { ArrowLeft, Music, ExternalLink, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, Printer, Youtube, Star, BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -76,6 +76,19 @@ const SongDetail = () => {
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+    enabled: !!id && !!user,
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ['song_stats', id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('setlist_songs')
+        .select('*', { count: 'exact', head: true })
+        .eq('song_id', id);
+      if (error) throw error;
+      return count || 0;
     },
     enabled: !!id && !!user,
   });
@@ -340,6 +353,19 @@ const SongDetail = () => {
                   <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />
                 </Button>
               )}
+            </div>
+
+            {/* Stats section */}
+            <div className="mb-6 flex gap-4">
+              <div className="flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl w-full sm:w-auto">
+                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-secondary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground leading-none">{stats || 0}</p>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mt-1">Veces Tocada</p>
+                </div>
+              </div>
             </div>
 
             {/* YouTube Player */}
