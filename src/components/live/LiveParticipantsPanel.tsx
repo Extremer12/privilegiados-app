@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Users, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Users, CheckCircle2, Clock, XCircle, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { useUserRole } from '@/hooks/useUserRole';
+import { ManageParticipantsDialog } from '@/components/repertorios/ManageParticipantsDialog';
 
 interface ParticipantStatus {
   id: string;
@@ -17,6 +20,8 @@ interface ParticipantStatus {
 
 export function LiveParticipantsPanel({ sessionId }: { sessionId: string }) {
   const [participants, setParticipants] = useState<ParticipantStatus[]>([]);
+  const [manageOpen, setManageOpen] = useState(false);
+  const { isLeader } = useUserRole();
 
   useEffect(() => {
     // 1. Initial fetch
@@ -66,16 +71,29 @@ export function LiveParticipantsPanel({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="bg-black/40 backdrop-blur-md rounded-3xl border border-white/5 p-4 flex flex-col h-full overflow-hidden">
-      <div className="flex items-center gap-3 mb-4 shrink-0">
-        <div className="p-2 bg-secondary/20 rounded-xl">
-          <Users className="w-5 h-5 text-secondary" />
+      <div className="flex items-center justify-between mb-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-secondary/20 rounded-xl">
+            <Users className="w-5 h-5 text-secondary" />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-sm">Equipo Conectado</h3>
+            <p className="text-[10px] uppercase tracking-widest text-secondary/80 font-black">
+              {confirmedCount} / {participants.length} Confirmados
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-white font-bold text-sm">Equipo Conectado</h3>
-          <p className="text-[10px] uppercase tracking-widest text-secondary/80 font-black">
-            {confirmedCount} / {participants.length} Confirmados
-          </p>
-        </div>
+        
+        {isLeader && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setManageOpen(true)}
+            className="rounded-xl bg-white/5 hover:bg-secondary/20 text-white hover:text-secondary transition-all"
+          >
+            <UserPlus className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
       <ScrollArea className="flex-1 -mx-2 px-2">
@@ -84,9 +102,11 @@ export function LiveParticipantsPanel({ sessionId }: { sessionId: string }) {
             <p className="text-xs text-muted-foreground text-center py-4">No hay participantes asignados</p>
           ) : (
             participants.map((p) => (
-              <div key={p.id} className="flex items-center justify-between bg-white/5 border border-white/5 p-2 rounded-2xl">
+              <div key={p.id} className={`flex items-center justify-between bg-white/5 border border-white/5 p-2 rounded-2xl transition-all ${
+                p.status === 'confirmed' ? 'opacity-100' : 'opacity-50 grayscale'
+              }`}>
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8 border border-white/10">
+                  <Avatar className={`h-8 w-8 border ${p.status === 'confirmed' ? 'border-secondary/50' : 'border-white/10'}`}>
                     <AvatarImage src={p.profiles?.avatar_url || undefined} />
                     <AvatarFallback className="bg-secondary/20 text-secondary text-xs font-bold">
                       {p.profiles?.full_name?.charAt(0) || '?'}
@@ -107,6 +127,13 @@ export function LiveParticipantsPanel({ sessionId }: { sessionId: string }) {
           )}
         </div>
       </ScrollArea>
+
+      <ManageParticipantsDialog
+        open={manageOpen}
+        onOpenChange={setManageOpen}
+        type="live_session"
+        targetId={sessionId}
+      />
     </div>
   );
 }

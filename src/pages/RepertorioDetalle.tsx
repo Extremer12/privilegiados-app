@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { ServiceStructureView } from '@/components/repertorios/ServiceStructureView';
 import { AddSongToSetlistDialog } from '@/components/repertorios/AddSongToSetlistDialog';
+import { ManageParticipantsDialog } from '@/components/repertorios/ManageParticipantsDialog';
 import { Setlist, SetlistSong, SECTION_TYPES, SectionType } from '@/components/repertorios/types';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +40,7 @@ const RepertorioDetalle = () => {
   
   const [isEditing, setIsEditing] = useState(false);
   const [addSongDialogOpen, setAddSongDialogOpen] = useState(false);
+  const [manageParticipantsOpen, setManageParticipantsOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState<SectionType>('alabanza');
   const [sections, setSections] = useState<any[]>([]);
   const [printMode, setPrintMode] = useState(false);
@@ -480,11 +482,23 @@ const RepertorioDetalle = () => {
               </div>
 
               {/* Team Participants */}
-              {participants.length > 0 && (
-                <div className="space-y-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
                   <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
                     Ministerio / Equipo
                   </h3>
+                  {isEditing && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setManageParticipantsOpen(true)}
+                      className="h-7 text-xs font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 rounded-lg px-3"
+                    >
+                      <UserPlus className="w-3 h-3 mr-1" /> Editar Equipo
+                    </Button>
+                  )}
+                </div>
+                {participants.length > 0 ? (
                   <div className="flex flex-wrap gap-3">
                     {participants.map((p: any) => (
                       <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/5 border border-white/5">
@@ -502,8 +516,10 @@ const RepertorioDetalle = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No hay participantes asignados</p>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -552,6 +568,15 @@ const RepertorioDetalle = () => {
           />
         )}
       </AnimatePresence>
+      {setlist && (
+        <ManageParticipantsDialog
+          open={manageParticipantsOpen}
+          onOpenChange={setManageParticipantsOpen}
+          type="setlist"
+          targetId={setlist.id}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] })}
+        />
+      )}
     </>
   );
 };
