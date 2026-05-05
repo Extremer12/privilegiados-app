@@ -39,6 +39,8 @@ export function useLiveSession(sessionId: string | undefined) {
   // Ref to track setlist_id for realtime subscriptions (avoids stale closures)
   const setlistIdRef = useRef<string | null>(null);
   const wakeLockRef = useRef<any>(null);
+  // Prevents duplicate navigation when the creator ends the session
+  const isEndingRef = useRef(false);
 
   // ── Derived state ─────────────────────────
   const currentSong = songs[session?.current_position ?? 0] ?? null;
@@ -131,7 +133,9 @@ export function useLiveSession(sessionId: string | undefined) {
         (payload) => {
           const newSession = payload.new as LiveSession;
           setSession(newSession);
-          if (!newSession.is_active) {
+          // Only auto-navigate for non-creators (participants).
+          // The creator already navigates via handleEndSession.
+          if (!newSession.is_active && !isEndingRef.current) {
             toast.success("Sesión finalizada", {
               description: "La sesión en vivo ha terminado",
             });
@@ -282,6 +286,7 @@ export function useLiveSession(sessionId: string | undefined) {
       if (!session || !user || !sessionId) return false;
 
       try {
+        isEndingRef.current = true;
         await liveService.createServiceReport({
           setlistId: session.setlist_id,
           sessionId,
@@ -303,6 +308,7 @@ export function useLiveSession(sessionId: string | undefined) {
         return true;
       } catch (error) {
         console.error("Error ending session:", error);
+        isEndingRef.current = false;
         toast.error("Error", {
           description:
             "No se pudo finalizar la sesión y guardar las estadísticas.",

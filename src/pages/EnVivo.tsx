@@ -13,7 +13,6 @@ import { LiveHeader } from "@/components/live/LiveHeader";
 import { LyricsDisplay } from "@/components/live/LyricsDisplay";
 import { SongListPanel } from "@/components/live/SongListPanel";
 import { LiveChat } from "@/components/live/LiveChat";
-import { VoiceChannel } from "@/components/live/VoiceChannel";
 import { EndSessionDialog } from "@/components/live/EndSessionDialog";
 import { PresentationView } from "@/components/live/PresentationView";
 import { BottomControls } from "@/components/live/BottomControls";
@@ -70,11 +69,8 @@ const EnVivo = () => {
     closePresentationMode,
   } = usePresentationMode();
 
-  // 3. UI View States (Local to this layout)
-  const [showChat, setShowChat] = useState(false);
-  const [showSongList, setShowSongList] = useState(true);
-  const [showVoiceChannel, setShowVoiceChannel] = useState(true);
-  const [showParticipants, setShowParticipants] = useState(false);
+  // 3. UI View States
+  const [activePanel, setActivePanel] = useState<"songs" | "chat" | "participants" | null>("songs");
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   
@@ -82,6 +78,11 @@ const EnVivo = () => {
   const [showAddSong, setShowAddSong] = useState(false);
   const [selectedSection, setSelectedSection] = useState<SectionType>("alabanza");
   const [songToDelete, setSongToDelete] = useState<string | null>(null);
+
+  // Panel toggles — only one panel active at a time on mobile, multiple on desktop
+  const togglePanel = (panel: "songs" | "chat" | "participants") => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
 
   // Handle saving the report and navigating
   const onConfirmEndSession = async (data: any) => {
@@ -125,6 +126,8 @@ const EnVivo = () => {
     );
   }
 
+  const showRightPanel = activePanel !== null;
+
   return (
     <TooltipProvider>
       <motion.div
@@ -137,36 +140,36 @@ const EnVivo = () => {
       >
         {/* Ambient background effects */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <motion.div
+          <div
             className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 rounded-full opacity-30"
             style={{
-              background: "radial-gradient(circle, hsl(48 100% 50% / 0.1) 0%, transparent 70%)",
+              background: "radial-gradient(circle, hsl(48 100% 50% / 0.08) 0%, transparent 70%)",
             }}
-            transition={{ duration: 20, ease: "easeInOut" }}
           />
-          <motion.div
+          <div
             className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 rounded-full opacity-30"
             style={{
-              background: "radial-gradient(circle, hsl(217 91% 60% / 0.05) 0%, transparent 70%)",
+              background: "radial-gradient(circle, hsl(217 91% 60% / 0.04) 0%, transparent 70%)",
             }}
-            transition={{ duration: 15, ease: "easeInOut" }}
           />
         </div>
 
         {/* Header */}
-        <div className="sticky top-0 z-50 px-4 pt-4 pb-2 max-w-7xl mx-auto">
+        <div className="sticky top-0 z-50 px-4 pt-3 pb-2 max-w-7xl mx-auto">
           <LiveHeader 
             setlistTitle={setlist?.title || "Cargando..."}
             sessionStartedAt={session?.started_at}
+            currentPosition={session?.current_position || 0}
+            totalSongs={songs.length}
           />
         </div>
 
         {/* Main Layout Area */}
-        <div className="max-w-7xl mx-auto p-4 flex flex-col md:flex-row gap-6 relative z-10 h-[calc(100vh-140px)]">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-4 relative z-10 h-[calc(100vh-120px)]">
           
           {/* Main Stage (Lyrics) */}
           <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative">
-            <div className="absolute inset-0 flex flex-col pb-[80px]">
+            <div className="absolute inset-0 flex flex-col pb-[72px]">
               <LyricsDisplay
                 currentSong={currentSong}
                 nextSong={nextSong}
@@ -180,40 +183,26 @@ const EnVivo = () => {
             </div>
           </div>
 
-          {/* Right Panels (Song List & Chat & Voice) */}
+          {/* Right Panels — Desktop */}
           <AnimatePresence mode="wait">
-            {(showSongList || showChat || showVoiceChannel || showParticipants) && (
+            {showRightPanel && (
               <motion.div 
                 initial={{ opacity: 0, x: 20, width: 0 }}
-                animate={{ opacity: 1, x: 0, width: "380px" }}
+                animate={{ opacity: 1, x: 0, width: "340px" }}
                 exit={{ opacity: 0, x: 20, width: 0 }}
-                className="hidden md:flex flex-col gap-4 overflow-hidden h-full pb-[80px]"
+                className="hidden md:flex flex-col gap-3 overflow-hidden h-full pb-[72px] shrink-0"
               >
-                {/* Voice Channel */}
-                {showVoiceChannel && session && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="shrink-0"
-                  >
-                    <VoiceChannel sessionId={session.id} />
-                  </motion.div>
-                )}
-
-                {/* Participants Panel */}
-                {showParticipants && session && (
+                {activePanel === "participants" && session && (
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex-1 overflow-hidden max-h-[300px]"
+                    className="flex-1 overflow-hidden"
                   >
                     <LiveParticipantsPanel sessionId={session.id} />
                   </motion.div>
                 )}
 
-                {/* Setlist Panel */}
-                {showSongList && (
+                {activePanel === "songs" && (
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -233,8 +222,7 @@ const EnVivo = () => {
                   </motion.div>
                 )}
 
-                {/* Chat Panel */}
-                {showChat && session && (
+                {activePanel === "chat" && session && (
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -254,43 +242,91 @@ const EnVivo = () => {
           {/* Mobile Overlay Panels */}
           <AnimatePresence>
             <div className="md:hidden">
-              {showSongList && (
+              {activePanel === "songs" && (
                 <motion.div
                   initial={{ opacity: 0, y: "100%" }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: "100%" }}
-                  className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm p-4 pt-20"
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed inset-x-0 bottom-0 top-14 z-40 flex flex-col"
+                  style={{
+                    background: "linear-gradient(145deg, hsl(222 47% 8%) 0%, hsl(222 47% 5%) 100%)",
+                  }}
                 >
-                  <SongListPanel
-                    songs={songs}
-                    currentPosition={session?.current_position || 0}
-                    onSongSelect={(pos) => {
-                      if (isCreator) handleJumpToSong(pos);
-                      setShowSongList(false);
-                    }}
-                    isCreator={isCreator}
-                    onDeleteSong={(id) => setSongToDelete(id)}
-                    onAddSong={(section) => {
-                      setSelectedSection(section as SectionType);
-                      setShowAddSong(true);
-                      setShowSongList(false);
-                    }}
-                  />
+                  {/* Mobile close bar */}
+                  <div className="flex items-center justify-center py-2 shrink-0">
+                    <button
+                      onClick={() => setActivePanel(null)}
+                      className="w-10 h-1 rounded-full bg-white/20"
+                    />
+                  </div>
+                  <div className="flex-1 overflow-hidden px-3 pb-20">
+                    <SongListPanel
+                      songs={songs}
+                      currentPosition={session?.current_position || 0}
+                      onSongSelect={(pos) => {
+                        if (isCreator) handleJumpToSong(pos);
+                        setActivePanel(null);
+                      }}
+                      isCreator={isCreator}
+                      onDeleteSong={(id) => setSongToDelete(id)}
+                      onAddSong={(section) => {
+                        setSelectedSection(section as SectionType);
+                        setShowAddSong(true);
+                        setActivePanel(null);
+                      }}
+                    />
+                  </div>
                 </motion.div>
               )}
 
-              {showChat && session && (
+              {activePanel === "chat" && session && (
                 <motion.div
                   initial={{ opacity: 0, y: "100%" }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: "100%" }}
-                  className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm p-4 pt-20"
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed inset-x-0 bottom-0 top-14 z-40 flex flex-col"
+                  style={{
+                    background: "linear-gradient(145deg, hsl(222 47% 8%) 0%, hsl(222 47% 5%) 100%)",
+                  }}
                 >
-                  <LiveChat 
-                    sessionId={session.id}
-                    comments={comments}
-                    onAddComment={addComment}
-                  />
+                  <div className="flex items-center justify-center py-2 shrink-0">
+                    <button
+                      onClick={() => setActivePanel(null)}
+                      className="w-10 h-1 rounded-full bg-white/20"
+                    />
+                  </div>
+                  <div className="flex-1 overflow-hidden px-3 pb-20">
+                    <LiveChat 
+                      sessionId={session.id}
+                      comments={comments}
+                      onAddComment={addComment}
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {activePanel === "participants" && session && (
+                <motion.div
+                  initial={{ opacity: 0, y: "100%" }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: "100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed inset-x-0 bottom-0 top-14 z-40 flex flex-col"
+                  style={{
+                    background: "linear-gradient(145deg, hsl(222 47% 8%) 0%, hsl(222 47% 5%) 100%)",
+                  }}
+                >
+                  <div className="flex items-center justify-center py-2 shrink-0">
+                    <button
+                      onClick={() => setActivePanel(null)}
+                      className="w-10 h-1 rounded-full bg-white/20"
+                    />
+                  </div>
+                  <div className="flex-1 overflow-hidden px-3 pb-20">
+                    <LiveParticipantsPanel sessionId={session.id} />
+                  </div>
                 </motion.div>
               )}
             </div>
@@ -299,14 +335,12 @@ const EnVivo = () => {
 
         {/* Bottom Controls Bar */}
         <BottomControls
-          showSongList={showSongList}
-          setShowSongList={setShowSongList}
-          showVoiceChannel={showVoiceChannel}
-          setShowVoiceChannel={setShowVoiceChannel}
-          showChat={showChat}
-          setShowChat={setShowChat}
-          showParticipants={showParticipants}
-          setShowParticipants={setShowParticipants}
+          showSongList={activePanel === "songs"}
+          setShowSongList={() => togglePanel("songs")}
+          showChat={activePanel === "chat"}
+          setShowChat={() => togglePanel("chat")}
+          showParticipants={activePanel === "participants"}
+          setShowParticipants={() => togglePanel("participants")}
           commentsCount={comments.length}
           songsCount={songs.length}
           isFullscreen={isFullscreen}

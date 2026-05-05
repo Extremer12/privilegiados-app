@@ -235,7 +235,7 @@ export interface ServiceReportPayload {
 }
 
 export async function createServiceReport(payload: ServiceReportPayload) {
-  // 1. Report
+  // 1. Create service report
   const { data: report, error: reportError } = await supabase
     .from("service_reports")
     .insert({
@@ -254,47 +254,59 @@ export async function createServiceReport(payload: ServiceReportPayload) {
 
   if (reportError) throw reportError;
 
-  // 2. Participants
-  if (payload.participants.length > 0) {
-    const { error } = await supabase.from("service_participants").insert(
-      payload.participants.map((p) => ({
-        service_report_id: report.id,
-        user_id: p.user_id || null,
-        participant_name: p.name,
-        role_in_service: p.role,
-      })),
-    );
-    if (error) throw error;
-  }
-
-  // 3. Songs played
-  const played = payload.songs.filter((s) => s.played);
-  if (played.length > 0) {
-    const { error } = await supabase.from("service_songs").insert(
-      played.map((s, idx) => ({
-        service_report_id: report.id,
-        song_id: s.song_id,
-        position: idx + 1,
-        was_improvised: s.was_improvised,
-      })),
-    );
-    if (error) throw error;
-  }
-
-  // 4. Leader rating
-  if (payload.leaderRating > 0) {
-    await supabase.from("service_ratings").insert({
-      service_report_id: report.id,
-      user_id: payload.userId,
-      rating: payload.leaderRating,
-    });
-  }
-
-  // 5. Deactivate session
+  // 2. CRITICAL: Deactivate session FIRST so the live event stops immediately
+  //    This must happen before optional data writes to prevent the session
+  //    from staying active if any subsequent step fails.
   await deactivateSession(payload.sessionId);
 
-  // 6. Mark setlist as completed
+  // 3. CRITICAL: Mark setlist as completed so it moves to "Cultos terminados"
   await markSetlistCompleted(payload.setlistId);
+
+  // 4. Save participants (non-blocking — we don't throw if this fails)
+  if (payload.participants.length > 0) {
+    try {
+      await supabase.from("service_participants").insert(
+        payload.participants.map((p) => ({
+          service_report_id: report.id,
+          user_id: p.user_id || null,
+          participant_name: p.name,
+          role_in_service: p.role,
+        })),
+      );
+    } catch (err) {
+      console.error("Error saving participants (non-blocking):", err);
+    }
+  }
+
+  // 5. Save songs played (non-blocking)
+  const played = payload.songs.filter((s) => s.played);
+  if (played.length > 0) {
+    try {
+      await supabase.from("service_songs").insert(
+        played.map((s, idx) => ({
+          service_report_id: report.id,
+          song_id: s.song_id,
+          position: idx + 1,
+          was_improvised: s.was_improvised,
+        })),
+      );
+    } catch (err) {
+      console.error("Error saving songs (non-blocking):", err);
+    }
+  }
+
+  // 6. Save leader rating (non-blocking)
+  if (payload.leaderRating > 0) {
+    try {
+      await supabase.from("service_ratings").insert({
+        service_report_id: report.id,
+        user_id: payload.userId,
+        rating: payload.leaderRating,
+      });
+    } catch (err) {
+      console.error("Error saving rating (non-blocking):", err);
+    }
+  }
 
   return report;
 }
