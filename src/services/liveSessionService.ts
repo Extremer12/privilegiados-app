@@ -47,7 +47,7 @@ export async function deactivateSession(sessionId: string) {
     .update({ is_active: false, ended_at: new Date().toISOString() })
     .eq("id", sessionId);
 
-  if (error) throw error;
+  if (error) console.error("Error deactivating session:", error);
 }
 
 // ── Setlist ──────────────────────────────────
@@ -64,10 +64,12 @@ export async function fetchSetlistCompact(setlistId: string) {
 }
 
 export async function markSetlistCompleted(setlistId: string) {
-  await supabase
+  const { error } = await supabase
     .from("setlists")
     .update({ status: "completed" })
     .eq("id", setlistId);
+    
+  if (error) console.error("Error marking setlist completed:", error);
 }
 
 // ── Songs ────────────────────────────────────
@@ -235,7 +237,15 @@ export interface ServiceReportPayload {
 }
 
 export async function createServiceReport(payload: ServiceReportPayload) {
-  // 1. Create service report
+  // 1. CRITICAL: Deactivate session FIRST so the live event stops immediately
+  //    This must happen before optional data writes to prevent the session
+  //    from staying active if any subsequent step fails.
+  await deactivateSession(payload.sessionId);
+
+  // 2. CRITICAL: Mark setlist as completed so it moves to "Cultos terminados"
+  await markSetlistCompleted(payload.setlistId);
+
+  // 3. Create service report
   const { data: report, error: reportError } = await supabase
     .from("service_reports")
     .insert({
@@ -252,18 +262,13 @@ export async function createServiceReport(payload: ServiceReportPayload) {
     .select()
     .single();
 
-  if (reportError) throw reportError;
+  if (reportError) {
+    console.error("Error creating service report:", reportError);
+    return null;
+  }
 
-  // 2. CRITICAL: Deactivate session FIRST so the live event stops immediately
-  //    This must happen before optional data writes to prevent the session
-  //    from staying active if any subsequent step fails.
-  await deactivateSession(payload.sessionId);
-
-  // 3. CRITICAL: Mark setlist as completed so it moves to "Cultos terminados"
-  await markSetlistCompleted(payload.setlistId);
-
-  // 4. Save participants (non-blocking — we don't throw if this fails)
-  if (payload.participants.length > 0) {
+  // 4. Save participants (non-blocking)
+  if (report && payload.participants.length > 0) {
     try {
       await supabase.from("service_participants").insert(
         payload.participants.map((p) => ({
@@ -280,7 +285,7 @@ export async function createServiceReport(payload: ServiceReportPayload) {
 
   // 5. Save songs played (non-blocking)
   const played = payload.songs.filter((s) => s.played);
-  if (played.length > 0) {
+  if (report && played.length > 0) {
     try {
       await supabase.from("service_songs").insert(
         played.map((s, idx) => ({
@@ -296,7 +301,7 @@ export async function createServiceReport(payload: ServiceReportPayload) {
   }
 
   // 6. Save leader rating (non-blocking)
-  if (payload.leaderRating > 0) {
+  if (report && payload.leaderRating > 0) {
     try {
       await supabase.from("service_ratings").insert({
         service_report_id: report.id,
