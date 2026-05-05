@@ -22,9 +22,8 @@ import {
 
 export const ServicesHistory = ({ data }: { data: any }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const { role } = useUserRole();
+  const { isLeader: isAuthorized } = useUserRole();
   const queryClient = useQueryClient();
-  const isAuthorized = ["admin", "lider", "pastor", "moderador"].includes(role || "");
 
   const { reports, songsPlayed, participants, feedback } = data;
 
@@ -179,8 +178,40 @@ export const ServicesHistory = ({ data }: { data: any }) => {
                       </div>
                     </div>
 
-                    {/* Right Column: Participants & Notes */}
                     <div className="space-y-6">
+                      {/* Participant Feedback Section */}
+                      {reportFeedback.length > 0 && (
+                        <div className="space-y-4 bg-secondary/5 p-4 rounded-2xl border border-secondary/10">
+                          <h4 className="font-bold text-secondary flex items-center gap-2 text-sm uppercase tracking-widest">
+                            <MessageSquare className="w-4 h-4" /> Opiniones del Equipo ({reportFeedback.length})
+                          </h4>
+                          <div className="grid gap-3">
+                            {reportFeedback.map((f: any) => (
+                              <div key={f.id} className="bg-black/20 border border-white/5 p-3 rounded-xl">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center text-[10px] font-bold text-secondary">
+                                      {f.profiles?.full_name?.charAt(0) || "?"}
+                                    </div>
+                                    <span className="text-xs font-bold text-white">{f.profiles?.full_name || "Miembro"}</span>
+                                  </div>
+                                  <div className="flex items-center gap-0.5">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star key={i} className={`w-2.5 h-2.5 ${i < f.rating ? 'fill-secondary text-secondary' : 'text-white/5'}`} />
+                                    ))}
+                                  </div>
+                                </div>
+                                {f.comment && (
+                                  <p className="text-xs text-muted-foreground italic leading-relaxed pl-8">
+                                    "{f.comment}"
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="space-y-3">
                         <h4 className="font-semibold text-white/80 flex items-center gap-2 text-sm uppercase tracking-wider">
                           <Users className="w-4 h-4" /> Participantes ({reportParts.length})
@@ -193,7 +224,6 @@ export const ServicesHistory = ({ data }: { data: any }) => {
                           ))}
                         </div>
                       </div>
-
                       {report.notes && (
                         <div className="space-y-2">
                           <h4 className="font-semibold text-white/80 flex items-center gap-2 text-sm uppercase tracking-wider">
@@ -202,34 +232,6 @@ export const ServicesHistory = ({ data }: { data: any }) => {
                           <p className="text-sm text-muted-foreground bg-white/5 p-3 rounded-xl italic">
                             "{report.notes}"
                           </p>
-                        </div>
-                      )}
-
-                      {/* Participant Feedback Section */}
-                      {reportFeedback.length > 0 && (
-                        <div className="space-y-3 pt-2">
-                          <h4 className="font-semibold text-secondary flex items-center gap-2 text-sm uppercase tracking-wider">
-                            <MessageSquare className="w-4 h-4" /> Opiniones del Equipo
-                          </h4>
-                          <div className="space-y-2">
-                            {reportFeedback.map((f: any) => (
-                              <div key={f.id} className="bg-white/5 border border-white/5 p-3 rounded-2xl">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-xs font-bold text-white/70">{f.profiles?.full_name || "Miembro"}</span>
-                                  <div className="flex items-center gap-0.5">
-                                    {[...Array(5)].map((_, i) => (
-                                      <Star key={i} className={`w-2.5 h-2.5 ${i < f.rating ? 'fill-secondary text-secondary' : 'text-white/10'}`} />
-                                    ))}
-                                  </div>
-                                </div>
-                                {f.comment && (
-                                  <p className="text-xs text-muted-foreground italic leading-relaxed">
-                                    "{f.comment}"
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
                         </div>
                       )}
                     </div>
