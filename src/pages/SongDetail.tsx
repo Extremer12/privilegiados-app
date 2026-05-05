@@ -293,6 +293,12 @@ const SongDetail = () => {
                 >
                   {song.category}
                 </Badge>
+                {stats !== undefined && stats > 0 && (
+                  <Badge variant="outline" className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 text-white/70 border-white/10 flex items-center gap-1.5">
+                    <BarChart3 className="w-3 h-3" />
+                    Tocada {stats} {stats === 1 ? 'vez' : 'veces'} en cultos
+                  </Badge>
+                )}
               </div>
               
               <div>
