@@ -2,13 +2,50 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, Star, Users, ChevronDown, ChevronUp, Clock, FileText, Music } from "lucide-react";
+import { CalendarDays, Star, Users, ChevronDown, ChevronUp, Clock, FileText, Music, Trash2, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const ServicesHistory = ({ data }: { data: any }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { role } = useUserRole();
+  const queryClient = useQueryClient();
+  const isAuthorized = ["admin", "lider", "pastor", "moderador"].includes(role || "");
 
-  const { reports, songsPlayed, participants } = data;
+  const { reports, songsPlayed, participants, feedback } = data;
+
+  const deleteMutation = useMutation({
+    mutationFn: async (setlistId: string) => {
+      const { error } = await supabase
+        .from('setlists')
+        .delete()
+        .eq('id', setlistId);
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: () => {
+      toast.success("Culto eliminado permanentemente");
+      queryClient.invalidateQueries({ queryKey: ["service_stats"] });
+    },
+    onError: (error) => {
+      console.error("Error deleting setlist:", error);
+      toast.error("Error al eliminar el culto");
+    }
+  });
 
   const toggleExpand = (id: string) => {
     if (expandedId === id) setExpandedId(null);
@@ -28,8 +65,10 @@ export const ServicesHistory = ({ data }: { data: any }) => {
         const isExpanded = expandedId === report.id;
         const reportSongs = songsPlayed.filter((s: any) => s.service_report_id === report.id);
         const reportParts = participants.filter((p: any) => p.service_report_id === report.id);
-        const avgRating = report.service_ratings?.length > 0 
-          ? report.service_ratings.reduce((a: number, b: any) => a + b.rating, 0) / report.service_ratings.length
+        const reportFeedback = feedback.filter((f: any) => f.service_id === report.setlist_id);
+        
+        const avgRating = reportFeedback.length > 0 
+          ? reportFeedback.reduce((a: number, b: any) => a + b.rating, 0) / reportFeedback.length
           : null;
 
         return (
@@ -73,8 +112,40 @@ export const ServicesHistory = ({ data }: { data: any }) => {
                 ) : (
                   <span className="text-sm text-muted-foreground">Sin valorar</span>
                 )}
-                <div className="text-muted-foreground bg-white/5 p-2 rounded-lg">
-                  {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                
+                <div className="flex items-center gap-2">
+                  {isAuthorized && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button 
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-3xl border-white/10 bg-neutral-900">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-white">¿Estás completamente seguro?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-muted-foreground">
+                            Esta acción eliminará permanentemente este culto del historial y todas sus estadísticas asociadas. No se puede deshacer.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-xl border-white/10 text-white hover:bg-white/5">Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => deleteMutation.mutate(report.setlist_id)}
+                            className="rounded-xl bg-red-500 hover:bg-red-600 text-white border-none"
+                          >
+                            Eliminar definitivamente
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                  <div className="text-muted-foreground bg-white/5 p-2 rounded-lg">
+                    {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  </div>
                 </div>
               </div>
             </div>
@@ -126,11 +197,39 @@ export const ServicesHistory = ({ data }: { data: any }) => {
                       {report.notes && (
                         <div className="space-y-2">
                           <h4 className="font-semibold text-white/80 flex items-center gap-2 text-sm uppercase tracking-wider">
-                            <FileText className="w-4 h-4" /> Observaciones
+                            <FileText className="w-4 h-4" /> Observaciones del Líder
                           </h4>
                           <p className="text-sm text-muted-foreground bg-white/5 p-3 rounded-xl italic">
                             "{report.notes}"
                           </p>
+                        </div>
+                      )}
+
+                      {/* Participant Feedback Section */}
+                      {reportFeedback.length > 0 && (
+                        <div className="space-y-3 pt-2">
+                          <h4 className="font-semibold text-secondary flex items-center gap-2 text-sm uppercase tracking-wider">
+                            <MessageSquare className="w-4 h-4" /> Opiniones del Equipo
+                          </h4>
+                          <div className="space-y-2">
+                            {reportFeedback.map((f: any) => (
+                              <div key={f.id} className="bg-white/5 border border-white/5 p-3 rounded-2xl">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs font-bold text-white/70">{f.profiles?.full_name || "Miembro"}</span>
+                                  <div className="flex items-center gap-0.5">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star key={i} className={`w-2.5 h-2.5 ${i < f.rating ? 'fill-secondary text-secondary' : 'text-white/10'}`} />
+                                    ))}
+                                  </div>
+                                </div>
+                                {f.comment && (
+                                  <p className="text-xs text-muted-foreground italic leading-relaxed">
+                                    "{f.comment}"
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

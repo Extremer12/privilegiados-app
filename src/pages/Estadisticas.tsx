@@ -59,7 +59,15 @@ const Estadisticas = () => {
           service_reports (service_date)
         `);
 
-      // 4. Fetch all available songs to find the ones never played and get top uploaders
+      // 4. Fetch all available feedback
+      const { data: feedback } = await supabase
+        .from("service_feedback")
+        .select(`
+          *,
+          profiles (full_name, avatar_url)
+        `);
+
+      // 5. Fetch all available songs to find the ones never played and get top uploaders
       const { data: allSongs } = await supabase
         .from("songs")
         .select("id, title, category, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)");
@@ -69,6 +77,7 @@ const Estadisticas = () => {
         songsPlayed: songsPlayed || [],
         participants: participants || [],
         allSongs: allSongs || [],
+        feedback: feedback || [],
       };
     },
     enabled: !!user,

@@ -300,16 +300,17 @@ export async function createServiceReport(payload: ServiceReportPayload) {
     }
   }
 
-  // 6. Save leader rating (non-blocking)
+  // 6. Save leader rating and feedback into service_feedback (non-blocking)
   if (report && payload.leaderRating > 0) {
     try {
-      await supabase.from("service_ratings").insert({
-        service_report_id: report.id,
+      await supabase.from("service_feedback").insert({
+        service_id: payload.setlistId,
         user_id: payload.userId,
         rating: payload.leaderRating,
+        comment: payload.notes
       });
     } catch (err) {
-      console.error("Error saving rating (non-blocking):", err);
+      console.error("Error saving leader feedback (non-blocking):", err);
     }
   }
 
