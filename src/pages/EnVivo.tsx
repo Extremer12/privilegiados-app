@@ -33,6 +33,7 @@ import {
 // Hooks
 import { useLiveSession } from "@/hooks/useLiveSession";
 import { usePresentationMode } from "@/hooks/usePresentationMode";
+import { useHotkeys } from "@/hooks/useHotkeys";
 
 const EnVivo = () => {
   const { id } = useParams<{ id: string }>();
@@ -75,18 +76,14 @@ const EnVivo = () => {
   const [activePanel, setActivePanel] = useState<"songs" | "chat" | "participants" | null>("songs");
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
+  useHotkeys({
+    'ArrowRight': () => handleNavigateSong("next"),
+    'Space': () => handleNavigateSong("next"),
+    'ArrowLeft': () => handleNavigateSong("prev"),
+    'T': () => isPresentationMode ? closePresentationMode() : openPresentationMode(),
+    'F': () => toggleFullscreen()
+  }, [handleNavigateSong, isPresentationMode, openPresentationMode, closePresentationMode, toggleFullscreen]);
   
   // Dialog state for adding songs
   const [showAddSong, setShowAddSong] = useState(false);
@@ -177,20 +174,7 @@ const EnVivo = () => {
           />
         </div>
 
-        {/* Header */}
-        <AnimatePresence>
-          {!isOnline && (
-            <motion.div
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              className="absolute top-0 left-0 right-0 z-[100] bg-amber-500/95 text-amber-950 px-4 py-3 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg border-b border-amber-600/20"
-            >
-              <WifiOff className="w-4 h-4 animate-pulse" />
-              <span className="font-bold text-sm">Sin conexión a Internet. Reconectando...</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
 
         <div className="sticky top-0 z-50 px-4 pt-3 pb-2 max-w-7xl mx-auto">
           <LiveHeader 

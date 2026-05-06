@@ -19,8 +19,8 @@ import { PrintPreviewMode } from "@/components/PrintPreviewMode";
 import { SongComments } from "@/components/SongComments";
 import { transposeChords } from "@/utils/chordTransposer";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
+import { vibrateLight, vibrateMedium } from "@/utils/haptics";
 import {
-  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
@@ -232,7 +232,10 @@ const SongDetail = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => toggleFavoriteMutation.mutate()}
+                onClick={() => {
+                  vibrateLight();
+                  toggleFavoriteMutation.mutate();
+                }}
                 disabled={toggleFavoriteMutation.isPending}
                 className={`transition-all ${isFavorite ? 'text-amber-500 border-amber-500/50 bg-amber-500/10' : ''}`}
               >
@@ -242,7 +245,10 @@ const SongDetail = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate(`/canciones/${id}/editar`)}
+                onClick={() => {
+                  vibrateLight();
+                  navigate(`/canciones/${id}/editar`);
+                }}
                 className="h-9 px-3 md:px-4"
               >
                 <Edit className="w-4 h-4 md:mr-2" aria-hidden="true" />
@@ -251,7 +257,10 @@ const SongDetail = () => {
               <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => setShowDeleteDialog(true)}
+                  onClick={() => {
+                    vibrateMedium();
+                    setShowDeleteDialog(true);
+                  }}
                   className="h-9 px-3 md:px-4"
                 >
                   <Trash2 className="w-4 h-4" aria-hidden="true" />
@@ -334,7 +343,10 @@ const SongDetail = () => {
                 <Button
                   variant="hero"
                   className="flex-1"
-                  onClick={() => setShowPresentation(true)}
+                  onClick={() => {
+                    vibrateMedium();
+                    setShowPresentation(true);
+                  }}
                 >
                   <Maximize2 className="w-4 h-4 mr-2" aria-hidden="true" />
                   Modo Presentación
@@ -343,7 +355,10 @@ const SongDetail = () => {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setShowPrintPreview(true)}
+                onClick={() => {
+                  vibrateLight();
+                  setShowPrintPreview(true);
+                }}
               >
                 <Printer className="w-4 h-4 mr-2" aria-hidden="true" />
                 Imprimir
@@ -409,7 +424,10 @@ const SongDetail = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setFontSize((prev) => Math.max(prev - 2, 12))}
+                      onClick={() => {
+                        vibrateLight();
+                        setFontSize((prev) => Math.max(prev - 2, 12));
+                      }}
                     >
                       A-
                     </Button>
@@ -419,7 +437,10 @@ const SongDetail = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setFontSize((prev) => Math.min(prev + 2, 32))}
+                      onClick={() => {
+                        vibrateLight();
+                        setFontSize((prev) => Math.min(prev + 2, 32));
+                      }}
                     >
                       A+
                     </Button>
@@ -445,7 +466,10 @@ const SongDetail = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setTransposeSteps((prev) => prev - 1)}
+                      onClick={() => {
+                        vibrateLight();
+                        setTransposeSteps((prev) => prev - 1);
+                      }}
                       aria-label="Disminuir tono"
                     >
                       <ChevronDown className="w-4 h-4" aria-hidden="true" />
@@ -456,7 +480,10 @@ const SongDetail = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setTransposeSteps((prev) => prev + 1)}
+                      onClick={() => {
+                        vibrateLight();
+                        setTransposeSteps((prev) => prev + 1);
+                      }}
                       aria-label="Aumentar tono"
                     >
                       <ChevronUp className="w-4 h-4" aria-hidden="true" />

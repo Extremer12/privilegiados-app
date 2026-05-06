@@ -11,6 +11,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader } from '@/components/ui/loader';
+import { Skeleton } from '@/components/ui/skeleton';
+import { FloatingActionButton } from '@/components/ui/fab';
+import { vibrateLight } from '@/utils/haptics';
 import { 
   Dialog,
   DialogContent,
@@ -233,8 +236,11 @@ const Repertorios = () => {
             </div>
             
             <Button
-              onClick={() => setCreateDialogOpen(true)}
-              className="h-12 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm gap-2 shadow-lg shadow-secondary/20 active:scale-[0.97] transition-all"
+              onClick={() => {
+                vibrateLight();
+                setCreateDialogOpen(true);
+              }}
+              className="hidden sm:flex h-12 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm gap-2 shadow-lg shadow-secondary/20 active:scale-[0.97] transition-all"
             >
               <Plus className="h-5 w-5" />
               Nuevo Repertorio
@@ -305,8 +311,21 @@ const Repertorios = () => {
 
           {/* List */}
           {loading ? (
-            <div className="flex justify-center py-16">
-              <Loader />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="rounded-2xl border-white/10 bg-white/[0.03] p-6 h-[180px] overflow-hidden">
+                  <div className="flex flex-col h-full gap-4">
+                    <div className="flex justify-between">
+                      <Skeleton className="w-24 h-6 rounded-full bg-white/5" />
+                      <Skeleton className="w-8 h-8 rounded-full bg-white/5" />
+                    </div>
+                    <div className="space-y-2 mt-auto">
+                      <Skeleton className="h-7 w-3/4 bg-white/5" />
+                      <Skeleton className="h-4 w-1/2 bg-white/5" />
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           ) : filteredSetlists.length === 0 ? (
             <motion.div 
@@ -464,6 +483,12 @@ const Repertorios = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <FloatingActionButton 
+        icon={<Plus className="h-6 w-6" />}
+        label="Nuevo Repertorio"
+        onClick={() => setCreateDialogOpen(true)}
+      />
     </>
   );
 };

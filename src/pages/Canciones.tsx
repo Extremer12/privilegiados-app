@@ -18,6 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/EmptyState";
 import { Loader } from "@/components/ui/loader";
+import { FloatingActionButton } from "@/components/ui/fab";
+import { vibrateLight } from "@/utils/haptics";
 
 import type { Song } from "@/types";
 
@@ -175,8 +177,11 @@ const Canciones = () => {
             <Button 
               variant="hero" 
               size="sm"
-              className="h-10 px-5 rounded-xl shadow-md font-bold text-sm"
-              onClick={() => navigate('/canciones/nueva')}
+              className="hidden sm:flex h-10 px-5 rounded-xl shadow-md font-bold text-sm"
+              onClick={() => {
+                vibrateLight();
+                navigate('/canciones/nueva');
+              }}
             >
               <Plus className="w-4 h-4 mr-2" />
               Nueva Canción
@@ -400,6 +405,12 @@ const Canciones = () => {
           </motion.button>
         )}
       </AnimatePresence>
+
+      <FloatingActionButton 
+        icon={<Plus className="w-6 h-6" />}
+        label="Nueva Canción"
+        onClick={() => navigate('/canciones/nueva')}
+      />
     </>
   );
 };
