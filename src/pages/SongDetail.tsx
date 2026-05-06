@@ -21,6 +21,7 @@ import { transposeChords } from "@/utils/chordTransposer";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { vibrateLight, vibrateMedium } from "@/utils/haptics";
 import {
+  AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
