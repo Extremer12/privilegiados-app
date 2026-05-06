@@ -174,8 +174,6 @@ const EnVivo = () => {
           />
         </div>
 
-        </div>
-
         <div className="sticky top-0 z-50 px-4 pt-3 pb-2 max-w-7xl mx-auto">
           <LiveHeader 
             setlistTitle={setlist?.title || "Cargando..."}
