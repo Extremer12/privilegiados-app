@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { motion } from "framer-motion";
 import { TrendingUp, AlertTriangle, Music, PieChart as PieChartIcon, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
