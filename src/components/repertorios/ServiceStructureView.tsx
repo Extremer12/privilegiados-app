@@ -28,6 +28,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
 const iconMap: Record<string, React.ElementType> = {
   Music, Heart, BookOpen, Gift, MessageSquare, Sparkles, Flag,
@@ -78,7 +79,13 @@ function SortableSongItem({
     transform,
     transition,
     isDragging
-  } = useSortable({ id: song.id });
+  } = useSortable({ 
+    id: song.id,
+    data: {
+      type: 'song',
+      sectionId: (song as any).section // Assuming song has section id
+    }
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -182,7 +189,12 @@ function SortableSectionItem({
     transform,
     transition,
     isDragging
-  } = useSortable({ id: section.id });
+  } = useSortable({ 
+    id: section.id,
+    data: {
+      type: 'section'
+    }
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -193,15 +205,7 @@ function SortableSectionItem({
 
   const Icon = iconMap[section.icon] || Sparkles;
 
-  const handleDragEndSongs = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = songs.findIndex((s: any) => s.id === active.id);
-      const newIndex = songs.findIndex((s: any) => s.id === over.id);
-      const newSongs = arrayMove(songs, oldIndex, newIndex);
-      onReorderSongs(section.id, newSongs.map((s: any) => s.id));
-    }
-  };
+  // No handleDragEndSongs here anymore
 
   return (
     <div ref={setNodeRef} style={style} className="mb-4">
@@ -321,27 +325,18 @@ function SortableSectionItem({
                 </div>
               ) : (
                 <div className="space-y-2 border-t border-white/5 pt-4">
-                  <DndContext
-                    sensors={useSensors(
-                      useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-                      useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
-                    )}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEndSongs}
-                  >
-                    <SortableContext items={songs.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
-                      {songs.map((song: any, songIdx: number) => (
-                        <SortableSongItem 
-                          key={song.id} 
-                          song={song} 
-                          songIndex={songIdx} 
-                          isEditing={isEditing} 
-                          onSongClick={onSongClick}
-                          onRemoveSong={onRemoveSong}
-                        />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
+                  <SortableContext items={songs.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
+                    {songs.map((song: any, songIdx: number) => (
+                      <SortableSongItem 
+                        key={song.id} 
+                        song={song} 
+                        songIndex={songIdx} 
+                        isEditing={isEditing} 
+                        onSongClick={onSongClick}
+                        onRemoveSong={onRemoveSong}
+                      />
+                    ))}
+                  </SortableContext>
                 </div>
               )}
 
@@ -378,8 +373,18 @@ export function ServiceStructureView({
   const [editingName, setEditingName] = useState('');
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(PointerSensor, { 
+      activationConstraint: { distance: 8 } 
+    }),
+    useSensor(TouchSensor, { 
+      activationConstraint: { 
+        delay: 250, 
+        tolerance: 5 
+      } 
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
 
   const toggleSection = (sectionId: string) => {
@@ -416,12 +421,39 @@ export function ServiceStructureView({
     setEditingSectionId(null);
   };
 
-  const handleDragEndSections = (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = sections.findIndex(s => s.id === active.id);
-      const newIndex = sections.findIndex(s => s.id === over.id);
-      onUpdateSections(arrayMove(sections, oldIndex, newIndex));
+    if (!over) return;
+
+    if (active.id !== over.id) {
+      const activeData = active.data.current;
+      const overData = over.data.current;
+      
+      if (activeData?.type === 'section') {
+        const overSectionId = overData?.type === 'song' ? overData.sectionId : over.id;
+        const oldIndex = sections.findIndex(s => s.id === active.id);
+        const newIndex = sections.findIndex(s => s.id === overSectionId);
+        
+        if (oldIndex !== -1 && newIndex !== -1) {
+          onUpdateSections(arrayMove(sections, oldIndex, newIndex));
+        }
+      } else if (activeData?.type === 'song') {
+        const activeSectionId = activeData.sectionId;
+        const overSectionId = overData?.type === 'song' ? overData.sectionId : over.id;
+        
+        if (activeSectionId === overSectionId) {
+          const sectionSongs = songsBySection[activeSectionId] || [];
+          const oldIndex = sectionSongs.findIndex(s => s.id === active.id);
+          const newIndex = sectionSongs.findIndex(s => s.id === over.id);
+          
+          if (oldIndex !== -1 && newIndex !== -1) {
+            const newSongs = arrayMove(sectionSongs, oldIndex, newIndex);
+            if (onReorderSongs) {
+              onReorderSongs(activeSectionId, newSongs.map(s => s.id));
+            }
+          }
+        }
+      }
     }
   };
 
@@ -454,7 +486,8 @@ export function ServiceStructureView({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragEnd={handleDragEndSections}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToVerticalAxis]}
       >
         <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
           {sections.map((section, index) => (
