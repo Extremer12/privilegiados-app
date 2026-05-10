@@ -56,7 +56,8 @@ const Estadisticas = () => {
         .from("service_participants")
         .select(`
           *,
-          service_reports (service_date)
+          service_reports (service_date),
+          profiles (full_name, avatar_url, role)
         `);
 
       // 4. Fetch all available feedback

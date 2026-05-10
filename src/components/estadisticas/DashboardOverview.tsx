@@ -8,104 +8,108 @@ import { es } from 'date-fns/locale';
 
 export const DashboardOverview = ({ data }: { data: any }) => {
   const stats = useMemo(() => {
-    const { reports, songsPlayed } = data;
+    const { reports, songsPlayed, participants } = data;
     
-    // Total services
+    // 1. Total services
     const totalServices = reports.length;
     
-    // Average rating
-    const ratings = reports.flatMap((r: any) => r.service_ratings.map((sr: any) => sr.rating));
+    // 2. Average rating (Quality)
+    const ratings = reports.flatMap((r: any) => r.service_ratings?.map((sr: any) => sr.rating) || []);
     const avgRating = ratings.length > 0 
       ? (ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length).toFixed(1)
-      : "N/A";
+      : "0";
       
-    // Average attendance
+    // 3. Preparation Score (Improvisation)
+    const improvisedSongs = songsPlayed.filter((s: any) => s.was_improvised).length;
+    const totalSongsPlayed = songsPlayed.length;
+    const prepScore = totalSongsPlayed > 0 
+      ? Math.max(0, 100 - (improvisedSongs / totalSongsPlayed) * 100)
+      : 100;
+
+    // 4. Attendance Trends (Stability)
     const attendance = reports.map((r: any) => r.attendance_count).filter(Boolean);
     const avgAttendance = attendance.length > 0
       ? Math.round(attendance.reduce((a: number, b: number) => a + b, 0) / attendance.length)
       : 0;
 
-    // Health Score (0-100)
-    // Formula: (Avg Rating / 5) * 50 + (Attendance stable?) * 50
-    const ratingScore = ratings.length > 0 ? (Number(avgRating) / 5) * 60 : 0;
-    const attendanceScore = avgAttendance > 0 ? Math.min(40, (avgAttendance / 15) * 40) : 0; // Assuming 15 is a good baseline
-    const healthScore = Math.round(ratingScore + attendanceScore);
+    // 5. Ministry Health Score (Compound Metric)
+    // Quality (40%) + Preparation (30%) + Stability (30%)
+    const qualityWeight = (Number(avgRating) / 5) * 40;
+    const prepWeight = (prepScore / 100) * 30;
+    const stabilityWeight = Math.min(30, (avgAttendance / 20) * 30); // 20 as target attendance
+    const healthScore = Math.round(qualityWeight + prepWeight + stabilityWeight);
 
-    // Chart Data (Last 10 services)
-    const chartData = [...reports].reverse().slice(-10).map((r: any) => {
-      const sRatings = r.service_ratings.map((sr: any) => sr.rating);
+    // 6. Chart Data (Enhanced)
+    const chartData = [...reports].reverse().slice(-12).map((r: any) => {
+      const sRatings = r.service_ratings?.map((sr: any) => sr.rating) || [];
       const sAvgRating = sRatings.length > 0 ? sRatings.reduce((a: number, b: number) => a + b, 0) / sRatings.length : 0;
       return {
-        date: format(new Date(r.service_date), 'MMM dd', { locale: es }),
+        date: format(new Date(r.service_date), 'dd/MM', { locale: es }),
         asistencia: r.attendance_count || 0,
-        valoracion: sAvgRating * 20, // scale to 100 for chart comparison
+        calidad: Math.round(sAvgRating * 20), // 0-100
+        preparacion: Math.round((1 - (songsPlayed.filter((s: any) => s.service_report_id === r.id && s.was_improvised).length / (songsPlayed.filter((s: any) => s.service_report_id === r.id).length || 1))) * 100),
       };
     });
 
-    // Top song of the month
-    const last30Days = new Date();
-    last30Days.setDate(last30Days.getDate() - 30);
-    
-    const recentSongs = songsPlayed.filter((s: any) => new Date(s.service_reports.service_date) >= last30Days);
+    // 7. Top Song Analysis
+    const last60Days = new Date();
+    last60Days.setDate(last60Days.getDate() - 60);
+    const recentSongs = songsPlayed.filter((s: any) => new Date(s.service_reports?.service_date) >= last60Days);
     const songCounts = recentSongs.reduce((acc: any, s: any) => {
-      if (s.songs) {
-        acc[s.songs.title] = (acc[s.songs.title] || 0) + 1;
-      }
+      if (s.songs) acc[s.songs.title] = (acc[s.songs.title] || 0) + 1;
       return acc;
     }, {});
-    
     const topSong = Object.entries(songCounts).sort((a: any, b: any) => b[1] - a[1])[0] || ["Ninguna", 0];
 
-    // Calculate Top Uploaders
+    // 8. Top Contributors (Enhanced)
     const { allSongs } = data;
     const uploadersMap = (allSongs || []).reduce((acc: any, song: any) => {
-      if (song.profiles) {
-        const name = song.profiles.full_name;
-        if (!acc[name]) {
-          acc[name] = { count: 0, profile: song.profiles };
-        }
+      if (song.creator_profile) {
+        const name = song.creator_profile.full_name;
+        if (!acc[name]) acc[name] = { count: 0, profile: song.creator_profile };
         acc[name].count += 1;
       }
       return acc;
     }, {});
-    
-    const topUploaders = Object.values(uploadersMap)
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 5); // Top 5
+    const topUploaders = Object.values(uploadersMap).sort((a: any, b: any) => b.count - a.count).slice(0, 4);
 
-    return { totalServices, avgRating, avgAttendance, healthScore, chartData, topSong: topSong[0], topSongCount: topSong[1], topUploaders };
+    return { totalServices, avgRating, avgAttendance, healthScore, prepScore, chartData, topSong: topSong[0], topSongCount: topSong[1], topUploaders };
   }, [data]);
 
   // Generate Insights
   const insights = useMemo(() => {
     const messages = [];
-    const { allSongs, songsPlayed } = data;
+    const { allSongs, songsPlayed, reports } = data;
     
+    // 1. Repertoire Health
     const playedSongIds = new Set(songsPlayed.map((s: any) => s.song_id));
-    const unusedSongs = allSongs.filter((s: any) => !playedSongIds.has(s.id));
-    if (unusedSongs.length > 0) {
+    const unusedPercentage = Math.round(( (allSongs.length - playedSongIds.size) / (allSongs.length || 1) ) * 100);
+    if (unusedPercentage > 40) {
       messages.push({
         type: "warning",
-        title: "Repertorio estancado",
-        text: `Hay ${unusedSongs.length} canciones en la base de datos que nunca se han tocado. Considera refrescar el repertorio.`
+        title: "Repertorio Estancado",
+        text: `El ${unusedPercentage}% de tus canciones no se han tocado nunca. ¡Es hora de renovar!`
       });
     }
 
-    const recentRatings = data.reports.slice(0, 3).flatMap((r: any) => r.service_ratings.map((sr: any) => sr.rating));
+    // 2. Performance Consistency
+    const recentRatings = reports.slice(0, 3).flatMap((r: any) => r.service_ratings?.map((sr: any) => sr.rating) || []);
     if (recentRatings.length > 0 && recentRatings.every((r: number) => r >= 4)) {
       messages.push({
         type: "success",
-        title: "¡Excelente trabajo!",
-        text: "Los últimos 3 cultos han recibido calificaciones excelentes. ¡Sigan así!"
+        title: "Consistencia de Oro",
+        text: "Llevas una racha de 3 cultos con valoración impecable. El equipo está en su mejor momento."
       });
     }
 
-    const improvisedCount = data.songsPlayed.filter((s: any) => s.was_improvised).length;
-    if (improvisedCount > 5) {
+    // 3. Planning Audit
+    const improvisedCount = songsPlayed.filter((s: any) => s.was_improvised).length;
+    const improvisedRate = Math.round((improvisedCount / (songsPlayed.length || 1)) * 100);
+    if (improvisedRate > 20) {
       messages.push({
         type: "info",
-        title: "Alta improvisación",
-        text: `Se han improvisado ${improvisedCount} canciones históricamente. Esto muestra flexibilidad, pero trata de planificar con anticipación.`
+        title: "Alerta de Improvisación",
+        text: `El ${improvisedRate}% de las canciones son improvisadas. Considera dedicar más tiempo al ensayo previo.`
       });
     }
 
@@ -116,9 +120,9 @@ export const DashboardOverview = ({ data }: { data: any }) => {
 
   const statCards = [
     { title: "Salud del Ministerio", value: `${stats.healthScore}%`, icon: Activity, color: "text-rose-400", bg: "bg-rose-400/10" },
-    { title: "Valoración General", value: `${stats.avgRating} / 5`, icon: Star, color: "text-amber-400", bg: "bg-amber-400/10" },
-    { title: "Promedio Asistencia", value: stats.avgAttendance, icon: Users, color: "text-emerald-400", bg: "bg-emerald-400/10" },
-    { title: "Canción Top Mensual", value: stats.topSong, sub: `${stats.topSongCount} veces`, icon: TrendingUp, color: "text-purple-400", bg: "bg-purple-400/10" },
+    { title: "Calidad Promedio", value: `${stats.avgRating}/5`, icon: Star, color: "text-amber-400", bg: "bg-amber-400/10" },
+    { title: "Planificación", value: `${Math.round(stats.prepScore)}%`, icon: Music, color: "text-emerald-400", bg: "bg-emerald-400/10" },
+    { title: "Asistencia Media", value: stats.avgAttendance, icon: Users, color: "text-blue-400", bg: "bg-blue-400/10" },
   ];
 
   return (
@@ -164,9 +168,19 @@ export const DashboardOverview = ({ data }: { data: any }) => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-secondary" /> Tendencia de Servicios
+                <TrendingUp className="w-5 h-5 text-secondary" /> Análisis de Rendimiento
               </h2>
-              <p className="text-sm text-muted-foreground">Evolución de asistencia y valoración (últimos 10 cultos)</p>
+              <p className="text-sm text-muted-foreground">Evolución de asistencia, calidad y preparación</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="text-[10px] text-muted-foreground font-bold uppercase">Asistencia</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-amber-500" />
+                <span className="text-[10px] text-muted-foreground font-bold uppercase">Calidad</span>
+              </div>
             </div>
           </div>
           <div className="h-[250px] w-full">
@@ -188,8 +202,8 @@ export const DashboardOverview = ({ data }: { data: any }) => {
                   contentStyle={{ backgroundColor: 'hsl(222.2 84% 4.9%)', borderColor: 'hsl(217 33% 25%)', borderRadius: '12px' }}
                   itemStyle={{ color: '#fff' }}
                 />
-                <Area type="monotone" dataKey="asistencia" stroke="hsl(142.1 76.2% 36.3%)" strokeWidth={3} fillOpacity={1} fill="url(#colorAsistencia)" />
-                <Area type="monotone" dataKey="valoracion" stroke="hsl(47.9 95.8% 53.1%)" strokeWidth={3} fillOpacity={1} fill="url(#colorValoracion)" />
+                <Area type="monotone" dataKey="asistencia" stroke="hsl(142.1 76.2% 36.3%)" strokeWidth={4} fillOpacity={1} fill="url(#colorAsistencia)" />
+                <Area type="monotone" dataKey="calidad" stroke="hsl(47.9 95.8% 53.1%)" strokeWidth={4} fillOpacity={1} fill="url(#colorValoracion)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
