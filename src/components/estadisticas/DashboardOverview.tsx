@@ -26,54 +26,46 @@ export const DashboardOverview = ({ data }: { data: any }) => {
       ? Math.max(0, 100 - (improvisedSongs / totalSongsPlayed) * 100)
       : 100;
 
-    // 4. Attendance Trends (Stability)
-    const attendance = reports.map((r: any) => r.attendance_count).filter(Boolean);
-    const avgAttendance = attendance.length > 0
-      ? Math.round(attendance.reduce((a: number, b: number) => a + b, 0) / attendance.length)
-      : 0;
+    // 4. Musical Keys Distribution
+    const keysMap = songsPlayed.reduce((acc: any, s: any) => {
+      if (s.key_played) acc[s.key_played] = (acc[s.key_played] || 0) + 1;
+      return acc;
+    }, {});
+    const topKeys = Object.entries(keysMap)
+      .sort((a: any, b: any) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([key, count]) => ({ key, count }));
 
-    // 5. Ministry Health Score (Compound Metric)
-    // Quality (40%) + Preparation (30%) + Stability (30%)
-    const qualityWeight = (Number(avgRating) / 5) * 40;
-    const prepWeight = (prepScore / 100) * 30;
-    const stabilityWeight = Math.min(30, (avgAttendance / 20) * 30); // 20 as target attendance
-    const healthScore = Math.round(qualityWeight + prepWeight + stabilityWeight);
+    // 5. Team Streaks (Consecutive services)
+    const sortedReports = [...reports].sort((a: any, b: any) => new Date(b.service_date).getTime() - new Date(a.service_date).getTime());
+    const streaks: Record<string, number> = {};
+    
+    if (sortedReports.length > 0) {
+      const lastServiceId = sortedReports[0].id;
+      participants.filter((p: any) => p.service_report_id === lastServiceId).forEach((p: any) => {
+        const name = p.profiles?.full_name || p.participant_name;
+        let count = 0;
+        for (const report of sortedReports) {
+          const wasPresent = participants.some((part: any) => part.service_report_id === report.id && (part.profiles?.full_name === name || part.participant_name === name));
+          if (wasPresent) count++;
+          else break;
+        }
+        streaks[name] = count;
+      } );
+    }
+    const topStreaks = Object.entries(streaks).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-    // 6. Chart Data (Enhanced)
-    const chartData = [...reports].reverse().slice(-12).map((r: any) => {
-      const sRatings = r.service_ratings?.map((sr: any) => sr.rating) || [];
-      const sAvgRating = sRatings.length > 0 ? sRatings.reduce((a: number, b: number) => a + b, 0) / sRatings.length : 0;
-      return {
-        date: format(new Date(r.service_date), 'dd/MM', { locale: es }),
-        asistencia: r.attendance_count || 0,
-        calidad: Math.round(sAvgRating * 20), // 0-100
-        preparacion: Math.round((1 - (songsPlayed.filter((s: any) => s.service_report_id === r.id && s.was_improvised).length / (songsPlayed.filter((s: any) => s.service_report_id === r.id).length || 1))) * 100),
-      };
-    });
-
-    // 7. Top Song Analysis
-    const last60Days = new Date();
-    last60Days.setDate(last60Days.getDate() - 60);
-    const recentSongs = songsPlayed.filter((s: any) => new Date(s.service_reports?.service_date) >= last60Days);
-    const songCounts = recentSongs.reduce((acc: any, s: any) => {
+    // 6. Song Momentum (Trending)
+    const recent30Days = new Date();
+    recent30Days.setDate(recent30Days.getDate() - 30);
+    const recentSongs = songsPlayed.filter((s: any) => new Date(s.service_reports?.service_date) >= recent30Days);
+    const songTrend = recentSongs.reduce((acc: any, s: any) => {
       if (s.songs) acc[s.songs.title] = (acc[s.songs.title] || 0) + 1;
       return acc;
     }, {});
-    const topSong = Object.entries(songCounts).sort((a: any, b: any) => b[1] - a[1])[0] || ["Ninguna", 0];
+    const trendingSongs = Object.entries(songTrend).sort((a: any, b: any) => b[1] - a[1]).slice(0, 3);
 
-    // 8. Top Contributors (Enhanced)
-    const { allSongs } = data;
-    const uploadersMap = (allSongs || []).reduce((acc: any, song: any) => {
-      if (song.creator_profile) {
-        const name = song.creator_profile.full_name;
-        if (!acc[name]) acc[name] = { count: 0, profile: song.creator_profile };
-        acc[name].count += 1;
-      }
-      return acc;
-    }, {});
-    const topUploaders = Object.values(uploadersMap).sort((a: any, b: any) => b.count - a.count).slice(0, 4);
-
-    return { totalServices, avgRating, avgAttendance, healthScore, prepScore, chartData, topSong: topSong[0], topSongCount: topSong[1], topUploaders };
+    return { totalServices, avgRating, prepScore, topKeys, topStreaks, trendingSongs };
   }, [data]);
 
   // Generate Insights
@@ -119,10 +111,10 @@ export const DashboardOverview = ({ data }: { data: any }) => {
   }, [data]);
 
   const statCards = [
-    { title: "Salud del Ministerio", value: `${stats.healthScore}%`, icon: Activity, color: "text-rose-400", bg: "bg-rose-400/10" },
-    { title: "Calidad Promedio", value: `${stats.avgRating}/5`, icon: Star, color: "text-amber-400", bg: "bg-amber-400/10" },
-    { title: "Planificación", value: `${Math.round(stats.prepScore)}%`, icon: Music, color: "text-emerald-400", bg: "bg-emerald-400/10" },
-    { title: "Asistencia Media", value: stats.avgAttendance, icon: Users, color: "text-blue-400", bg: "bg-blue-400/10" },
+    { title: "Servicios Realizados", value: stats.totalServices, icon: CalendarIcon, color: "text-blue-400", bg: "bg-blue-400/10" },
+    { title: "Calidad Vocal/Musical", value: `${stats.avgRating}/5`, icon: Star, color: "text-amber-400", bg: "bg-amber-400/10" },
+    { title: "Efectividad de Ensayo", value: `${Math.round(stats.prepScore)}%`, icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-400/10" },
+    { title: "Canciones Diferentes", value: new Set(data.songsPlayed.map((s: any) => s.song_id)).size, icon: Music, color: "text-purple-400", bg: "bg-purple-400/10" },
   ];
 
   return (
@@ -157,7 +149,7 @@ export const DashboardOverview = ({ data }: { data: any }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Trend Chart */}
+        {/* Musical Keys Distribution */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -168,48 +160,36 @@ export const DashboardOverview = ({ data }: { data: any }) => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-secondary" /> Análisis de Rendimiento
+                <Music className="w-5 h-5 text-secondary" /> Distribución de Tonos
               </h2>
-              <p className="text-sm text-muted-foreground">Evolución de asistencia, calidad y preparación</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                <span className="text-[10px] text-muted-foreground font-bold uppercase">Asistencia</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-amber-500" />
-                <span className="text-[10px] text-muted-foreground font-bold uppercase">Calidad</span>
-              </div>
+              <p className="text-sm text-muted-foreground">Tonos más utilizados en los últimos servicios</p>
             </div>
           </div>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorAsistencia" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(142.1 76.2% 36.3%)" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="hsl(142.1 76.2% 36.3%)" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorValoracion" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(47.9 95.8% 53.1%)" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="hsl(47.9 95.8% 53.1%)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" stroke="hsl(215 20.2% 65.1%)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="hsl(215 20.2% 65.1%)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'hsl(222.2 84% 4.9%)', borderColor: 'hsl(217 33% 25%)', borderRadius: '12px' }}
-                  itemStyle={{ color: '#fff' }}
-                />
-                <Area type="monotone" dataKey="asistencia" stroke="hsl(142.1 76.2% 36.3%)" strokeWidth={4} fillOpacity={1} fill="url(#colorAsistencia)" />
-                <Area type="monotone" dataKey="calidad" stroke="hsl(47.9 95.8% 53.1%)" strokeWidth={4} fillOpacity={1} fill="url(#colorValoracion)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          
+          <div className="space-y-5">
+            {stats.topKeys.length > 0 ? stats.topKeys.map((item, i) => (
+              <div key={item.key} className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="font-bold text-white">{item.key}</span>
+                  <span className="text-muted-foreground">{item.count} veces</span>
+                </div>
+                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(item.count / stats.topKeys[0].count) * 100}%` }}
+                    className="h-full bg-secondary shadow-[0_0_10px_rgba(251,191,36,0.3)]"
+                  />
+                </div>
+              </div>
+            )) : (
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground italic">
+                No hay datos de tonos registrados aún.
+              </div>
+            )}
           </div>
         </motion.div>
 
-        {/* Top Uploaders Section */}
+        {/* Team Momentum / Streaks */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -218,44 +198,62 @@ export const DashboardOverview = ({ data }: { data: any }) => {
           style={{ background: "linear-gradient(180deg, hsl(217 33% 12%) 0%, hsl(222 47% 6%) 100%)" }}
         >
           <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-400" /> Top Contribuidores
+            <Trophy className="w-5 h-5 text-amber-400" /> Racha de Servicio
           </h2>
           <div className="space-y-4">
-            {stats.topUploaders.length > 0 ? stats.topUploaders.map((uploader: any, i: number) => (
+            {stats.topStreaks.length > 0 ? stats.topStreaks.map(([name, count]: any, i: number) => (
               <div
-                key={uploader.profile.full_name}
-                className="flex items-center justify-between group hover:bg-white/5 p-2 rounded-xl transition-colors"
+                key={name}
+                className="flex items-center justify-between group bg-white/5 p-3 rounded-2xl border border-white/5 transition-all hover:border-secondary/20"
               >
                 <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Avatar className="w-10 h-10 border border-white/10">
-                      <AvatarImage src={uploader.profile.avatar_url || undefined} />
-                      <AvatarFallback className="text-[12px] bg-secondary/20 text-secondary font-bold">
-                        {uploader.profile.full_name?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    {i === 0 && (
-                      <div className="absolute -top-2 -right-2 bg-amber-500 rounded-full p-1 border-2 border-[#131722] shadow-lg shadow-amber-500/50">
-                        <Trophy className="w-3 h-3 text-[#131722]" />
-                      </div>
-                    )}
+                  <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center font-bold text-secondary text-sm">
+                    {name.charAt(0)}
                   </div>
                   <div>
                     <h4 className="font-bold text-white text-sm">
-                      {uploader.profile.full_name.split(' ')[0]}
+                      {name.split(' ')[0]}
                     </h4>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Music className="w-3 h-3 text-secondary" />
-                      {uploader.count} canciones aportadas
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
+                      Presente
                     </p>
                   </div>
                 </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-white">{count}</span>
+                  <span className="text-[10px] text-secondary ml-1 font-bold">CULTOS</span>
+                </div>
               </div>
             )) : (
-              <p className="text-muted-foreground text-center py-4">No hay datos suficientes</p>
+              <p className="text-muted-foreground text-center py-4">Sin datos de racha.</p>
             )}
           </div>
         </motion.div>
+      </div>
+
+      {/* Song Momentum Section */}
+      <h2 className="text-xl font-bold text-white mt-8 mb-4 flex items-center gap-2">
+        <TrendingUp className="w-5 h-5 text-secondary" /> Momentum de Canciones
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {stats.trendingSongs.map(([title, count]: any, i) => (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5 + (i * 0.1) }}
+            key={title}
+            className="p-5 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.06] transition-all group"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
+                <Music className="w-5 h-5" />
+              </div>
+              <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">EN TENDENCIA</Badge>
+            </div>
+            <h4 className="font-bold text-white text-lg truncate group-hover:text-secondary transition-colors">{title}</h4>
+            <p className="text-sm text-muted-foreground mt-1">Tocada <span className="text-white font-bold">{count} veces</span> en los últimos 30 días</p>
+          </motion.div>
+        ))}
       </div>
 
       {/* Insights Section */}
