@@ -6,7 +6,7 @@ import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Edit3, Save, Play, Users, MessageSquare,
-  AlertCircle, FileDown, X, Mic
+  AlertCircle, FileDown, X, Mic, UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -181,6 +181,37 @@ const RepertorioDetalle = () => {
 
   const handleRemoveSong = async (songId: string) => {
     removeSongMutation.mutate(songId);
+  };
+
+  const moveSongMutation = useMutation({
+    mutationFn: async ({ songId, direction }: { songId: string, direction: 'up' | 'down' }) => {
+      const song = songs.find(s => s.id === songId);
+      if (!song) return;
+
+      const sectionSongs = songs.filter(s => s.section === song.section).sort((a, b) => a.position - b.position);
+      const currentIndex = sectionSongs.findIndex(s => s.id === songId);
+      
+      if (direction === 'up' && currentIndex > 0) {
+        const prevSong = sectionSongs[currentIndex - 1];
+        await supabase.from('setlist_songs').update({ position: prevSong.position }).eq('id', song.id);
+        await supabase.from('setlist_songs').update({ position: song.position }).eq('id', prevSong.id);
+      } else if (direction === 'down' && currentIndex < sectionSongs.length - 1) {
+        const nextSong = sectionSongs[currentIndex + 1];
+        await supabase.from('setlist_songs').update({ position: nextSong.position }).eq('id', song.id);
+        await supabase.from('setlist_songs').update({ position: song.position }).eq('id', nextSong.id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] });
+    },
+    onError: (error) => {
+      console.error('Error moving song:', error);
+      toast.error('Error al mover la canción');
+    }
+  });
+
+  const handleMoveSong = (songId: string, direction: 'up' | 'down') => {
+    moveSongMutation.mutate({ songId, direction });
   };
 
   const handleStartLive = async () => {
@@ -545,6 +576,7 @@ const RepertorioDetalle = () => {
                 setAddSongDialogOpen(true);
               }}
               onRemoveSong={handleRemoveSong}
+              onMoveSong={handleMoveSong}
               onSongClick={(song) => navigate(`/canciones/${song.song_id}`)}
               isEditing={isEditing && setlist.status !== 'completed'}
             />

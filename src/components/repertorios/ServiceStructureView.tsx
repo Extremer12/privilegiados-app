@@ -32,6 +32,7 @@ interface ServiceStructureViewProps {
   songsBySection: SongsBySection;
   onAddSong: (section: string) => void;
   onRemoveSong: (songId: string) => void;
+  onMoveSong?: (songId: string, direction: 'up' | 'down') => void;
   onSongClick: (song: SetlistSong) => void;
   isEditing: boolean;
 }
@@ -42,6 +43,7 @@ export function ServiceStructureView({
   songsBySection, 
   onAddSong, 
   onRemoveSong,
+  onMoveSong,
   onSongClick,
   isEditing 
 }: ServiceStructureViewProps) {
@@ -302,17 +304,50 @@ export function ServiceStructureView({
                               )}
                             </div>
                             
-                            {/* Remove button */}
+                            {/* Actions */}
                             {isEditing && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-10 w-10 shrink-0 rounded-xl hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-all active:scale-[0.9]"
-                                onClick={() => onRemoveSong(song.id)}
-                                aria-label={`Remover ${song.songs?.title || 'canción'}`}
-                              >
-                                <X className="h-5 w-5" />
-                              </Button>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {onMoveSong && (
+                                  <div className="flex flex-col gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-5 w-5 rounded-[4px] hover:bg-white/10 text-muted-foreground hover:text-white"
+                                      disabled={songIndex === 0}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onMoveSong(song.id, 'up');
+                                      }}
+                                    >
+                                      <ArrowUp className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-5 w-5 rounded-[4px] hover:bg-white/10 text-muted-foreground hover:text-white"
+                                      disabled={songIndex === songs.length - 1}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onMoveSong(song.id, 'down');
+                                      }}
+                                    >
+                                      <ArrowDown className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10 shrink-0 rounded-xl hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-all active:scale-[0.9]"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemoveSong(song.id);
+                                  }}
+                                  aria-label={`Remover ${song.songs?.title || 'canción'}`}
+                                >
+                                  <X className="h-5 w-5" />
+                                </Button>
+                              </div>
                             )}
                           </div>
                         ))}

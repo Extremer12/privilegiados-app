@@ -82,7 +82,6 @@ const Profile = () => {
         .from("profiles")
         .update({
           full_name: fullName,
-          role: role,
           bio: bio,
           avatar_url: avatarUrl,
         })
@@ -155,16 +154,12 @@ const Profile = () => {
               </div>
 
               <div>
-                <Label htmlFor="role" className="text-foreground">
-                  Rol en el Grupo
+                <Label className="text-foreground">
+                  Rol en el Grupo (Asignado por Administrador)
                 </Label>
-                <Input
-                  id="role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="bg-background/50 border-secondary/20"
-                  placeholder="Ej: Vocalista, Guitarrista, Baterista, Líder..."
-                />
+                <div className="bg-background/30 border border-secondary/20 rounded-md px-3 py-2 mt-1 text-sm text-foreground/80 cursor-not-allowed">
+                  {role || "Miembro"}
+                </div>
               </div>
 
               <div>
