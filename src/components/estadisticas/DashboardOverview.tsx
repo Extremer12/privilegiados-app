@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Users, Music, Star, TrendingUp, AlertCircle, Lightbulb, Trophy, Activity } from "lucide-react";
+import { Users, Music, Star, TrendingUp, AlertCircle, Lightbulb, Trophy, Activity, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
