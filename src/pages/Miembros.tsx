@@ -10,6 +10,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Search, Users, Music, Mic, Shield, ShieldOff, Edit2, Check, UserCircle, Star, Crown, MessageSquare } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -122,20 +123,9 @@ const Miembros = () => {
   const updateRolesMutation = useMutation({
     mutationFn: async ({ userId, roles }: { userId: string, roles: string[] }) => {
       // 1. Sync internal roles for permissions
+      // (The DB trigger tr_sync_profile_role will automatically update profiles.role)
       const roleResult = await syncRoles(userId, roles);
       if (roleResult.error) throw new Error(roleResult.error);
-
-      // 2. Generate display label (comma separated)
-      const roleLabels = roles.map(r => AVAILABLE_ROLES.find(ar => ar.value === r)?.label || r);
-      const roleLabel = roleLabels.join(", ");
-
-      // 3. Update profile for public display
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ role: roleLabel || "Miembro" })
-        .eq("id", userId);
-      
-      if (profileError) throw profileError;
 
       return { success: true };
     },
@@ -235,12 +225,16 @@ const Miembros = () => {
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-secondary/20 blur-2xl rounded-full" />
-                <Loader />
-              </div>
-              <p className="text-muted-foreground font-medium animate-pulse">Sincronizando miembros...</p>
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                <div key={i} className="p-4 bg-white/[0.01] border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-4">
+                  <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/5" />
+                  <div className="space-y-2 w-full">
+                    <Skeleton className="h-4 w-3/4 mx-auto bg-white/5" />
+                    <Skeleton className="h-3 w-1/2 mx-auto bg-white/5" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredMembers.length === 0 ? (
             <Card className="p-16 text-center card-gradient border-secondary/10 animate-fade-in rounded-3xl">

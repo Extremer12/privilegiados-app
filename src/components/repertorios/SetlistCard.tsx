@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { 
-  Play, Eye, Trash2,
+  Play, Eye, Trash2, Copy,
   CheckCircle2, Clock, FileEdit, Music, Calendar,
   Mic, User, Star
 } from 'lucide-react';
@@ -15,8 +15,10 @@ interface SetlistCardProps {
   songsCount: number;
   onView: () => void;
   onStartLive: () => void;
+  onDuplicate?: () => void;
   onDelete?: () => void;
   isOwner: boolean;
+  avgRating?: number;
 }
 
 const statusConfig = {
@@ -51,6 +53,7 @@ export function SetlistCard({
   songsCount, 
   onView, 
   onStartLive, 
+  onDuplicate,
   onDelete, 
   avgRating
 }: SetlistCardProps) {
@@ -167,6 +170,20 @@ export function SetlistCard({
               {isCompleted ? 'FINALIZADO' : 'INICIAR VIVO'}
             </Button>
 
+            {onDuplicate && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate();
+                }}
+                variant="ghost"
+                className="h-14 w-14 shrink-0 rounded-2xl bg-white/5 hover:bg-secondary/10 text-secondary/60 hover:text-secondary transition-all border border-white/5"
+                title="Duplicar repertorio"
+              >
+                <Copy className="h-5 w-5" />
+              </Button>
+            )}
+            
             {onDelete && (
               <Button
                 onClick={(e) => {

@@ -38,7 +38,7 @@ const Profile = () => {
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || "");
-      setRole(profile.role || profile.instrument || "");
+      setRole(profile.role || "");
       setBio(profile.bio || "");
       setAvatarUrl(profile.avatar_url || "");
     }

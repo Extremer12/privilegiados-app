@@ -170,6 +170,28 @@ const Repertorios = () => {
       toast.error('Error al eliminar el repertorio');
     }
   });
+  
+  const duplicateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase.rpc('duplicate_setlist', {
+        source_id: id,
+        creator_id: user?.id
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (newId) => {
+      toast.success('Repertorio duplicado', {
+        description: 'Se ha creado una copia en estado borrador.'
+      });
+      queryClient.invalidateQueries({ queryKey: ['setlists'] });
+      navigate(`/repertorios/${newId}`);
+    },
+    onError: (error) => {
+      console.error('Error duplicating setlist:', error);
+      toast.error('Error al duplicar el repertorio');
+    }
+  });
 
   const handleDeleteSetlist = (id: string) => {
     setSetlistToDelete(id);
@@ -370,6 +392,7 @@ const Repertorios = () => {
                       songsCount={setlist.songsCount}
                       onView={() => navigate(`/repertorios/${setlist.id}`)}
                       onStartLive={() => handleStartLive(setlist)}
+                      onDuplicate={() => duplicateMutation.mutate(setlist.id)}
                       onDelete={() => handleDeleteSetlist(setlist.id)}
                       isOwner={setlist.created_by === user?.id}
                       avgRating={(setlist as any).avgRating}

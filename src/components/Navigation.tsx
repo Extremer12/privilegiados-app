@@ -162,6 +162,7 @@ export const Navigation = () => {
                 onClick={() => setIsOpen(prev => !prev)}
                 className="relative w-12 h-12 flex items-center justify-center rounded-xl bg-secondary/10 text-foreground active:bg-secondary/20 transition-colors"
                 aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+                aria-expanded={isOpen}
                 type="button"
               >
                 {isOpen ? (

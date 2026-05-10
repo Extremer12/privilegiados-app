@@ -26,8 +26,19 @@ import { AddSongToSetlistDialog } from '@/components/repertorios/AddSongToSetlis
 import { ManageParticipantsDialog } from '@/components/repertorios/ManageParticipantsDialog';
 import { Setlist, SetlistSong, SECTION_TYPES, SectionType } from '@/components/repertorios/types';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import * as liveSessionService from '@/services/liveSessionService';
 
 import { PrintSetlistMode } from '@/components/repertorios/PrintSetlistMode';
@@ -36,6 +47,7 @@ const RepertorioDetalle = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin, isLeader } = useUserRole();
   const queryClient = useQueryClient();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -44,6 +56,7 @@ const RepertorioDetalle = () => {
   const [selectedSection, setSelectedSection] = useState<SectionType>('alabanza');
   const [sections, setSections] = useState<any[]>([]);
   const [printMode, setPrintMode] = useState(false);
+  const [songToRemove, setSongToRemove] = useState<string | null>(null);
 
   const [editForm, setEditForm] = useState({
     title: '',
@@ -109,6 +122,8 @@ const RepertorioDetalle = () => {
   const setlist = data?.setlist || null;
   const songs = data?.songs || [];
   const participants = data?.participants || [];
+  
+  const isAuthorized = setlist ? (user?.id === setlist.created_by || isAdmin || isLeader) : false;
 
   useEffect(() => {
     if (setlist) {
@@ -180,7 +195,14 @@ const RepertorioDetalle = () => {
   });
 
   const handleRemoveSong = async (songId: string) => {
-    removeSongMutation.mutate(songId);
+    setSongToRemove(songId);
+  };
+
+  const confirmRemoveSong = () => {
+    if (songToRemove) {
+      removeSongMutation.mutate(songToRemove);
+      setSongToRemove(null);
+    }
   };
 
   const moveSongMutation = useMutation({
@@ -193,12 +215,22 @@ const RepertorioDetalle = () => {
       
       if (direction === 'up' && currentIndex > 0) {
         const prevSong = sectionSongs[currentIndex - 1];
-        await supabase.from('setlist_songs').update({ position: prevSong.position }).eq('id', song.id);
-        await supabase.from('setlist_songs').update({ position: song.position }).eq('id', prevSong.id);
+        const { error } = await supabase.rpc('swap_song_positions', {
+          song_a_id: song.id,
+          song_a_pos: prevSong.position,
+          song_b_id: prevSong.id,
+          song_b_pos: song.position
+        });
+        if (error) throw error;
       } else if (direction === 'down' && currentIndex < sectionSongs.length - 1) {
         const nextSong = sectionSongs[currentIndex + 1];
-        await supabase.from('setlist_songs').update({ position: nextSong.position }).eq('id', song.id);
-        await supabase.from('setlist_songs').update({ position: song.position }).eq('id', nextSong.id);
+        const { error } = await supabase.rpc('swap_song_positions', {
+          song_a_id: song.id,
+          song_a_pos: nextSong.position,
+          song_b_id: nextSong.id,
+          song_b_pos: song.position
+        });
+        if (error) throw error;
       }
     },
     onSuccess: () => {
@@ -212,6 +244,33 @@ const RepertorioDetalle = () => {
 
   const handleMoveSong = (songId: string, direction: 'up' | 'down') => {
     moveSongMutation.mutate({ songId, direction });
+  };
+
+  const reorderSongsMutation = useMutation({
+    mutationFn: async ({ sectionId, songIds }: { sectionId: string, songIds: string[] }) => {
+      const updates = songIds.map((id, index) => ({
+        id,
+        position: index + 1,
+        section: sectionId
+      }));
+
+      const { error } = await supabase
+        .from('setlist_songs')
+        .upsert(updates, { onConflict: 'id' });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] });
+    },
+    onError: (error) => {
+      console.error('Error reordering songs:', error);
+      toast.error('Error al reordenar canciones');
+    }
+  });
+
+  const handleReorderSongs = (sectionId: string, songIds: string[]) => {
+    reorderSongsMutation.mutate({ sectionId, songIds });
   };
 
   const handleStartLive = async () => {
@@ -401,15 +460,17 @@ const RepertorioDetalle = () => {
                   </>
                 ) : (
                   <>
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setIsEditing(true)} 
-                      disabled={setlist.status === 'completed'}
-                      className={`h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-semibold active:scale-[0.97] transition-all ${setlist.status === 'completed' ? 'opacity-50 grayscale' : ''}`}
-                    >
-                      <Edit3 className="h-4 w-4 mr-2" />
-                      {setlist.status === 'completed' ? 'Cerrado' : 'Editar'}
-                    </Button>
+                    {isAuthorized && (
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => setIsEditing(true)} 
+                        disabled={setlist.status === 'completed'}
+                        className={`h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-semibold active:scale-[0.97] transition-all ${setlist.status === 'completed' ? 'opacity-50 grayscale' : ''}`}
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        {setlist.status === 'completed' ? 'Cerrado' : 'Editar'}
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       onClick={handleExportPDF} 
@@ -418,20 +479,22 @@ const RepertorioDetalle = () => {
                       <FileDown className="h-4 w-4 mr-2" />
                       PDF
                     </Button>
-                    <Button 
-                      onClick={handleStartLive}
-                      disabled={setlist.status === 'completed' || songs.length === 0}
-                      className={`h-11 px-6 rounded-xl bg-secondary text-primary-foreground font-bold text-sm shadow-lg active:scale-[0.97] transition-all ${
-                        setlist.status === 'completed' 
-                          ? 'bg-muted text-muted-foreground shadow-none' 
-                          : songs.length === 0 
-                            ? 'opacity-50 cursor-not-allowed hover:opacity-50 shadow-none' 
-                            : 'hover:opacity-90 shadow-secondary/20'
-                      }`}
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      {setlist.status === 'completed' ? 'Finalizado' : 'En Vivo'}
-                    </Button>
+                    {isAuthorized && (
+                      <Button 
+                        onClick={handleStartLive}
+                        disabled={setlist.status === 'completed' || songs.length === 0}
+                        className={`h-11 px-6 rounded-xl bg-secondary text-primary-foreground font-bold text-sm shadow-lg active:scale-[0.97] transition-all ${
+                          setlist.status === 'completed' 
+                            ? 'bg-muted text-muted-foreground shadow-none' 
+                            : songs.length === 0 
+                              ? 'opacity-50 cursor-not-allowed hover:opacity-50 shadow-none' 
+                              : 'hover:opacity-90 shadow-secondary/20'
+                        }`}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        {setlist.status === 'completed' ? 'Finalizado' : 'En Vivo'}
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
@@ -577,6 +640,7 @@ const RepertorioDetalle = () => {
               }}
               onRemoveSong={handleRemoveSong}
               onMoveSong={handleMoveSong}
+              onReorderSongs={handleReorderSongs}
               onSongClick={(song) => navigate(`/canciones/${song.song_id}`)}
               isEditing={isEditing && setlist.status !== 'completed'}
             />
@@ -615,6 +679,26 @@ const RepertorioDetalle = () => {
           onSaved={() => queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] })}
         />
       )}
+
+      <AlertDialog open={!!songToRemove} onOpenChange={(open) => !open && setSongToRemove(null)}>
+        <AlertDialogContent className="card-gradient border-destructive/20 rounded-[2rem]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-black text-destructive">¿Quitar canción?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-base">
+              Esta canción será removida del repertorio. Podrás volver a agregarla después si lo deseas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 mt-6">
+            <AlertDialogCancel className="h-12 rounded-2xl border-border font-bold">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmRemoveSong}
+              className="h-12 rounded-2xl bg-destructive text-white font-black uppercase tracking-widest hover:bg-destructive/90 shadow-xl shadow-destructive/20"
+            >
+              Quitar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
