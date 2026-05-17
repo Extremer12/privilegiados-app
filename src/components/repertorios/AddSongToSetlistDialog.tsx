@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SECTION_TYPES, Song, SectionType } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { HelpTooltip } from './HelpTooltip';
+import { CreateEnganchadoDialog } from '@/components/CreateEnganchadoDialog';
+import { ListMusic } from 'lucide-react';
 
 interface AddSongToSetlistDialogProps {
   open: boolean;
@@ -41,6 +43,7 @@ export function AddSongToSetlistDialog({
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [assignedTo, setAssignedTo] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
+  const [createEnganchadoOpen, setCreateEnganchadoOpen] = useState(false);
 
   const sectionInfo = SECTION_TYPES.find(s => s.id === section);
 
@@ -107,6 +110,7 @@ export function AddSongToSetlistDialog({
     alabanza: 'bg-yellow-500/20 text-yellow-400',
     adoracion: 'bg-pink-500/20 text-pink-400',
     especial: 'bg-purple-500/20 text-purple-400',
+    enganchado: 'bg-emerald-500/20 text-emerald-400',
     otro: 'bg-gray-500/20 text-gray-400',
   };
 
@@ -122,28 +126,40 @@ export function AddSongToSetlistDialog({
 
         {!selectedSong ? (
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar canción..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar canción..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="alabanza">Alabanza</SelectItem>
+                    <SelectItem value="adoracion">Adoración</SelectItem>
+                    <SelectItem value="especial">Especial</SelectItem>
+                    <SelectItem value="enganchado">Enganchados</SelectItem>
+                    <SelectItem value="otro">Otro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="alabanza">Alabanza</SelectItem>
-                  <SelectItem value="adoracion">Adoración</SelectItem>
-                  <SelectItem value="especial">Especial</SelectItem>
-                  <SelectItem value="otro">Otro</SelectItem>
-                </SelectContent>
-              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-bold justify-start"
+                onClick={() => setCreateEnganchadoOpen(true)}
+              >
+                <ListMusic className="w-4 h-4 mr-2" />
+                Crear nuevo Enganchado
+              </Button>
             </div>
 
             <ScrollArea className="h-[300px]">
@@ -243,6 +259,15 @@ export function AddSongToSetlistDialog({
           </div>
         )}
       </DialogContent>
+      
+      <CreateEnganchadoDialog 
+        open={createEnganchadoOpen}
+        onOpenChange={setCreateEnganchadoOpen}
+        onCreated={() => {
+          fetchSongs();
+          setCategoryFilter('enganchado');
+        }}
+      />
     </Dialog>
   );
 }

@@ -103,7 +103,7 @@ export interface UserRole {
 //  Songs
 // ──────────────────────────────────────────────
 
-export type SongCategory = "alabanza" | "adoracion" | "especial" | "otro";
+export type SongCategory = "alabanza" | "adoracion" | "especial" | "enganchado" | "otro";
 
 export interface Song {
   id: string;

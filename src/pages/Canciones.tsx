@@ -22,6 +22,7 @@ import { FloatingActionButton } from "@/components/ui/fab";
 import { vibrateLight } from "@/utils/haptics";
 
 import type { Song } from "@/types";
+import { CreateEnganchadoDialog } from "@/components/CreateEnganchadoDialog";
 
 const Canciones = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const Canciones = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [createEnganchadoOpen, setCreateEnganchadoOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(40);
   const { isAdmin, isLeader, isModerator } = useUserRole();
   const isAuthorized = isAdmin || isLeader || isModerator;
@@ -108,6 +110,15 @@ const Canciones = () => {
       dot: "bg-gray-500",
       borderFocus: "group-hover:border-gray-500/40"
     },
+    enganchado: {
+      badge: "bg-[#064E3B]/80 text-[#10B981] border-[#10B981]/30",
+      iconColor: "text-emerald-500",
+      gradient: "from-[#022C22]/80 via-background to-background",
+      glow: "hover:shadow-[0_8px_30px_rgba(16,185,129,0.12)]",
+      textHover: "group-hover:text-emerald-400",
+      dot: "bg-emerald-500",
+      borderFocus: "group-hover:border-emerald-500/40"
+    },
   }), []);
 
   const containerVariants = {
@@ -174,18 +185,29 @@ const Canciones = () => {
               </p>
             </div>
             
-            <Button 
-              variant="hero" 
-              size="sm"
-              className="hidden sm:flex h-10 px-5 rounded-xl shadow-md font-bold text-sm"
-              onClick={() => {
-                vibrateLight();
-                navigate('/canciones/nueva');
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Canción
-            </Button>
+            <div className="hidden sm:flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="h-10 px-5 rounded-xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-bold text-sm"
+                onClick={() => setCreateEnganchadoOpen(true)}
+              >
+                <ListMusic className="w-4 h-4 mr-2" />
+                Crear Enganchado
+              </Button>
+              <Button 
+                variant="hero" 
+                size="sm"
+                className="h-10 px-5 rounded-xl shadow-md font-bold text-sm"
+                onClick={() => {
+                  vibrateLight();
+                  navigate('/canciones/nueva');
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Canción
+              </Button>
+            </div>
           </div>
 
           <div className="mb-8 space-y-4">
@@ -209,6 +231,7 @@ const Canciones = () => {
                 { id: "alabanza", label: "Alabanza" },
                 { id: "adoracion", label: "Adoración" },
                 { id: "especial", label: "Especial" },
+                { id: "enganchado", label: "Enganchados" },
                 { id: "otro", label: "Otro" },
                 ...(isAuthorized ? [{ id: "suggestions", label: "Sugerencias" }] : [])
               ].map((cat) => {
@@ -410,6 +433,12 @@ const Canciones = () => {
         icon={<Plus className="w-6 h-6" />}
         label="Nueva Canción"
         onClick={() => navigate('/canciones/nueva')}
+      />
+
+      <CreateEnganchadoDialog 
+        open={createEnganchadoOpen} 
+        onOpenChange={setCreateEnganchadoOpen} 
+        onCreated={() => fetchSongs()}
       />
     </>
   );
