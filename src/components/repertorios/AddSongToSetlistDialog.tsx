@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SECTION_TYPES, Song, SectionType } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { HelpTooltip } from './HelpTooltip';
@@ -35,6 +36,7 @@ export function AddSongToSetlistDialog({
 }: AddSongToSetlistDialogProps) {
   const [songs, setSongs] = useState<Song[]>([]);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [assignedTo, setAssignedTo] = useState('');
@@ -57,10 +59,13 @@ export function AddSongToSetlistDialog({
     if (data) setSongs(data);
   };
 
-  const filteredSongs = songs.filter(song =>
-    song.title.toLowerCase().includes(search.toLowerCase()) ||
-    song.category.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredSongs = songs.filter(song => {
+    const matchesSearch = song.title.toLowerCase().includes(search.toLowerCase()) || 
+                          song.category.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || song.category === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   const handleAddSong = async () => {
     if (!selectedSong) return;
@@ -95,6 +100,7 @@ export function AddSongToSetlistDialog({
     setAssignedTo('');
     setSpecialInstructions('');
     setSearch('');
+    setCategoryFilter('all');
   };
 
   const categoryColors: Record<string, string> = {
@@ -116,14 +122,28 @@ export function AddSongToSetlistDialog({
 
         {!selectedSong ? (
           <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar canción..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar canción..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="alabanza">Alabanza</SelectItem>
+                  <SelectItem value="adoracion">Adoración</SelectItem>
+                  <SelectItem value="especial">Especial</SelectItem>
+                  <SelectItem value="otro">Otro</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <ScrollArea className="h-[300px]">

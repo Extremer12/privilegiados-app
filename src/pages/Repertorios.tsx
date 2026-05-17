@@ -38,6 +38,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { notificationService } from '@/services/notificationService';
 
 interface SetlistWithCount extends Setlist {
   songsCount: number;

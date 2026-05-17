@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { 
   Music, Heart, BookOpen, Gift, MessageSquare, Sparkles, Flag,
-  ChevronDown, ChevronUp, Plus, X, ArrowUp, ArrowDown, Edit2, Check,
+  ChevronDown, ChevronUp, Plus, X, Edit2, Check,
   GripVertical, Trash2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
   TouchSensor,
 } from '@dnd-kit/core';
 import {
@@ -29,6 +31,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { toast } from 'sonner';
 
 const iconMap: Record<string, React.ElementType> = {
   Music, Heart, BookOpen, Gift, MessageSquare, Sparkles, Flag,
@@ -56,6 +59,8 @@ interface ServiceStructureViewProps {
   onReorderSongs?: (sectionId: string, songIds: string[]) => void;
   onSongClick: (song: SetlistSong) => void;
   isEditing: boolean;
+  /** Whether the current user is authorized to reorder (admin/leader/owner) */
+  canReorder?: boolean;
 }
 
 // --- Sortable Song Item ---
@@ -63,14 +68,16 @@ function SortableSongItem({
   song, 
   songIndex, 
   isEditing, 
+  canDrag,
   onSongClick, 
   onRemoveSong 
 }: { 
-  song: SetlistSong, 
-  songIndex: number, 
-  isEditing: boolean, 
-  onSongClick: (song: SetlistSong) => void,
-  onRemoveSong: (id: string) => void
+  song: SetlistSong; 
+  songIndex: number; 
+  isEditing: boolean;
+  canDrag: boolean;
+  onSongClick: (song: SetlistSong) => void;
+  onRemoveSong: (id: string) => void;
 }) {
   const {
     attributes,
@@ -81,9 +88,10 @@ function SortableSongItem({
     isDragging
   } = useSortable({ 
     id: song.id,
+    disabled: !canDrag,
     data: {
       type: 'song',
-      sectionId: (song as any).section // Assuming song has section id
+      sectionId: song.section
     }
   });
 
@@ -98,16 +106,16 @@ function SortableSongItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all group ${isDragging ? 'shadow-2xl bg-white/[0.08] border-secondary/30' : ''}`}
+      className={`flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all group select-none ${isDragging ? 'shadow-2xl bg-white/[0.08] border-secondary/30' : ''}`}
     >
-      {/* Grip handle */}
-      {isEditing && (
+      {/* Grip handle — visible when user can drag (authorized), not just editing */}
+      {canDrag && (
         <div 
           {...attributes} 
           {...listeners}
-          className="cursor-grab active:cursor-grabbing p-1 -ml-2 text-muted-foreground/30 hover:text-secondary transition-colors"
+          className="cursor-grab active:cursor-grabbing p-2 -ml-2 text-muted-foreground/40 hover:text-secondary transition-colors touch-none flex-shrink-0"
         >
-          <GripVertical className="h-4 w-4" />
+          <GripVertical className="h-5 w-5" />
         </div>
       )}
 
@@ -144,7 +152,7 @@ function SortableSongItem({
         )}
       </div>
       
-      {/* Actions */}
+      {/* Remove action — only in editing mode */}
       {isEditing && (
         <Button
           variant="ghost"
@@ -163,11 +171,115 @@ function SortableSongItem({
   );
 }
 
+// --- Static Song Item (for DragOverlay) ---
+function SongOverlayItem({ song, songIndex }: { song: SetlistSong; songIndex: number }) {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-xl bg-[#1a1f2c] border-2 border-secondary/50 shadow-2xl shadow-secondary/20">
+      <div className="p-1 -ml-2 text-secondary">
+        <GripVertical className="h-4 w-4" />
+      </div>
+      <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
+        <span className="text-xs font-bold text-secondary">{songIndex + 1}</span>
+      </div>
+      <p className="text-base font-semibold text-secondary truncate">
+        {song.songs?.title || 'Sin título'}
+      </p>
+    </div>
+  );
+}
+
+// --- Static Section Overlay (for DragOverlay) ---
+function SectionOverlayItem({ section, songCount }: { section: SectionConfig; songCount: number }) {
+  const Icon = iconMap[section.icon] || Sparkles;
+  return (
+    <div className="mb-4">
+      <Card className="rounded-2xl border-2 border-secondary/50 bg-[#1a1f2c] shadow-2xl shadow-secondary/20 overflow-hidden">
+        <CardHeader className="py-5 px-5 md:px-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div className="p-1 -ml-2 text-secondary">
+                <GripVertical className="h-5 w-5" />
+              </div>
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-white/[0.05] shrink-0 ${section.color}`}>
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-base md:text-lg font-semibold tracking-wide text-secondary">
+                  {section.name}
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">{section.description}</p>
+              </div>
+            </div>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-secondary/15 text-secondary">
+              {songCount}
+            </span>
+          </div>
+        </CardHeader>
+      </Card>
+    </div>
+  );
+}
+
+// --- Section Content (non-sortable wrapper for songs DnD) ---
+function SectionSongList({
+  section,
+  songs,
+  isEditing,
+  canDrag,
+  onAddSong,
+  onRemoveSong,
+  onSongClick,
+}: {
+  section: SectionConfig;
+  songs: SetlistSong[];
+  isEditing: boolean;
+  canDrag: boolean;
+  onAddSong: (sectionId: string) => void;
+  onRemoveSong: (songId: string) => void;
+  onSongClick: (song: SetlistSong) => void;
+}) {
+  return (
+    <CardContent className="px-5 md:px-6 pb-5 pt-0">
+      {songs.length === 0 ? (
+        <div className="py-6 border-t border-white/5 text-center">
+          <p className="text-sm text-muted-foreground/60">Sin canciones asignadas</p>
+        </div>
+      ) : (
+        <div className="space-y-2 border-t border-white/5 pt-4">
+          <SortableContext items={songs.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            {songs.map((song, songIdx) => (
+              <SortableSongItem 
+                key={song.id} 
+                song={song} 
+                songIndex={songIdx} 
+                isEditing={isEditing} 
+                canDrag={canDrag}
+                onSongClick={onSongClick}
+                onRemoveSong={onRemoveSong}
+              />
+            ))}
+          </SortableContext>
+        </div>
+      )}
+
+      <Button
+        variant="ghost"
+        className="w-full mt-4 h-12 rounded-xl border border-dashed border-white/10 hover:border-secondary/40 hover:bg-secondary/5 text-sm font-semibold text-muted-foreground hover:text-secondary transition-all"
+        onClick={() => onAddSong(section.id)}
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Agregar canción
+      </Button>
+    </CardContent>
+  );
+}
+
 // --- Sortable Section Item ---
 function SortableSectionItem({
   section,
   index,
   isEditing,
+  canDrag,
   isExpanded,
   toggleSection,
   isRenaming,
@@ -180,8 +292,24 @@ function SortableSectionItem({
   onAddSong,
   onRemoveSong,
   onSongClick,
-  onReorderSongs
-}: any) {
+}: {
+  section: SectionConfig;
+  index: number;
+  isEditing: boolean;
+  canDrag: boolean;
+  isExpanded: boolean;
+  toggleSection: (id: string) => void;
+  isRenaming: boolean;
+  editingName: string;
+  setEditingName: (name: string) => void;
+  saveSectionName: (id: string) => void;
+  setEditingSectionId: (id: string | null) => void;
+  deleteSection: (index: number) => void;
+  songs: SetlistSong[];
+  onAddSong: (section: string) => void;
+  onRemoveSong: (songId: string) => void;
+  onSongClick: (song: SetlistSong) => void;
+}) {
   const {
     attributes,
     listeners,
@@ -191,6 +319,7 @@ function SortableSectionItem({
     isDragging
   } = useSortable({ 
     id: section.id,
+    disabled: !canDrag,
     data: {
       type: 'section'
     }
@@ -204,8 +333,6 @@ function SortableSectionItem({
   };
 
   const Icon = iconMap[section.icon] || Sparkles;
-
-  // No handleDragEndSongs here anymore
 
   return (
     <div ref={setNodeRef} style={style} className="mb-4">
@@ -222,17 +349,17 @@ function SortableSectionItem({
         }`}>
           <CollapsibleTrigger asChild>
             <CardHeader className={`cursor-pointer py-5 px-5 md:px-6 ${isRenaming ? 'pointer-events-none' : ''}`}>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-3 select-none">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                  {/* Grip handle for sections */}
-                  {isEditing && (
+                  {/* Grip handle for sections — visible when canDrag */}
+                  {canDrag && (
                     <div 
                       {...attributes} 
                       {...listeners}
-                      className="cursor-grab active:cursor-grabbing p-1 -ml-2 text-muted-foreground/30 hover:text-secondary transition-colors"
+                      className="cursor-grab active:cursor-grabbing p-2 -ml-2 text-muted-foreground/40 hover:text-secondary transition-colors touch-none flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <GripVertical className="h-5 w-5" />
+                      <GripVertical className="h-6 w-6" />
                     </div>
                   )}
 
@@ -318,37 +445,15 @@ function SortableSectionItem({
           </CollapsibleTrigger>
           
           <CollapsibleContent>
-            <CardContent className="px-5 md:px-6 pb-5 pt-0">
-              {songs.length === 0 ? (
-                <div className="py-6 border-t border-white/5 text-center">
-                  <p className="text-sm text-muted-foreground/60">Sin canciones asignadas</p>
-                </div>
-              ) : (
-                <div className="space-y-2 border-t border-white/5 pt-4">
-                  <SortableContext items={songs.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
-                    {songs.map((song: any, songIdx: number) => (
-                      <SortableSongItem 
-                        key={song.id} 
-                        song={song} 
-                        songIndex={songIdx} 
-                        isEditing={isEditing} 
-                        onSongClick={onSongClick}
-                        onRemoveSong={onRemoveSong}
-                      />
-                    ))}
-                  </SortableContext>
-                </div>
-              )}
-
-              <Button
-                variant="ghost"
-                className="w-full mt-4 h-12 rounded-xl border border-dashed border-white/10 hover:border-secondary/40 hover:bg-secondary/5 text-sm font-semibold text-muted-foreground hover:text-secondary transition-all"
-                onClick={() => onAddSong(section.id)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar canción
-              </Button>
-            </CardContent>
+            <SectionSongList
+              section={section}
+              songs={songs}
+              isEditing={isEditing}
+              canDrag={canDrag}
+              onAddSong={onAddSong}
+              onRemoveSong={onRemoveSong}
+              onSongClick={onSongClick}
+            />
           </CollapsibleContent>
         </Card>
       </Collapsible>
@@ -364,21 +469,29 @@ export function ServiceStructureView({
   onRemoveSong,
   onReorderSongs,
   onSongClick,
-  isEditing 
+  isEditing,
+  canReorder = false,
 }: ServiceStructureViewProps) {
   const [expandedSections, setExpandedSections] = useState<string[]>(
     sections.map(s => s.id)
   );
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [activeDragItem, setActiveDragItem] = useState<{
+    type: 'section' | 'song';
+    id: string;
+  } | null>(null);
+
+  // Allow dragging when editing OR when canReorder is true (authorized user)
+  const canDrag = isEditing || canReorder;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { 
-      activationConstraint: { distance: 8 } 
+      activationConstraint: { distance: 5 } 
     }),
     useSensor(TouchSensor, { 
       activationConstraint: { 
-        delay: 250, 
+        delay: 150, 
         tolerance: 5 
       } 
     }),
@@ -387,20 +500,20 @@ export function ServiceStructureView({
     })
   );
 
-  const toggleSection = (sectionId: string) => {
+  const toggleSection = useCallback((sectionId: string) => {
     setExpandedSections(prev => 
       prev.includes(sectionId)
         ? prev.filter(id => id !== sectionId)
         : [...prev, sectionId]
     );
-  };
+  }, []);
 
-  const deleteSection = (index: number) => {
+  const deleteSection = useCallback((index: number) => {
     const newSections = sections.filter((_, i) => i !== index);
     onUpdateSections(newSections);
-  };
+  }, [sections, onUpdateSections]);
 
-  const addSection = () => {
+  const addSection = useCallback(() => {
     const newId = `custom_${Date.now()}`;
     const newSection: SectionConfig = {
       id: newId,
@@ -413,49 +526,83 @@ export function ServiceStructureView({
     setExpandedSections(prev => [...prev, newId]);
     setEditingSectionId(newId);
     setEditingName('Nueva Sección');
-  };
+  }, [sections, onUpdateSections]);
 
-  const saveSectionName = (id: string) => {
+  const saveSectionName = useCallback((id: string) => {
     const newSections = sections.map(s => s.id === id ? { ...s, name: editingName } : s);
     onUpdateSections(newSections);
     setEditingSectionId(null);
-  };
+  }, [sections, editingName, onUpdateSections]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active } = event;
+    const activeData = active.data.current;
+    setActiveDragItem({
+      type: activeData?.type === 'section' ? 'section' : 'song',
+      id: String(active.id),
+    });
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    setActiveDragItem(null);
+    
+    if (!over || active.id === over.id) return;
 
-    if (active.id !== over.id) {
-      const activeData = active.data.current;
-      const overData = over.data.current;
+    const activeData = active.data.current;
+    const overData = over.data.current;
+    
+    if (activeData?.type === 'section') {
+      // --- Reordering sections ---
+      const overSectionId = overData?.type === 'song' ? overData.sectionId : over.id;
+      const oldIndex = sections.findIndex(s => s.id === active.id);
+      const newIndex = sections.findIndex(s => s.id === overSectionId);
       
-      if (activeData?.type === 'section') {
-        const overSectionId = overData?.type === 'song' ? overData.sectionId : over.id;
-        const oldIndex = sections.findIndex(s => s.id === active.id);
-        const newIndex = sections.findIndex(s => s.id === overSectionId);
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const newSections = arrayMove(sections, oldIndex, newIndex);
+        onUpdateSections(newSections);
+        toast.success('Secciones reordenadas', {
+          description: 'El orden se guardará automáticamente.',
+          duration: 2000,
+        });
+      }
+    } else if (activeData?.type === 'song') {
+      // --- Reordering songs within same section ---
+      const activeSectionId = activeData.sectionId;
+      const overSectionId = overData?.type === 'song' ? overData.sectionId : over.id;
+      
+      if (activeSectionId === overSectionId) {
+        const sectionSongs = songsBySection[activeSectionId] || [];
+        const oldIndex = sectionSongs.findIndex(s => s.id === active.id);
+        const newIndex = sectionSongs.findIndex(s => s.id === over.id);
         
-        if (oldIndex !== -1 && newIndex !== -1) {
-          onUpdateSections(arrayMove(sections, oldIndex, newIndex));
-        }
-      } else if (activeData?.type === 'song') {
-        const activeSectionId = activeData.sectionId;
-        const overSectionId = overData?.type === 'song' ? overData.sectionId : over.id;
-        
-        if (activeSectionId === overSectionId) {
-          const sectionSongs = songsBySection[activeSectionId] || [];
-          const oldIndex = sectionSongs.findIndex(s => s.id === active.id);
-          const newIndex = sectionSongs.findIndex(s => s.id === over.id);
-          
-          if (oldIndex !== -1 && newIndex !== -1) {
-            const newSongs = arrayMove(sectionSongs, oldIndex, newIndex);
-            if (onReorderSongs) {
-              onReorderSongs(activeSectionId, newSongs.map(s => s.id));
-            }
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const newSongs = arrayMove(sectionSongs, oldIndex, newIndex);
+          if (onReorderSongs) {
+            onReorderSongs(activeSectionId, newSongs.map(s => s.id));
+            toast.success('Canciones reordenadas', {
+              duration: 2000,
+            });
           }
         }
       }
     }
-  };
+  }, [sections, songsBySection, onUpdateSections, onReorderSongs]);
+
+  // Find active item data for DragOverlay
+  const activeSong = useMemo(() => {
+    if (!activeDragItem || activeDragItem.type !== 'song') return null;
+    for (const sectionSongs of Object.values(songsBySection)) {
+      const found = sectionSongs.find(s => s.id === activeDragItem.id);
+      if (found) return { song: found, index: sectionSongs.indexOf(found) };
+    }
+    return null;
+  }, [activeDragItem, songsBySection]);
+
+  const activeSection = useMemo(() => {
+    if (!activeDragItem || activeDragItem.type !== 'section') return null;
+    return sections.find(s => s.id === activeDragItem.id) || null;
+  }, [activeDragItem, sections]);
 
   return (
     <div className="space-y-6">
@@ -466,26 +613,34 @@ export function ServiceStructureView({
           </h2>
           <HelpTooltip
             title="Estructura del Servicio"
-            description="Organiza las canciones por secciones según el flujo típico de un culto."
+            description="Organiza las canciones por secciones según el flujo típico de un culto. Puedes arrastrar para reordenar secciones y canciones."
             example="Alabanza → Adoración → Ofrenda → Palabra → Cierre"
           />
         </div>
-        {isEditing && (
-          <Button
-            onClick={addSection}
-            variant="outline"
-            size="sm"
-            className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary hover:text-primary-foreground transition-all gap-2 text-sm font-semibold"
-          >
-            <Plus className="h-4 w-4" />
-            Sección
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {canDrag && !isEditing && (
+            <span className="text-[10px] font-bold text-secondary/60 uppercase tracking-widest hidden sm:inline">
+              Arrastra para reordenar
+            </span>
+          )}
+          {isEditing && (
+            <Button
+              onClick={addSection}
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary hover:text-primary-foreground transition-all gap-2 text-sm font-semibold"
+            >
+              <Plus className="h-4 w-4" />
+              Sección
+            </Button>
+          )}
+        </div>
       </div>
 
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         modifiers={[restrictToVerticalAxis]}
       >
@@ -496,6 +651,7 @@ export function ServiceStructureView({
               section={section}
               index={index}
               isEditing={isEditing}
+              canDrag={canDrag}
               isExpanded={expandedSections.includes(section.id)}
               toggleSection={toggleSection}
               isRenaming={editingSectionId === section.id}
@@ -508,10 +664,21 @@ export function ServiceStructureView({
               onAddSong={onAddSong}
               onRemoveSong={onRemoveSong}
               onSongClick={onSongClick}
-              onReorderSongs={onReorderSongs}
             />
           ))}
         </SortableContext>
+
+        {/* DragOverlay for visual feedback */}
+        <DragOverlay>
+          {activeDragItem?.type === 'song' && activeSong ? (
+            <SongOverlayItem song={activeSong.song} songIndex={activeSong.index} />
+          ) : activeDragItem?.type === 'section' && activeSection ? (
+            <SectionOverlayItem 
+              section={activeSection} 
+              songCount={(songsBySection[activeSection.id] || []).length} 
+            />
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );

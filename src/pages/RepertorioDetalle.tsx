@@ -25,6 +25,7 @@ import { ServiceStructureView } from '@/components/repertorios/ServiceStructureV
 import { AddSongToSetlistDialog } from '@/components/repertorios/AddSongToSetlistDialog';
 import { ManageParticipantsDialog } from '@/components/repertorios/ManageParticipantsDialog';
 import { Setlist, SetlistSong, SECTION_TYPES, SectionType } from '@/components/repertorios/types';
+import type { SectionConfig } from '@/components/repertorios/ServiceStructureView';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,7 +55,7 @@ const RepertorioDetalle = () => {
   const [addSongDialogOpen, setAddSongDialogOpen] = useState(false);
   const [manageParticipantsOpen, setManageParticipantsOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState<SectionType>('alabanza');
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<SectionConfig[]>([]);
   const [printMode, setPrintMode] = useState(false);
   const [songToRemove, setSongToRemove] = useState<string | null>(null);
 
@@ -248,8 +249,9 @@ const RepertorioDetalle = () => {
 
   const reorderSongsMutation = useMutation({
     mutationFn: async ({ sectionId, songIds }: { sectionId: string, songIds: string[] }) => {
-      const updates = songIds.map((id, index) => ({
-        id,
+      const updates = songIds.map((songRowId, index) => ({
+        id: songRowId,
+        setlist_id: id,
         position: index + 1,
         section: sectionId
       }));
@@ -266,6 +268,25 @@ const RepertorioDetalle = () => {
     onError: (error) => {
       console.error('Error reordering songs:', error);
       toast.error('Error al reordenar canciones');
+    }
+  });
+
+  // Persist section order immediately to DB (no need to click Save)
+  const reorderSectionsMutation = useMutation({
+    mutationFn: async (newSections: SectionConfig[]) => {
+      const { error } = await supabase
+        .from('setlists')
+        .update({ sections_config: newSections })
+        .eq('id', id!);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['setlist_detail', id] });
+    },
+    onError: (error) => {
+      console.error('Error reordering sections:', error);
+      toast.error('Error al reordenar secciones');
     }
   });
 
@@ -631,7 +652,13 @@ const RepertorioDetalle = () => {
           >
             <ServiceStructureView
               sections={sections}
-              onUpdateSections={setSections}
+              onUpdateSections={(newSections) => {
+                setSections(newSections);
+                // Persist section order immediately to DB
+                if (!isEditing) {
+                  reorderSectionsMutation.mutate(newSections);
+                }
+              }}
               songsBySection={songsBySection}
               onAddSong={(section) => {
                 if (setlist.status === 'completed') return;
@@ -643,6 +670,7 @@ const RepertorioDetalle = () => {
               onReorderSongs={handleReorderSongs}
               onSongClick={(song) => navigate(`/canciones/${song.song_id}`)}
               isEditing={isEditing && setlist.status !== 'completed'}
+              canReorder={isAuthorized && setlist.status !== 'completed'}
             />
           </motion.div>
         </div>
