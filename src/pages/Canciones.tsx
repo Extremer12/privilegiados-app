@@ -10,7 +10,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSongsWithProfiles } from "@/services/songService";
 
-import { Plus, Music, Search, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp, AlertCircle } from "lucide-react";
+import { Plus, Music, Search, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp, AlertCircle, ListMusic } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
