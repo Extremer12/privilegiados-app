@@ -14,18 +14,11 @@ export const DashboardOverview = ({ data }: { data: any }) => {
     // 1. Total services
     const totalServices = reports.length;
     
-    // 2. Average rating (Quality)
-    const ratings = reports.flatMap((r: any) => r.service_ratings?.map((sr: any) => sr.rating) || []);
-    const avgRating = ratings.length > 0 
-      ? (ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length).toFixed(1)
-      : "0";
+    // 2. Unique Participants
+    const uniqueParticipants = new Set(participants.map((p: any) => p.user_id || p.participant_name)).size;
       
-    // 3. Preparation Score (Improvisation)
-    const improvisedSongs = songsPlayed.filter((s: any) => s.was_improvised).length;
+    // 3. Total Songs Played
     const totalSongsPlayed = songsPlayed.length;
-    const prepScore = totalSongsPlayed > 0 
-      ? Math.max(0, 100 - (improvisedSongs / totalSongsPlayed) * 100)
-      : 100;
 
     // 4. Musical Keys Distribution
     const keysMap = songsPlayed.reduce((acc: any, s: any) => {
@@ -66,7 +59,7 @@ export const DashboardOverview = ({ data }: { data: any }) => {
     }, {});
     const trendingSongs = Object.entries(songTrend).sort((a: any, b: any) => b[1] - a[1]).slice(0, 3);
 
-    return { totalServices, avgRating, prepScore, topKeys, topStreaks, trendingSongs };
+    return { totalServices, uniqueParticipants, totalSongsPlayed, topKeys, topStreaks, trendingSongs };
   }, [data]);
 
   // Generate Insights
@@ -85,24 +78,25 @@ export const DashboardOverview = ({ data }: { data: any }) => {
       });
     }
 
-    // 2. Performance Consistency
-    const recentRatings = reports.slice(0, 3).flatMap((r: any) => r.service_ratings?.map((sr: any) => sr.rating) || []);
-    if (recentRatings.length > 0 && recentRatings.every((r: number) => r >= 4)) {
+    // 2. New Songs Added
+    const recent30Days = new Date();
+    recent30Days.setDate(recent30Days.getDate() - 30);
+    const newSongsCount = allSongs.filter((s: any) => new Date(s.created_at) >= recent30Days).length;
+    if (newSongsCount > 0) {
       messages.push({
         type: "success",
-        title: "Consistencia de Oro",
-        text: "Llevas una racha de 3 cultos con valoración impecable. El equipo está en su mejor momento."
+        title: "Crecimiento Musical",
+        text: `Has agregado ${newSongsCount} canciones nuevas este mes. ¡Sigan ampliando el repertorio!`
       });
     }
 
-    // 3. Planning Audit
-    const improvisedCount = songsPlayed.filter((s: any) => s.was_improvised).length;
-    const improvisedRate = Math.round((improvisedCount / (songsPlayed.length || 1)) * 100);
-    if (improvisedRate > 20) {
+    // 3. Top Key Usage
+    const topKey = stats.topKeys[0];
+    if (topKey && (topKey.count / (songsPlayed.length || 1)) > 0.4) {
       messages.push({
         type: "info",
-        title: "Alerta de Improvisación",
-        text: `El ${improvisedRate}% de las canciones son improvisadas. Considera dedicar más tiempo al ensayo previo.`
+        title: "Diversidad Tonal",
+        text: `El ${Math.round((topKey.count / songsPlayed.length) * 100)}% de las canciones están en ${topKey.key}. Intenta variar más las tonalidades.`
       });
     }
 
@@ -113,9 +107,9 @@ export const DashboardOverview = ({ data }: { data: any }) => {
 
   const statCards = [
     { title: "Servicios Realizados", value: stats.totalServices, icon: CalendarIcon, color: "text-blue-400", bg: "bg-blue-400/10" },
-    { title: "Calidad Vocal/Musical", value: `${stats.avgRating}/5`, icon: Star, color: "text-amber-400", bg: "bg-amber-400/10" },
-    { title: "Efectividad de Ensayo", value: `${Math.round(stats.prepScore)}%`, icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-400/10" },
     { title: "Canciones Diferentes", value: new Set(data.songsPlayed.map((s: any) => s.song_id)).size, icon: Music, color: "text-purple-400", bg: "bg-purple-400/10" },
+    { title: "Reproducciones Totales", value: stats.totalSongsPlayed, icon: Activity, color: "text-emerald-400", bg: "bg-emerald-400/10" },
+    { title: "Miembros Activos", value: stats.uniqueParticipants, icon: Users, color: "text-amber-400", bg: "bg-amber-400/10" },
   ];
 
   return (

@@ -182,11 +182,13 @@ const Miembros = () => {
     });
   };
 
-  const filteredMembers = members.filter((member) =>
-    member.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    member.instrument?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMembers = members.filter((member) => {
+    const searchLower = searchQuery.toLowerCase();
+    const nameMatch = member.full_name?.toLowerCase().includes(searchLower) ?? false;
+    const roleMatch = member.role?.toLowerCase().includes(searchLower) ?? false;
+    const instrumentMatch = (member as any).instrument?.toLowerCase().includes(searchLower) ?? false;
+    return nameMatch || roleMatch || instrumentMatch;
+  });
 
   if (authLoading || !user) {
     return null;
