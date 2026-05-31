@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Music, ChevronRight, 
   CalendarDays, Bell, Clock,
-  MapPin, AlertCircle, Info, AlertTriangle, Zap, Star, MessageSquare
+  MapPin, AlertCircle, Info, AlertTriangle, Zap, Star, MessageSquare, ListMusic
 } from "lucide-react";
 import { format, formatDistanceToNow, isAfter, isBefore, addDays, subDays, subHours } from "date-fns";
 import { es } from "date-fns/locale";
