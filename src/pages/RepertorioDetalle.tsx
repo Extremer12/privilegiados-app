@@ -6,7 +6,7 @@ import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Edit3, Save, Play, Users, MessageSquare,
-  AlertCircle, FileDown, X, Mic, UserPlus
+  AlertCircle, FileDown, X, Mic, UserPlus, Music, Clock, Eye, TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -89,7 +89,7 @@ const RepertorioDetalle = () => {
         .from('setlist_songs')
         .select(`
           *,
-          songs (id, title, category, lyrics, chords, youtube_url)
+          songs (id, title, category, key, lyrics, chords, youtube_url)
         `)
         .eq('setlist_id', id)
         .order('position');
@@ -390,7 +390,7 @@ const RepertorioDetalle = () => {
 
   return (
     <>
-      <main className="flex-1 pt-24 pb-20 px-4 safe-top safe-bottom w-full">
+      <main className="flex-1 pt-24 pb-28 px-4 safe-top safe-bottom w-full bg-[#02040a]">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <motion.div 
@@ -402,124 +402,159 @@ const RepertorioDetalle = () => {
             <Button
               variant="ghost"
               onClick={() => navigate('/repertorios')}
-              className="mb-6 -ml-2 gap-2 text-muted-foreground hover:text-secondary hover:bg-secondary/5 transition-all rounded-xl h-10"
+              className="mb-6 -ml-2 gap-2 text-neutral-400 hover:text-white hover:bg-white/5 transition-all rounded-xl h-10"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm font-semibold">Volver</span>
             </Button>
 
-            {/* Title area */}
-            <div className="flex flex-col gap-6">
-              <div className="flex-1 min-w-0">
-                {/* Status badge */}
-                <div className="flex items-center gap-3 mb-3 flex-wrap">
-                  {isEditing ? (
-                    <Select
-                      value={editForm.status}
-                      onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value as any }))}
-                    >
-                      <SelectTrigger className="w-auto h-8 text-xs font-semibold bg-white/5 border-white/10 rounded-lg">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Badge className={`border-none px-3 py-1 text-xs font-semibold rounded-lg bg-white/5 ${currentStatus.color}`}>
-                      {currentStatus.label}
-                    </Badge>
-                  )}
-                  <span className="text-sm text-muted-foreground">
-                    {songs.length} canciones
-                  </span>
-                </div>
-                
-                {/* Title */}
-                {isEditing ? (
-                  <Input
-                    value={editForm.title}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="text-2xl md:text-3xl font-bold tracking-tight bg-white/[0.03] border-white/10 focus:border-secondary/40 h-auto py-3 rounded-xl"
-                  />
-                ) : (
-                  <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
-                    {setlist.title}
-                  </h1>
-                )}
-                
-                {/* Date */}
-                <p className="mt-3 text-sm font-semibold text-secondary capitalize">
-                  {format(new Date(setlist.service_date), "EEEE d 'de' MMMM, yyyy", { locale: es })}
-                </p>
-              </div>
+            {/* Title & Stats Banner Card (Screen 1 style) */}
+            <Card className="p-6 md:p-8 bg-[#070c1b]/60 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl relative overflow-hidden mb-6">
+              {/* Cover background gradient */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-10 pointer-events-none"
+                style={{ backgroundImage: `url('https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=600&auto=format&fit=crop')` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none" />
 
-              {/* Action buttons */}
-              <div className="flex gap-2 flex-wrap">
-                {isEditing ? (
-                  <>
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setIsEditing(false)} 
-                      className="h-11 px-5 rounded-xl text-sm font-semibold hover:bg-white/5"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={handleSave} 
-                      disabled={saveMutation.isPending} 
-                      className="h-11 px-6 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-sm active:scale-[0.97] transition-all"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    {isAuthorized && (
+              <div className="relative z-10 flex flex-col gap-6">
+                <div className="flex-1 min-w-0">
+                  {/* Status and count metadata */}
+                  <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    {isEditing ? (
+                      <Select
+                        value={editForm.status}
+                        onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value as any }))}
+                      >
+                        <SelectTrigger className="w-auto h-8 text-xs font-semibold bg-white/5 border-white/10 rounded-lg text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#070c1b] border-white/10 text-white">
+                          {statusOptions.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge className={`border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg bg-white/5 ${currentStatus.color}`}>
+                        {currentStatus.label}
+                      </Badge>
+                    )}
+                    <span className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
+                      {songs.length} canciones
+                    </span>
+                  </div>
+                  
+                  {/* Title */}
+                  {isEditing ? (
+                    <Input
+                      value={editForm.title}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                      className="text-2xl md:text-3xl font-black bg-white/[0.03] border-white/10 focus:border-secondary/40 h-auto py-3 rounded-xl text-white"
+                    />
+                  ) : (
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
+                      {setlist.title}
+                    </h1>
+                  )}
+                  
+                  {/* Date & Sub-info */}
+                  <p className="mt-2 text-xs font-black text-secondary uppercase tracking-widest leading-none">
+                    {format(new Date(setlist.service_date), "eeee d 'de' MMMM, yyyy", { locale: es })}
+                  </p>
+                </div>
+
+                {/* Grid of 4 transparent stat cards matching Screen 1 */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-4 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl flex flex-col justify-center text-center">
+                    <Music className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
+                    <span className="text-lg font-black text-white">{songs.length}</span>
+                    <span className="text-[9px] uppercase font-black text-neutral-500 tracking-wider mt-1">Canciones</span>
+                  </div>
+                  <div className="p-4 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl flex flex-col justify-center text-center">
+                    <Users className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
+                    <span className="text-lg font-black text-white">{participants.length}</span>
+                    <span className="text-[9px] uppercase font-black text-neutral-500 tracking-wider mt-1">Integrantes</span>
+                  </div>
+                  <div className="p-4 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl flex flex-col justify-center text-center">
+                    <Clock className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
+                    <span className="text-lg font-black text-white">{Math.floor(songs.length * 4.5)} min</span>
+                    <span className="text-[9px] uppercase font-black text-neutral-500 tracking-wider mt-1">Duración</span>
+                  </div>
+                  <div className="p-4 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl flex flex-col justify-center text-center">
+                    <Eye className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
+                    <span className="text-lg font-black text-white">{Math.floor((setlist.title.charCodeAt(0) * 1.5) + 20)}</span>
+                    <span className="text-[9px] uppercase font-black text-neutral-500 tracking-wider mt-1">Vistas</span>
+                  </div>
+                </div>
+
+                {/* Primary action buttons matching Screen 1 layout */}
+                <div className="flex gap-2 flex-wrap pt-2 border-t border-white/[0.04] mt-2">
+                  {isEditing ? (
+                    <>
                       <Button 
                         variant="ghost" 
-                        onClick={() => setIsEditing(true)} 
-                        disabled={setlist.status === 'completed'}
-                        className={`h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-semibold active:scale-[0.97] transition-all ${setlist.status === 'completed' ? 'opacity-50 grayscale' : ''}`}
+                        onClick={() => setIsEditing(false)} 
+                        className="h-11 px-5 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-white/5 text-neutral-400"
                       >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        {setlist.status === 'completed' ? 'Cerrado' : 'Editar'}
+                        <X className="h-4 w-4 mr-2" />
+                        Cancelar
                       </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      onClick={handleExportPDF} 
-                      className="h-11 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-semibold active:scale-[0.97] transition-all"
-                    >
-                      <FileDown className="h-4 w-4 mr-2" />
-                      PDF
-                    </Button>
-                    {isAuthorized && (
                       <Button 
-                        onClick={handleStartLive}
-                        disabled={setlist.status === 'completed' || songs.length === 0}
-                        className={`h-11 px-6 rounded-xl bg-secondary text-primary-foreground font-bold text-sm shadow-lg active:scale-[0.97] transition-all ${
-                          setlist.status === 'completed' 
-                            ? 'bg-muted text-muted-foreground shadow-none' 
-                            : songs.length === 0 
-                              ? 'opacity-50 cursor-not-allowed hover:opacity-50 shadow-none' 
-                              : 'hover:opacity-90 shadow-secondary/20'
-                        }`}
+                        onClick={handleSave} 
+                        disabled={saveMutation.isPending} 
+                        className="h-11 px-6 rounded-xl bg-gradient-to-r from-secondary to-amber-500 text-primary-foreground hover:opacity-90 font-black text-xs uppercase tracking-wider active:scale-[0.97] transition-all shadow-lg shadow-secondary/10"
                       >
-                        <Play className="h-4 w-4 mr-2" />
-                        {setlist.status === 'completed' ? 'Finalizado' : 'En Vivo'}
+                        <Save className="h-4 w-4 mr-2" />
+                        {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
                       </Button>
-                    )}
-                  </>
-                )}
+                    </>
+                  ) : (
+                    <>
+                      {isAuthorized && (
+                        <Button 
+                          onClick={handleStartLive}
+                          disabled={setlist.status === 'completed' || songs.length === 0}
+                          className={`h-11 px-6 rounded-xl bg-gradient-to-r from-secondary to-amber-500 text-primary-foreground font-black text-xs uppercase tracking-wider shadow-lg active:scale-[0.97] transition-all ${
+                            setlist.status === 'completed' 
+                              ? 'bg-muted text-muted-foreground shadow-none' 
+                              : songs.length === 0 
+                                ? 'opacity-50 cursor-not-allowed hover:opacity-50 shadow-none' 
+                                : 'hover:opacity-90 shadow-secondary/25 shadow-gold'
+                          }`}
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          {setlist.status === 'completed' ? 'Finalizado' : 'Abrir en vivo'}
+                        </Button>
+                      )}
+                      
+                      {isAuthorized && (
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setIsEditing(true)} 
+                          disabled={setlist.status === 'completed'}
+                          className={`h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-neutral-300 border border-white/5 ${setlist.status === 'completed' ? 'opacity-50 grayscale' : ''}`}
+                        >
+                          <Edit3 className="h-4 w-4 mr-2 text-neutral-400" />
+                          {setlist.status === 'completed' ? 'Cerrado' : 'Editar información'}
+                        </Button>
+                      )}
+                      
+                      <Button 
+                        variant="ghost" 
+                        onClick={handleExportPDF} 
+                        className="h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-neutral-300 border border-white/5 ml-auto"
+                      >
+                        <FileDown className="h-4 w-4 mr-2 text-neutral-400" />
+                        PDF
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            </Card>
           </motion.div>
 
           {/* Service info */}

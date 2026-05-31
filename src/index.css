@@ -8,56 +8,56 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 222 47% 7%;
+    --background: 224 71% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 217 33% 17%;
+    --card: 220 30% 6%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 217 33% 17%;
+    --popover: 220 30% 6%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 222 47% 7%;
+    --primary: 224 71% 4%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 48 100% 50%;
-    --secondary-foreground: 222 47% 7%;
+    --secondary: 41 83% 55%;
+    --secondary-foreground: 224 71% 4%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 217 15% 65%;
+    --muted: 220 15% 10%;
+    --muted-foreground: 215 16% 65%;
 
-    --accent: 48 100% 50%;
-    --accent-foreground: 222 47% 7%;
+    --accent: 41 83% 55%;
+    --accent-foreground: 224 71% 4%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 25%;
-    --input: 217 33% 25%;
-    --ring: 48 100% 50%;
+    --border: 220 15% 13%;
+    --input: 220 15% 13%;
+    --ring: 41 83% 55%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
     /* Custom worship theme colors */
-    --deep-blue: 222 47% 7%;
-    --gold: 48 100% 50%;
+    --deep-blue: 224 71% 4%;
+    --gold: 41 83% 55%;
     --light-text: 210 40% 98%;
-    --secondary-text: 220 13% 82%;
-    --card-bg: 217 33% 17%;
-    --dark-bg: 222 47% 5%;
+    --secondary-text: 215 16% 70%;
+    --card-bg: 220 30% 6%;
+    --dark-bg: 224 71% 2%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 7%) 0%, hsl(222 47% 12%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(48 100% 50%) 0%, hsl(45 100% 60%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(217 33% 17%) 0%, hsl(217 33% 14%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(224 71% 4%) 0%, hsl(220 30% 7%) 100%);
+    --gradient-gold: linear-gradient(135deg, #d9a032 0%, #fbbf24 100%);
+    --gradient-card: linear-gradient(145deg, rgba(7, 12, 27, 0.7) 0%, rgba(4, 8, 20, 0.85) 100%);
 
     /* Shadows */
-    --shadow-gold: 0 10px 40px -10px hsl(48 100% 50% / 0.3);
-    --shadow-card: 0 4px 20px -4px hsl(222 47% 4% / 0.5);
-    --shadow-glow: 0 0 30px hsl(48 100% 50% / 0.2);
+    --shadow-gold: 0 10px 40px -10px rgba(217, 160, 50, 0.25);
+    --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --shadow-glow: 0 0 30px rgba(217, 160, 50, 0.15);
 
     /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* Mobile-first touch optimizations */
@@ -69,33 +69,33 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222 47% 7%;
+    --background: 224 71% 4%;
     --foreground: 210 40% 98%;
 
-    --card: 217 33% 17%;
+    --card: 220 30% 6%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 217 33% 17%;
+    --popover: 220 30% 6%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 7%;
+    --primary-foreground: 224 71% 4%;
 
-    --secondary: 48 100% 50%;
-    --secondary-foreground: 222 47% 7%;
+    --secondary: 41 83% 55%;
+    --secondary-foreground: 224 71% 4%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 217 15% 65%;
+    --muted: 220 15% 10%;
+    --muted-foreground: 215 16% 65%;
 
-    --accent: 48 100% 50%;
-    --accent-foreground: 222 47% 7%;
+    --accent: 41 83% 55%;
+    --accent-foreground: 224 71% 4%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 25%;
-    --input: 217 33% 25%;
-    --ring: 48 100% 50%;
+    --border: 220 15% 13%;
+    --input: 220 15% 13%;
+    --ring: 41 83% 55%;
   }
 }
 
@@ -109,6 +109,7 @@ All colors MUST be HSL.
     overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #02040a;
   }
 
   /* Mobile-first utilities */
@@ -139,10 +140,13 @@ All colors MUST be HSL.
 
   .card-gradient {
     background: var(--gradient-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .text-shadow-gold {
-    text-shadow: 0 2px 10px hsl(48 100% 50% / 0.3);
+    text-shadow: 0 2px 10px rgba(217, 160, 50, 0.35);
   }
 
   .hover-lift {
@@ -176,9 +180,11 @@ All colors MUST be HSL.
   /* Premium Card Effect */
   .card-premium {
     position: relative;
-    background: linear-gradient(145deg, hsl(217 33% 16%) 0%, hsl(217 33% 12%) 100%);
-    border: 1px solid hsl(217 33% 25% / 0.5);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(145deg, rgba(7, 12, 27, 0.65) 0%, rgba(4, 8, 20, 0.8) 100%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition-smooth);
     overflow: hidden;
   }
 
@@ -192,10 +198,10 @@ All colors MUST be HSL.
     background: linear-gradient(
       90deg,
       transparent,
-      hsl(48 100% 50% / 0.1),
+      rgba(217, 160, 50, 0.08),
       transparent
     );
-    transition: left 0.5s ease;
+    transition: left 0.6s ease;
     pointer-events: none;
   }
 
@@ -205,17 +211,19 @@ All colors MUST be HSL.
 
   .card-premium:hover {
     transform: translateY(-4px);
-    border-color: hsl(48 100% 50% / 0.4);
-    box-shadow: 0 20px 40px -15px hsl(48 100% 50% / 0.2),
-                0 0 0 1px hsl(48 100% 50% / 0.1);
+    border-color: rgba(217, 160, 50, 0.35);
+    box-shadow: 0 20px 40px -15px rgba(217, 160, 50, 0.18),
+                0 0 0 1px rgba(217, 160, 50, 0.1);
   }
 
   /* Action Card with Icon Glow */
   .card-action {
     position: relative;
-    background: linear-gradient(160deg, hsl(217 33% 18%) 0%, hsl(217 33% 12%) 100%);
-    border: 1px solid hsl(217 33% 28% / 0.6);
-    transition: all 0.3s ease;
+    background: linear-gradient(160deg, rgba(7, 12, 27, 0.7) 0%, rgba(4, 8, 20, 0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition-smooth);
     overflow: hidden;
   }
 
@@ -226,9 +234,9 @@ All colors MUST be HSL.
     right: -50%;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, hsl(48 100% 50% / 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(217, 160, 50, 0.08) 0%, transparent 70%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.4s ease;
     pointer-events: none;
   }
 
@@ -238,16 +246,19 @@ All colors MUST be HSL.
 
   .card-action:hover {
     transform: translateX(4px);
-    border-color: hsl(48 100% 50% / 0.5);
-    background: linear-gradient(160deg, hsl(217 33% 20%) 0%, hsl(217 33% 14%) 100%);
+    border-color: rgba(217, 160, 50, 0.4);
+    background: linear-gradient(160deg, rgba(10, 16, 35, 0.85) 0%, rgba(6, 10, 24, 0.95) 100%);
   }
 
   /* Stats Card */
   .card-stats {
-    background: linear-gradient(135deg, hsl(217 33% 16%) 0%, hsl(217 33% 11%) 100%);
-    border: 1px solid hsl(48 100% 50% / 0.15);
+    background: linear-gradient(135deg, rgba(7, 12, 27, 0.6) 0%, rgba(4, 8, 20, 0.75) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(217, 160, 50, 0.15);
     position: relative;
     overflow: hidden;
+    transition: var(--transition-smooth);
   }
 
   .card-stats::before {
@@ -257,9 +268,9 @@ All colors MUST be HSL.
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, hsl(48 100% 50%), hsl(45 100% 60%));
+    background: var(--gradient-gold);
     transform: scaleX(0);
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease;
   }
 
   .card-stats:hover::before {
@@ -267,7 +278,29 @@ All colors MUST be HSL.
   }
 
   .card-stats:hover {
-    border-color: hsl(48 100% 50% / 0.3);
+    border-color: rgba(217, 160, 50, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Custom Scrollbar for desktop */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(217, 160, 50, 0.15);
+    border-radius: 99px;
+    transition: background 0.3s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(217, 160, 50, 0.4);
   }
 
   /* Matrix Loader Animation - Optimized with transforms */

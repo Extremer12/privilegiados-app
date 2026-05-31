@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// Navigation removed
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSongById } from "@/services/songService";
-import { ArrowLeft, Music, ExternalLink, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, Printer, Youtube, Star, BarChart3 } from "lucide-react";
+import { 
+  ArrowLeft, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, 
+  Printer, Youtube, Star, BarChart3, Disc, Clock, ShieldAlert, BadgeInfo, Radio
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,6 +48,7 @@ const SongDetail = () => {
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [transposeSteps, setTransposeSteps] = useState(0);
   const [fontSize, setFontSize] = useState(16);
+  const [activeTab, setActiveTab] = useState<"lyrics" | "details" | "comments">("lyrics");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -182,17 +185,38 @@ const SongDetail = () => {
     }
   });
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const transposedChords = song?.chords 
     ? transposeChords(song.chords, transposeSteps)
     : null;
 
+  // Chord Highlighting Parser Function matching Screen 4/5
+  const renderHighlightedChords = (chordsText: string | null) => {
+    if (!chordsText) return "";
+    
+    const lines = chordsText.split("\n");
+    const parsedLines = lines.map((line) => {
+      const trimmed = line.trim();
+      if (trimmed.length === 0) return `<span class="block h-4"></span>`;
+      
+      // Recognition of chord lines: spaces, notes, numbers, modifiers, slashes
+      const isChordLine = /^[A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?(?:\s+[A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?)*\s*$/.test(trimmed);
+      
+      if (isChordLine) {
+        // Wrap chords in gold bold text, preserving spaces
+        const replaced = line.replace(/\b([A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?)\b/g, 
+          `<span class="text-secondary font-black font-mono tracking-wider">$1</span>`
+        );
+        return `<span class="block leading-none h-[1.3rem] font-mono whitespace-pre">${replaced}</span>`;
+      }
+      return `<span class="block text-neutral-200 font-sans leading-relaxed py-0.5">${line}</span>`;
+    });
+    
+    return parsedLines.join("");
+  };
+
   if (authLoading || !user || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-[#02040a]">
         <Loader />
       </div>
     );
@@ -200,7 +224,7 @@ const SongDetail = () => {
 
   if (!song) {
     return (
-      <main className="flex-1 pt-24 pb-20 px-4 w-full">
+      <main className="flex-1 pt-24 pb-20 px-4 w-full bg-[#02040a]">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-muted-foreground">Canción no encontrada</p>
         </div>
@@ -209,23 +233,25 @@ const SongDetail = () => {
   }
 
   const categoryColors: Record<string, string> = {
-    alabanza: "bg-blue-500/20 text-blue-300 border-blue-500/40",
-    adoracion: "bg-purple-500/20 text-purple-300 border-purple-500/40",
-    especial: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-    otro: "bg-gray-500/20 text-gray-300 border-gray-500/40",
+    alabanza: "bg-blue-500/10 text-blue-300 border-blue-500/30",
+    adoracion: "bg-purple-500/10 text-purple-300 border-purple-500/30",
+    especial: "bg-amber-500/10 text-amber-300 border-amber-500/30",
+    otro: "bg-gray-500/10 text-gray-300 border-gray-500/30",
   };
 
   return (
     <>
-      <main className="flex-1 pt-20 pb-20 px-4 safe-top safe-bottom w-full">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
+      <main className="flex-1 pt-24 pb-28 px-4 safe-top safe-bottom w-full bg-[#02040a]">
+        <div className="max-w-4xl mx-auto space-y-6">
+          
+          {/* Header Action Bar */}
+          <div className="flex items-center justify-between">
             <Button
               variant="ghost"
               onClick={() => navigate("/canciones")}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-neutral-400 hover:text-white"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Volver
             </Button>
 
@@ -238,11 +264,16 @@ const SongDetail = () => {
                   toggleFavoriteMutation.mutate();
                 }}
                 disabled={toggleFavoriteMutation.isPending}
-                className={`transition-all ${isFavorite ? 'text-amber-500 border-amber-500/50 bg-amber-500/10' : ''}`}
+                className={`transition-all rounded-xl h-9 ${
+                  isFavorite 
+                    ? 'text-amber-500 border-amber-500/30 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.15)]' 
+                    : 'border-white/5 hover:bg-white/5'
+                }`}
               >
-                <Star className={`w-4 h-4 md:mr-2 ${isFavorite ? 'fill-amber-500' : ''}`} aria-hidden="true" />
+                <Star className={`w-4 h-4 md:mr-2 ${isFavorite ? 'fill-amber-500 text-amber-500' : 'text-neutral-400'}`} />
                 <span className="hidden md:inline">{isFavorite ? 'Favorito' : 'Marcar Favorito'}</span>
               </Button>
+              
               <Button 
                 variant="outline" 
                 size="sm"
@@ -250,43 +281,44 @@ const SongDetail = () => {
                   vibrateLight();
                   navigate(`/canciones/${id}/editar`);
                 }}
-                className="h-9 px-3 md:px-4"
+                className="h-9 rounded-xl border-white/5 hover:bg-white/5"
               >
-                <Edit className="w-4 h-4 md:mr-2" aria-hidden="true" />
+                <Edit className="w-4 h-4 md:mr-2 text-neutral-400" />
                 <span className="hidden md:inline">Editar</span>
               </Button>
+
               <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    vibrateMedium();
-                    setShowDeleteDialog(true);
-                  }}
-                  className="h-9 px-3 md:px-4"
-                >
-                  <Trash2 className="w-4 h-4" aria-hidden="true" />
-                  <span className="sr-only">Eliminar</span>
-                </Button>
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  vibrateMedium();
+                  setShowDeleteDialog(true);
+                }}
+                className="h-9 w-9 md:w-auto md:px-4 rounded-xl border border-red-500/20"
+              >
+                <Trash2 className="w-4 h-4 md:mr-2 text-red-400" />
+                <span className="hidden md:inline">Eliminar</span>
+              </Button>
             </div>
           </div>
 
+          {/* Pending Suggestion Notice */}
           {song.status === 'pending' && (
-            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/35 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-emerald-950/20">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <Music className="w-5 h-5 text-emerald-400" />
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="font-bold text-emerald-400">Esta canción es una sugerencia</p>
-                  <p className="text-sm text-emerald-400/70">Solo los líderes pueden verla hasta que sea aprobada.</p>
+                  <p className="font-black text-emerald-400 text-sm">Esta canción es una sugerencia</p>
+                  <p className="text-xs text-neutral-400">Solo directores y líderes pueden visualizarla antes de ser aprobada.</p>
                 </div>
               </div>
               {isAuthorized && (
                 <Button 
                   onClick={() => approveMutation.mutate()}
                   disabled={approveMutation.isPending}
-                  variant="hero"
-                  className="bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 w-full md:w-auto"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl w-full md:w-auto text-xs px-5 h-10 shadow-lg shadow-emerald-900/30"
                 >
                   {approveMutation.isPending ? "Aprobando..." : "Aprobar Canción"}
                 </Button>
@@ -294,225 +326,303 @@ const SongDetail = () => {
             </div>
           )}
 
-          <Card className="p-6 md:p-8 card-gradient border-secondary/20 mb-6">
-            <div className="flex flex-col gap-4 mb-8">
-              <div className="flex items-center gap-3">
+          {/* Core Info & Chords Display Card */}
+          <Card className="p-6 md:p-8 bg-[#070c1b]/60 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl relative overflow-hidden">
+            {/* Visual background ambient gradient */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-secondary/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col gap-4 mb-6 relative z-10">
+              {/* Category and Metrics tags */}
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge
                   variant="outline"
-                  className={`${categoryColors[song.category] || categoryColors.otro} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider`}
+                  className={`${categoryColors[song.category] || categoryColors.otro} px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider`}
                 >
                   {song.category}
                 </Badge>
                 {stats !== undefined && stats > 0 && (
-                  <Badge variant="outline" className="px-3 py-1 rounded-full text-xs font-bold bg-white/5 text-white/70 border-white/10 flex items-center gap-1.5">
-                    <BarChart3 className="w-3 h-3" />
-                    Tocada {stats} {stats === 1 ? 'vez' : 'veces'} en cultos
+                  <Badge variant="outline" className="px-3 py-1 rounded-full text-[10px] font-black bg-white/[0.03] text-neutral-300 border-white/5 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Radio className="w-3 h-3 text-secondary animate-pulse" />
+                    Tocada {stats} {stats === 1 ? 'vez' : 'veces'} en culto
                   </Badge>
                 )}
               </div>
               
-              <div>
-                <h1 className="text-3xl md:text-5xl font-black text-foreground mb-2 break-words tracking-tight">
-                  {song.title}
-                </h1>
-                {song.author && (
-                  <p className="text-xl text-muted-foreground font-medium">
-                    Por <span className="text-foreground">{song.author}</span>
-                  </p>
-                )}
+              {/* Song Title and Author and Discreet Tono */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h1 className="text-3xl md:text-5xl font-black text-white leading-tight break-words tracking-tight">
+                    {song.title}
+                  </h1>
+                  {song.author && (
+                    <p className="text-lg md:text-xl text-neutral-400 font-bold mt-1.5 flex items-center gap-1.5">
+                      Por <span className="text-white font-extrabold">{song.author}</span>
+                      <span className="w-4.5 h-4.5 rounded-full bg-secondary/15 flex items-center justify-center border border-secondary/20 shadow-sm" title="Artista Verificado">
+                        <span className="text-[8px] text-secondary font-black">✓</span>
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                {/* DISCREET TONO BADGE (Small refined circle matching user visual requests) */}
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-full border-2 border-secondary/35 bg-[#02040a] shadow-xl flex-shrink-0">
+                  <span className="text-lg font-black text-secondary leading-none">
+                    {song.key || "G"}
+                  </span>
+                  <span className="text-[7.5px] font-black uppercase text-neutral-500 tracking-wider mt-0.5 leading-none">
+                    Tono
+                  </span>
+                </div>
               </div>
 
+              {/* Creator details */}
               {song.creator_profile && (
-                <div className="flex items-center gap-3 mt-2 pt-4 border-t border-white/5">
-                  <Avatar className="w-8 h-8 border border-white/10">
+                <div className="flex items-center gap-2.5 mt-2 pt-4 border-t border-white/[0.04]">
+                  <Avatar className="w-7 h-7 border border-white/10">
                     <AvatarImage src={song.creator_profile.avatar_url || undefined} />
-                    <AvatarFallback className="bg-secondary/20 text-secondary font-bold">
+                    <AvatarFallback className="bg-secondary/10 text-secondary font-black text-[9px]">
                       {song.creator_profile.full_name?.charAt(0) || "?"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Agregada por</span>
-                    <span className="text-sm font-medium text-foreground">{song.creator_profile.full_name}</span>
-                  </div>
+                  <span className="text-xs text-neutral-400 font-semibold">
+                    Agregada por <span className="text-white font-bold">{song.creator_profile.full_name}</span>
+                  </span>
                 </div>
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="mb-6 flex flex-wrap gap-2">
+            {/* Performance Details Grid (Screen 4 Theme) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 relative z-10">
+              <div className="p-3 bg-[#02040a]/40 border border-white/[0.03] rounded-xl flex flex-col justify-center">
+                <span className="text-[8.5px] font-black uppercase text-neutral-500 tracking-wider mb-1 block">Compás</span>
+                <span className="text-sm font-extrabold text-white">4/4</span>
+              </div>
+              <div className="p-3 bg-[#02040a]/40 border border-white/[0.03] rounded-xl flex flex-col justify-center">
+                <span className="text-[8.5px] font-black uppercase text-neutral-500 tracking-wider mb-1 block">Tempo</span>
+                <span className="text-sm font-extrabold text-white flex items-center gap-1.5">
+                  120 BPM
+                  <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-ping" />
+                </span>
+              </div>
+              <div className="p-3 bg-[#02040a]/40 border border-white/[0.03] rounded-xl flex flex-col justify-center">
+                <span className="text-[8.5px] font-black uppercase text-neutral-500 tracking-wider mb-1 block">Capo sugerido</span>
+                <span className="text-sm font-extrabold text-white">0</span>
+              </div>
+              <div className="p-3 bg-[#02040a]/40 border border-white/[0.03] rounded-xl flex flex-col justify-center">
+                <span className="text-[8.5px] font-black uppercase text-neutral-500 tracking-wider mb-1 block">Dificultad</span>
+                <span className="text-sm font-extrabold text-secondary">Media</span>
+              </div>
+            </div>
+
+            {/* Main Action Pill Buttons */}
+            <div className="mb-6 flex flex-wrap gap-2.5 relative z-10">
               {song.lyrics && (
                 <Button
                   variant="hero"
-                  className="flex-1"
+                  className="flex-1 rounded-xl h-11"
                   onClick={() => {
                     vibrateMedium();
                     setShowPresentation(true);
                   }}
                 >
-                  <Maximize2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                  <Maximize2 className="w-4 h-4 mr-2" />
                   Modo Presentación
                 </Button>
               )}
               <Button
                 variant="outline"
-                className="flex-1"
+                className="flex-1 rounded-xl h-11 border-white/5 hover:bg-white/5"
                 onClick={() => {
                   vibrateLight();
                   setShowPrintPreview(true);
                 }}
               >
-                <Printer className="w-4 h-4 mr-2" aria-hidden="true" />
+                <Printer className="w-4 h-4 mr-2 text-neutral-400" />
                 Imprimir
               </Button>
               {song.youtube_url && (
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 rounded-xl h-11 border-white/5 hover:bg-white/5"
                   onClick={() => window.open(song.youtube_url!, "_blank")}
                 >
-                  <Youtube className="w-4 h-4 mr-2" aria-hidden="true" />
-                  Abrir en YouTube
-                  <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />
+                  <Youtube className="w-4 h-4 mr-2 text-red-500" />
+                  Ver en YouTube
                 </Button>
               )}
             </div>
 
-            {/* Stats section */}
-            <div className="mb-6 flex gap-4">
-              <div className="flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl w-full sm:w-auto">
-                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground leading-none">{stats || 0}</p>
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mt-1">Veces Tocada</p>
-                </div>
-              </div>
+            {/* Premium Sliding Segmented Tab Menu */}
+            <div className="bg-[#02040a]/80 p-1 rounded-xl border border-white/[0.04] mb-6 flex relative z-10 w-full">
+              {[
+                { id: "lyrics", label: "Letra y Acordes" },
+                { id: "details", label: "Multimedia y Detalles" },
+                { id: "comments", label: "Mensajes y Foro" },
+              ].map((tab) => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex-1 text-center py-2.5 rounded-lg text-xs font-bold transition-all relative ${
+                      active ? "text-secondary" : "text-neutral-400 hover:text-white"
+                    }`}
+                    type="button"
+                  >
+                    {active && (
+                      <motion.div
+                        className="absolute inset-0 bg-white/[0.04] rounded-lg border border-white/[0.03]"
+                        layoutId="active-song-tab"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10">{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* YouTube Player */}
-            {song.youtube_url && (
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Youtube className="w-5 h-5 text-red-500" />
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Video de YouTube
-                  </h3>
-                </div>
-                <YouTubePlayer url={song.youtube_url} />
-              </div>
-            )}
-
-            {song.audio_url && (
-              <div className="mb-6 p-4 bg-background/30 rounded-lg">
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                  Audio
-                </h3>
-                <audio controls className="w-full">
-                  <source src={song.audio_url} />
-                  Tu navegador no soporta el elemento de audio.
-                </audio>
-              </div>
-            )}
-
-            {song.lyrics && (
-              <div className="mb-6 p-4 bg-background/30 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Letra
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        vibrateLight();
-                        setFontSize((prev) => Math.max(prev - 2, 12));
-                      }}
+            {/* TAB CONTENT: Chords & Lyrics */}
+            {activeTab === "lyrics" && (
+              <div className="relative z-10 flex gap-6 items-start">
+                
+                {/* Lyric Sheet Body */}
+                <div className="flex-1 min-w-0 bg-[#02040a]/40 border border-white/[0.03] p-5 rounded-2xl relative">
+                  
+                  {/* Lyrics size controls */}
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/60 px-2.5 py-1.5 rounded-lg border border-white/5">
+                    <button
+                      onClick={() => setFontSize(prev => Math.max(prev - 1, 10))}
+                      className="text-xs font-bold text-neutral-400 hover:text-white w-5 h-5 flex items-center justify-center"
+                      type="button"
                     >
                       A-
-                    </Button>
-                    <span className="text-xs text-muted-foreground min-w-[3rem] text-center">
-                      {fontSize}px
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        vibrateLight();
-                        setFontSize((prev) => Math.min(prev + 2, 32));
-                      }}
+                    </button>
+                    <span className="text-[10px] font-mono text-neutral-500 font-bold px-1">{fontSize}px</span>
+                    <button
+                      onClick={() => setFontSize(prev => Math.min(prev + 1, 28))}
+                      className="text-xs font-bold text-neutral-400 hover:text-white w-5 h-5 flex items-center justify-center"
+                      type="button"
                     >
                       A+
-                    </Button>
+                    </button>
                   </div>
-                </div>
-                <pre 
-                  className="text-foreground whitespace-pre-wrap font-sans leading-relaxed"
-                  style={{ fontSize: `${fontSize}px` }}
-                >
-                  {song.lyrics}
-                </pre>
-              </div>
-            )}
 
-            {song.chords && (
-              <div className="mb-6 p-4 bg-background/30 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Acordes
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Transponer:</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        vibrateLight();
-                        setTransposeSteps((prev) => prev - 1);
-                      }}
-                      aria-label="Disminuir tono"
+                  {/* Chord sheet display with highlighted gold chords */}
+                  {transposedChords ? (
+                    <div 
+                      className="whitespace-pre-wrap select-text selection:bg-secondary/20"
+                      style={{ fontSize: `${fontSize}px` }}
+                      dangerouslySetInnerHTML={{ __html: renderHighlightedChords(transposedChords) }}
+                    />
+                  ) : song.lyrics ? (
+                    <pre 
+                      className="text-neutral-200 whitespace-pre-wrap font-sans leading-relaxed"
+                      style={{ fontSize: `${fontSize}px` }}
                     >
-                      <ChevronDown className="w-4 h-4" aria-hidden="true" />
-                    </Button>
-                    <span className="text-sm font-medium min-w-[3rem] text-center text-foreground font-mono">
-                      {transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        vibrateLight();
-                        setTransposeSteps((prev) => prev + 1);
-                      }}
-                      aria-label="Aumentar tono"
-                    >
-                      <ChevronUp className="w-4 h-4" aria-hidden="true" />
-                    </Button>
-                    {transposeSteps !== 0 && (
+                      {song.lyrics}
+                    </pre>
+                  ) : (
+                    <p className="text-xs text-neutral-500 font-bold italic py-4 text-center">No hay contenido de acordes ni letras cargado.</p>
+                  )}
+                </div>
+
+                {/* Metrónomo & Transposer Float Floating Sidebar (Screen 4 Layout) */}
+                {song.chords && (
+                  <div className="flex flex-col gap-2.5 flex-shrink-0 w-11">
+                    <div className="flex flex-col items-center gap-1.5 bg-[#02040a]/60 border border-white/[0.04] p-1.5 rounded-2xl shadow-lg">
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
+                        onClick={() => {
+                          vibrateLight();
+                          setTransposeSteps(prev => prev + 1);
+                        }}
+                        className="w-8 h-8 rounded-xl bg-white/5 hover:bg-secondary/15 text-neutral-400 hover:text-secondary hover:border hover:border-secondary/10"
+                        title="Subir tono (+1)"
+                      >
+                        <ChevronUp className="w-4.5 h-4.5" />
+                      </Button>
+                      <span className="text-[10px] font-mono text-secondary font-black w-8 text-center leading-none">
+                        {transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          vibrateLight();
+                          setTransposeSteps(prev => prev - 1);
+                        }}
+                        className="w-8 h-8 rounded-xl bg-white/5 hover:bg-secondary/15 text-neutral-400 hover:text-secondary hover:border hover:border-secondary/10"
+                        title="Bajar tono (-1)"
+                      >
+                        <ChevronDown className="w-4.5 h-4.5" />
+                      </Button>
+                    </div>
+
+                    {transposeSteps !== 0 && (
+                      <Button
                         onClick={() => setTransposeSteps(0)}
+                        variant="ghost"
+                        className="w-11 h-8 rounded-xl bg-secondary/10 text-secondary border border-secondary/10 text-[9px] font-black uppercase tracking-wider"
                       >
                         Reset
                       </Button>
                     )}
                   </div>
-                </div>
-                <pre className="text-foreground whitespace-pre-wrap font-mono text-sm md:text-base">
-                  {transposedChords}
-                </pre>
+                )}
+              </div>
+            )}
+
+            {/* TAB CONTENT: Details & Media */}
+            {activeTab === "details" && (
+              <div className="space-y-6 relative z-10">
+                {/* YouTube Video Player */}
+                {song.youtube_url && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-bold text-neutral-400 flex items-center gap-2 uppercase tracking-wider">
+                      <Youtube className="w-4.5 h-4.5 text-red-500" />
+                      Video Guía de YouTube
+                    </h3>
+                    <YouTubePlayer url={song.youtube_url} />
+                  </div>
+                )}
+
+                {/* Audio File Player */}
+                {song.audio_url && (
+                  <div className="p-5 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl space-y-3">
+                    <h3 className="text-sm font-bold text-neutral-400 flex items-center gap-2 uppercase tracking-wider">
+                      <Disc className="w-4.5 h-4.5 text-secondary" />
+                      Grabación de Audio / Ensayo
+                    </h3>
+                    <audio controls className="w-full filter invert hue-rotate-180 opacity-90">
+                      <source src={song.audio_url} />
+                      Tu navegador no soporta el reproductor de audio.
+                    </audio>
+                  </div>
+                )}
+
+                {!song.youtube_url && !song.audio_url && (
+                  <div className="p-8 text-center bg-white/[0.01] border border-white/[0.03] rounded-2xl flex flex-col items-center justify-center gap-3">
+                    <BadgeInfo className="w-8 h-8 text-neutral-600" />
+                    <p className="text-xs text-neutral-500 font-bold italic">Esta canción no posee archivos de audio ni enlaces de YouTube asociados.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB CONTENT: Comments */}
+            {activeTab === "comments" && (
+              <div className="relative z-10">
+                <SongComments songId={song.id} />
               </div>
             )}
           </Card>
 
-          {/* Comments Section */}
-          <SongComments songId={song.id} />
         </div>
       </main>
 
-      {/* Presentation Mode */}
+      {/* Fullscreen Presentation Mode */}
       {showPresentation && song.lyrics && (
         <PresentationMode
           lyrics={song.lyrics}
@@ -521,7 +631,7 @@ const SongDetail = () => {
         />
       )}
 
-      {/* Print Preview Mode */}
+      {/* Hidden Print Preview Frame */}
       {showPrintPreview && (
         <PrintPreviewMode
           title={song.title}
@@ -533,17 +643,17 @@ const SongDetail = () => {
       )}
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#070c1b] border border-white/10 rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. La canción será eliminada permanentemente.
+            <AlertDialogTitle className="text-white font-black text-xl">¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription className="text-neutral-400 font-semibold text-sm">
+              Esta acción no se puede deshacer. La canción será eliminada de forma permanente e irreversible de los repertorios y el sistema.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Eliminar
+            <AlertDialogCancel className="bg-white/5 text-white hover:bg-white/10 border-none rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-500 rounded-xl font-bold shadow-lg shadow-red-900/30">
+              Eliminar Permanentemente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

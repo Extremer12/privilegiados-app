@@ -203,8 +203,8 @@ const Index = () => {
 
   return (
     <>
-      <main className="flex-1 pt-20 pb-24 px-4 safe-top safe-bottom w-full">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <main className="flex-1 pt-24 pb-28 px-4 safe-top safe-bottom w-full bg-[#02040a]">
+        <div className="max-w-4xl mx-auto space-y-8">
           
           {/* Welcome Banner */}
           <WelcomeCard />
@@ -218,17 +218,17 @@ const Index = () => {
                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
                 className="relative overflow-hidden group"
               >
-                <Card className="p-6 card-gradient border-secondary/30 shadow-2xl shadow-secondary/10 rounded-[2rem]">
+                <Card className="p-6 bg-gradient-to-br from-secondary/15 to-transparent border border-secondary/35 shadow-2xl rounded-3xl backdrop-blur-2xl">
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                     <Star className="w-24 h-24 text-secondary rotate-12" />
                   </div>
                   <div className="flex flex-col sm:flex-row items-center gap-6 relative z-10">
-                    <div className="w-20 h-20 rounded-3xl bg-secondary/20 flex items-center justify-center border border-secondary/30 shadow-xl shadow-secondary/10 flex-shrink-0 animate-bounce-subtle">
-                      <MessageSquare className="w-10 h-10 text-secondary" />
+                    <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center border border-secondary/25 shadow-xl shadow-secondary/10 flex-shrink-0 animate-bounce-subtle">
+                      <MessageSquare className="w-8 h-8 text-secondary" />
                     </div>
-                    <div className="flex-1 text-center sm:text-left space-y-2">
-                      <h3 className="text-xl font-black text-foreground tracking-tight">Tu opinión nos importa</h3>
-                      <p className="text-muted-foreground text-sm font-medium">
+                    <div className="flex-1 text-center sm:text-left space-y-1">
+                      <h3 className="text-lg font-black text-foreground tracking-tight">Tu opinión nos importa</h3>
+                      <p className="text-neutral-400 text-sm font-semibold">
                         Has participado en <span className="text-secondary font-bold">"{pendingFeedback[0].title}"</span>. 
                         ¡Déjanos tu valoración para seguir mejorando!
                       </p>
@@ -238,7 +238,7 @@ const Index = () => {
                         setSelectedService({ id: pendingFeedback[0].id, title: pendingFeedback[0].title });
                         setFeedbackOpen(true);
                       }}
-                      className="h-12 px-8 rounded-2xl bg-secondary text-primary-foreground font-black uppercase tracking-widest hover:opacity-90 shadow-lg shadow-secondary/20 active:scale-95 transition-all w-full sm:w-auto"
+                      className="h-11 px-6 rounded-xl bg-gradient-to-r from-secondary to-amber-500 text-primary-foreground font-bold uppercase tracking-wider hover:opacity-90 shadow-lg shadow-secondary/20 active:scale-95 transition-all w-full sm:w-auto text-xs"
                     >
                       Valorar Ahora
                     </Button>
@@ -248,68 +248,166 @@ const Index = () => {
             )}
           </AnimatePresence>
 
+          {/* Quick Stats Grid */}
+          <StatsCards stats={stats} />
+
+          {/* Upcoming Events (Screen 2 Theme) */}
+          {loadingEvents ? (
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-40 bg-white/5 rounded-lg" />
+              <Skeleton className="h-36 w-full bg-white/5 rounded-3xl" />
+            </div>
+          ) : upcomingEvents.length > 0 && (
+            <motion.div
+              className="space-y-4"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-black uppercase tracking-wider text-neutral-300">
+                  Próximo Evento
+                </h3>
+                <button 
+                  onClick={() => navigate("/eventos")} 
+                  className="text-xs font-bold text-secondary hover:underline flex items-center gap-1"
+                >
+                  Ver todos <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {upcomingEvents.slice(0, 1).map((event) => {
+                  const eventDate = new Date(event.event_date);
+                  
+                  return (
+                    <motion.div
+                      key={event.id}
+                      whileHover={{ scale: 1.01, y: -2 }}
+                      className="h-full"
+                    >
+                      {/* Premium Concert Lights Background Event Card */}
+                      <Card 
+                        onClick={() => navigate("/eventos")}
+                        className="relative overflow-hidden cursor-pointer group bg-gradient-to-r from-[#070c1b]/90 to-[#040814]/85 border border-white/5 p-6 rounded-3xl shadow-2xl transition-all duration-300 min-h-[160px]"
+                      >
+                        {/* Concert glow image placeholder */}
+                        <div 
+                          className="absolute inset-0 bg-cover bg-center opacity-10 group-hover:opacity-15 transition-opacity pointer-events-none"
+                          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600&auto=format&fit=crop')` }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none" />
+                        
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 justify-between h-full">
+                          <div className="flex items-center gap-5 w-full md:w-auto">
+                            {/* Flotante Gold Date Calendar Box */}
+                            <div className="flex flex-col items-center justify-center w-20 h-24 rounded-2xl bg-[#02040a] border border-secondary/35 text-center px-2 flex-shrink-0 relative shadow-lg shadow-black/50">
+                              {/* Amber Glow border */}
+                              <div className="absolute inset-0 rounded-2xl bg-secondary/5 opacity-50" />
+                              <span className="text-[10px] font-black uppercase text-secondary tracking-widest leading-none mb-1">
+                                {format(eventDate, "MMM", { locale: es })}
+                              </span>
+                              <span className="text-3xl font-black text-white leading-none">
+                                {format(eventDate, "d")}
+                              </span>
+                              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mt-1">
+                                {format(eventDate, "eeee", { locale: es }).slice(0, 3)}
+                              </span>
+                            </div>
+                            
+                            {/* Event Details */}
+                            <div className="space-y-1 min-w-0">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-secondary bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">
+                                Próximo Evento
+                              </span>
+                              <h4 className="text-xl font-black text-white group-hover:text-secondary transition-colors truncate mt-1.5">
+                                {event.title}
+                              </h4>
+                              
+                              <div className="flex flex-col gap-1 text-xs text-neutral-400 font-semibold mt-1">
+                                <span className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-secondary" />
+                                  {format(eventDate, "EEEE d 'de' MMMM - HH:mm", { locale: es })} hrs
+                                </span>
+                                {event.location && (
+                                  <span className="flex items-center gap-1.5 truncate">
+                                    <MapPin className="w-3.5 h-3.5 text-secondary" />
+                                    {event.location}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Button Pills */}
+                          <div className="flex-shrink-0 w-full md:w-auto text-right mt-4 md:mt-0">
+                            <Button 
+                              variant="outline" 
+                              className="h-10 rounded-full border-secondary/40 text-secondary hover:bg-secondary/10 px-6 font-bold text-xs uppercase tracking-wider group-hover:scale-105 active:scale-95 transition-all shadow-md w-full md:w-auto"
+                            >
+                              Ver repertorio →
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Quick Actions */}
+          <QuickActions />
+
           {/* Announcements Section */}
           {loadingAnnouncements ? (
             <div className="space-y-3">
-              <Skeleton className="h-8 w-48 bg-secondary/10" />
-              {[1, 2].map((i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-xl bg-secondary/10" />
-              ))}
+              <Skeleton className="h-6 w-40 bg-white/5 rounded-lg" />
+              <Skeleton className="h-24 w-full bg-white/5 rounded-2xl" />
             </div>
           ) : announcements.length > 0 && (
             <motion.div
               className="space-y-3"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.2 }}
             >
-              <div className="flex items-center gap-3">
-                <motion.div
-                  className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center shadow-lg"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <Bell className="w-5 h-5 text-red-400" aria-hidden="true" />
-                </motion.div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">Anuncios Importantes</h3>
-                  <p className="text-xs text-muted-foreground">Mantente al día con las novedades</p>
-                </div>
+              <div className="flex items-center gap-2">
+                <Bell className="w-4.5 h-4.5 text-secondary animate-bounce-subtle" />
+                <h3 className="text-base font-black uppercase tracking-wider text-neutral-300">
+                  Anuncios del Grupo
+                </h3>
               </div>
               
               <div className="space-y-3">
                 {announcements.map((announcement, index) => {
                   const config = getPriorityConfig(announcement.priority);
-                  const IconComponent = config.icon;
                   return (
                     <motion.div
                       key={announcement.id}
-                      initial={{ opacity: 0, x: -20 }}
+                      initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 + index * 0.1 }}
-                      whileHover={{ scale: 1.01, x: 4 }}
+                      transition={{ delay: 0.2 + index * 0.08 }}
                     >
                       <Card 
-                        className={`p-4 border ${config.border} ${config.bg} backdrop-blur-sm shadow-lg ${config.glow}`}
+                        className={`p-4 border ${config.border} ${config.bg} backdrop-blur-md rounded-2xl shadow-lg`}
                       >
                         <div className="flex gap-3">
-                          <motion.div
-                            className={`w-12 h-12 rounded-xl ${config.bg} flex items-center justify-center flex-shrink-0`}
-                            animate={announcement.priority === 'urgent' ? { rotate: [0, -5, 5, 0] } : undefined }
-                            transition={announcement.priority === 'urgent' ? { duration: 0.5, repeatDelay: 2 } : undefined }
-                          >
-                            <IconComponent className={`w-6 h-6 ${config.color}`} aria-hidden="true" />
-                          </motion.div>
+                          <div className={`w-10 h-10 rounded-xl ${config.bg} flex items-center justify-center flex-shrink-0 border ${config.border}`}>
+                            <config.icon className={`w-5 h-5 ${config.color}`} />
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <h4 className="font-bold text-foreground line-clamp-1">{announcement.title}</h4>
+                            <div className="flex items-start justify-between gap-2 mb-0.5">
+                              <h4 className="font-bold text-white text-sm line-clamp-1">{announcement.title}</h4>
                               {announcement.priority === 'urgent' && (
-                                <Badge variant="destructive" className="text-xs flex-shrink-0 shadow-[0_0_10px_rgba(239,68,68,0.5)] border-red-400/50">
+                                <Badge className="bg-red-500/20 text-red-300 border border-red-500/40 text-[9px] px-1.5 uppercase font-black tracking-wider">
                                   Urgente
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-2">{announcement.content}</p>
-                            <p className="text-xs text-muted-foreground/70 mt-2">
+                            <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">{announcement.content}</p>
+                            <p className="text-[10px] text-neutral-500 font-semibold mt-2">
                               {formatDistanceToNow(new Date(announcement.created_at), { addSuffix: true, locale: es })}
                             </p>
                           </div>
@@ -322,168 +420,101 @@ const Index = () => {
             </motion.div>
           )}
 
-          {/* Upcoming Events */}
-          {loadingEvents ? (
-            <div className="space-y-4 pt-4">
-              <Skeleton className="h-8 w-48 bg-secondary/10" />
-              {[1, 2].map((i) => (
-                <Skeleton key={i} className="h-32 w-full rounded-2xl bg-secondary/10" />
-              ))}
+          {/* Actividad Reciente (Screen 2 Style) */}
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black uppercase tracking-wider text-neutral-300">
+                Actividad Reciente
+              </h3>
+              <button 
+                onClick={() => navigate("/foro")}
+                className="text-xs font-bold text-secondary hover:underline flex items-center gap-1"
+              >
+                Ver todo <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
-          ) : upcomingEvents.length > 0 && (
-            <motion.div
-              className="space-y-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center shadow-lg"
-                    whileHover={{ rotate: 5 }}
-                  >
-                    <CalendarDays className="w-5 h-5 text-green-400" aria-hidden="true" />
-                  </motion.div>
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">Próximos Eventos</h3>
-                    <p className="text-xs text-muted-foreground">No te pierdas ninguno</p>
+
+            <Card className="bg-[#070c1b]/60 backdrop-blur-xl border border-white/5 p-4 rounded-3xl shadow-2xl divide-y divide-white/[0.04] space-y-3.5">
+              {[
+                {
+                  id: "act-1",
+                  avatar: "/logo.jpg",
+                  title: "Se agregó una nueva canción:",
+                  detail: "“Bondad de Dios”",
+                  by: "por Cristian",
+                  time: "2h",
+                  grad: "from-blue-500/20 to-indigo-500/10",
+                  icon: Music,
+                  iconColor: "text-blue-400"
+                },
+                {
+                  id: "act-2",
+                  avatar: "",
+                  title: "Se actualizó el repertorio:",
+                  detail: "Congreso Juvenil 2025",
+                  by: "por Ana María",
+                  time: "5h",
+                  grad: "from-amber-500/20 to-yellow-500/10",
+                  icon: ListMusic,
+                  iconColor: "text-amber-400"
+                },
+                {
+                  id: "act-3",
+                  avatar: "",
+                  title: "Nuevo evento creado:",
+                  detail: "Campamento de Alabanza",
+                  by: "por Juan Pablo",
+                  time: "1d",
+                  grad: "from-purple-500/20 to-fuchsia-500/10",
+                  icon: CalendarDays,
+                  iconColor: "text-purple-400"
+                },
+                {
+                  id: "act-4",
+                  avatar: "",
+                  title: "Nuevo mensaje en el foro:",
+                  detail: "Team Alabanza",
+                  by: "por Sofía",
+                  time: "1d",
+                  grad: "from-emerald-500/20 to-teal-500/10",
+                  icon: MessageSquare,
+                  iconColor: "text-emerald-400"
+                }
+              ].map((act, index) => (
+                <div key={act.id} className={`flex items-center justify-between gap-4 ${index > 0 ? "pt-3.5" : ""}`}>
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    {/* Circle Gradient Icon */}
+                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${act.grad} flex items-center justify-center flex-shrink-0 border border-white/[0.04]`}>
+                      <act.icon className={`w-5 h-5 ${act.iconColor}`} />
+                    </div>
+                    
+                    {/* Description Text */}
+                    <div className="min-w-0 leading-tight">
+                      <p className="text-xs text-neutral-400 font-semibold">
+                        {act.title}
+                      </p>
+                      <h5 className="text-[13.5px] font-black text-white mt-0.5 truncate max-w-[280px] sm:max-w-md">
+                        {act.detail} <span className="text-neutral-500 font-bold text-xs">{act.by}</span>
+                      </h5>
+                    </div>
                   </div>
+
+                  {/* Timestamp */}
+                  <span className="text-[11px] font-bold text-neutral-500 flex-shrink-0">
+                    {act.time}
+                  </span>
                 </div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-secondary border-secondary/30 hover:bg-secondary/10"
-                    onClick={() => navigate("/eventos")}
-                  >
-                    Ver todos
-                    <ChevronRight className="w-4 h-4 ml-1" aria-hidden="true" />
-                  </Button>
-                </motion.div>
-              </div>
-              
-              <div className="space-y-4">
-                {upcomingEvents.map((event, index) => {
-                  const eventDate = new Date(event.event_date);
-                  const isThisWeek = isBefore(eventDate, addDays(new Date(), 7));
-                  const isToday = isBefore(eventDate, addDays(new Date(), 1)) && isAfter(eventDate, new Date());
-                  
-                  return (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + index * 0.1 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <Card 
-                        className={`relative overflow-hidden cursor-pointer group transition-all duration-300 ${
-                          isToday 
-                            ? 'bg-gradient-to-r from-secondary/20 via-secondary/10 to-transparent border-secondary/40 shadow-xl shadow-secondary/20' 
-                            : isThisWeek
-                              ? 'bg-gradient-to-r from-green-500/10 via-card to-card border-green-500/30'
-                              : 'card-gradient border-secondary/20'
-                        }`}
-                        onClick={() => navigate("/eventos")}
-                      >
-                        {isToday && (
-                          <div
-                            className="absolute inset-0 bg-gradient-to-r from-secondary/5 via-transparent to-transparent pointer-events-none opacity-50"
-                          />
-                        )}
-                        
-                        <div className="p-5 sm:p-6">
-                          <div className="flex items-stretch gap-4 sm:gap-6">
-                            {/* Date Block */}
-                            <motion.div
-                              className={`flex flex-col items-center justify-center min-w-[80px] sm:min-w-[100px] py-4 px-3 rounded-2xl ${
-                                isToday 
-                                  ? 'bg-gradient-to-br from-secondary to-secondary/80 text-secondary-foreground shadow-lg shadow-secondary/30' 
-                                  : isThisWeek
-                                    ? 'bg-gradient-to-br from-green-500/30 to-green-600/20 text-green-300'
-                                    : 'bg-gradient-to-br from-secondary/25 to-secondary/10'
-                              }`}
-                              whileHover={{ scale: 1.05 }}
-                            >
-                              {isToday && (
-                                <span
-                                  className="text-[10px] font-bold uppercase tracking-wider mb-1 text-secondary-foreground"
-                                >
-                                  Hoy
-                                </span>
-                              )}
-                              <span className={`text-3xl sm:text-4xl font-bold ${isToday ? 'text-secondary-foreground' : 'text-secondary'}`}>
-                                {format(eventDate, "d")}
-                              </span>
-                              <span className={`text-xs sm:text-sm font-medium uppercase ${isToday ? 'text-secondary-foreground/80' : 'text-muted-foreground'}`}>
-                                {format(eventDate, "MMM", { locale: es })}
-                              </span>
-                            </motion.div>
-                            
-                            {/* Event Details */}
-                            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                              <div className="flex items-start gap-2 mb-2">
-                                <h4 className="text-lg sm:text-xl font-bold text-foreground line-clamp-1 group-hover:text-secondary transition-colors">
-                                  {event.title}
-                                </h4>
-                                {isToday && (
-                                  <Badge className="bg-secondary text-secondary-foreground text-[10px] px-2 py-0.5 flex-shrink-0 shadow-[0_0_8px_rgba(255,215,0,0.4)]">
-                                    HOY
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <Badge className={`w-fit mb-3 text-xs font-medium ${getEventTypeColor(event.event_type)}`}>
-                                {event.event_type}
-                              </Badge>
-                              
-                              <div className="flex flex-wrap items-center gap-4 text-sm">
-                                <span className="flex items-center gap-2 text-muted-foreground">
-                                  <div className="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
-                                    <Clock className="w-3.5 h-3.5 text-secondary" aria-hidden="true" />
-                                  </div>
-                                  <span className="font-medium">{format(eventDate, "HH:mm")} hrs</span>
-                                </span>
-                                {event.location && (
-                                  <span className="flex items-center gap-2 text-muted-foreground">
-                                    <div className="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
-                                      <MapPin className="w-3.5 h-3.5 text-secondary" aria-hidden="true" />
-                                    </div>
-                                    <span className="font-medium truncate max-w-[150px]">{event.location}</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Arrow */}
-                            <div className="hidden sm:flex items-center">
-                              <motion.div
-                                className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center"
-                                whileHover={{ x: 5, backgroundColor: "rgba(255, 215, 0, 0.2)" }}
-                              >
-                                <ChevronRight className="w-5 h-5 text-secondary" aria-hidden="true" />
-                              </motion.div>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
+              ))}
+            </Card>
+          </motion.div>
 
           {/* Profile Card */}
           <ProfileCard profile={profile} email={user.email} />
-
-          {/* Quick Stats */}
-          <StatsCards stats={stats} />
-
-          {/* Quick Actions */}
-          <QuickActions stats={stats} />
 
         </div>
       </main>

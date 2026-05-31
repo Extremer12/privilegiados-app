@@ -95,61 +95,73 @@ function SortableSongItem({
     }
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : undefined,
-    opacity: isDragging ? 0.5 : 1,
+  if (isDragging) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex items-center justify-center p-4 rounded-xl border border-dashed border-secondary/40 bg-secondary/[0.02] text-secondary text-xs font-bold uppercase tracking-widest min-h-[58px] select-none transition-all duration-300"
+      >
+        <span className="opacity-40 mr-3 text-secondary font-black">✦</span>
+        Suelta aquí para insertar
+        <span className="opacity-40 ml-3 text-secondary font-black">✦</span>
+      </div>
+    );
+  }
+
+  const styleConfig: Record<string, string> = {
+    alabanza: "border-blue-500/30 text-blue-400 bg-blue-500/10",
+    adoracion: "border-purple-500/30 text-purple-400 bg-purple-500/10",
+    especial: "border-amber-500/30 text-amber-400 bg-amber-500/10",
+    otro: "border-neutral-500/30 text-neutral-400 bg-neutral-500/10"
   };
+
+  const tagStyle = styleConfig[song.songs?.category || "otro"] || styleConfig.otro;
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] transition-all group select-none ${isDragging ? 'shadow-2xl bg-white/[0.08] border-secondary/30' : ''}`}
+      className="flex items-center gap-4 p-3.5 rounded-2xl bg-[#070c1b]/60 backdrop-blur-xl border border-white/[0.04] hover:border-secondary/25 transition-all group select-none hover:-translate-y-0.5 shadow-md shadow-black/20"
     >
       {/* Grip handle — visible when user can drag (authorized), not just editing */}
       {canDrag && (
         <div 
           {...attributes} 
           {...listeners}
-          className="cursor-grab active:cursor-grabbing p-2 -ml-2 text-muted-foreground/40 hover:text-secondary transition-colors touch-none flex-shrink-0"
+          className="cursor-grab active:cursor-grabbing p-2 -ml-2 text-neutral-500 hover:text-secondary transition-colors touch-none flex-shrink-0"
         >
           <GripVertical className="h-5 w-5" />
         </div>
       )}
 
-      {/* Number */}
-      {!isDragging && (
-        <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
-          <span className="text-xs font-bold text-secondary">
-            {songIndex + 1}
-          </span>
-        </div>
-      )}
+      {/* Number badge */}
+      <div className="w-8 h-8 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center shrink-0">
+        <span className="text-xs font-bold text-neutral-400">
+          {songIndex + 1}
+        </span>
+      </div>
 
       {/* Song info */}
       <div 
         className="flex-1 cursor-pointer min-w-0"
         onClick={() => onSongClick(song)}
       >
-        <p className="text-base font-semibold text-foreground group-hover:text-secondary transition-colors truncate">
-          {song.songs?.title || 'Sin título'}
-        </p>
-        {(song.special_instructions || song.notes || song.assigned_to) && (
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            {song.assigned_to && (
-              <span className="text-xs font-semibold text-muted-foreground bg-white/5 px-2 py-0.5 rounded-md">
-                {song.assigned_to}
-              </span>
-            )}
-            {(song.special_instructions || song.notes) && (
-              <span className="text-xs italic text-muted-foreground/70 truncate">
-                {song.special_instructions || song.notes}
-              </span>
-            )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[15px] font-black text-white group-hover:text-secondary transition-colors truncate">
+              {song.songs?.title || 'Sin título'}
+            </p>
+            <p className="text-[11px] text-neutral-400 font-bold mt-0.5">
+              Tono: <span className="text-secondary">{song.songs?.key || "G"}</span> &bull; 4:20
+            </p>
           </div>
-        )}
+
+          {/* Category Pill Tag */}
+          <Badge variant="outline" className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${tagStyle}`}>
+            {song.songs?.category || "otro"}
+          </Badge>
+        </div>
       </div>
       
       {/* Remove action — only in editing mode */}
@@ -157,14 +169,14 @@ function SortableSongItem({
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 shrink-0 rounded-xl hover:bg-red-500/10 text-muted-foreground/40 hover:text-red-400 transition-all active:scale-[0.9]"
+          className="h-9 w-9 shrink-0 rounded-xl hover:bg-red-500/10 text-neutral-500 hover:text-red-400 transition-all active:scale-[0.9]"
           onClick={(e) => {
             e.stopPropagation();
             onRemoveSong(song.id);
           }}
           aria-label={`Remover ${song.songs?.title || 'canción'}`}
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </Button>
       )}
     </div>
@@ -174,16 +186,21 @@ function SortableSongItem({
 // --- Static Song Item (for DragOverlay) ---
 function SongOverlayItem({ song, songIndex }: { song: SetlistSong; songIndex: number }) {
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl bg-[#1a1f2c] border-2 border-secondary/50 shadow-2xl shadow-secondary/20">
-      <div className="p-1 -ml-2 text-secondary">
-        <GripVertical className="h-4 w-4" />
+    <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-[#070c1b] border border-secondary/50 shadow-2xl shadow-secondary/15 select-none w-full max-w-lg">
+      <div className="p-2 -ml-2 text-secondary">
+        <GripVertical className="h-5 w-5" />
       </div>
-      <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
-        <span className="text-xs font-bold text-secondary">{songIndex + 1}</span>
+      <div className="w-8 h-8 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center shrink-0">
+        <span className="text-xs font-bold text-neutral-400">{songIndex + 1}</span>
       </div>
-      <p className="text-base font-semibold text-secondary truncate">
-        {song.songs?.title || 'Sin título'}
-      </p>
+      <div className="flex-1 min-w-0">
+        <p className="text-[15px] font-black text-secondary truncate">
+          {song.songs?.title || 'Sin título'}
+        </p>
+        <p className="text-[11px] text-neutral-500 font-bold mt-0.5">
+          Tono: {song.songs?.key || "G"}
+        </p>
+      </div>
     </div>
   );
 }

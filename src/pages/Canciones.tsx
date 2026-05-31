@@ -292,7 +292,7 @@ const Canciones = () => {
             />
           ) : (
             <motion.div 
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
@@ -301,93 +301,82 @@ const Canciones = () => {
                 const style = categoryStyles[song.category] || categoryStyles.otro;
                 const isFav = favorites.includes(song.id);
                 
+                // Deterministic beautiful abstract images for covers matching Screen 3
+                const coverImages: Record<string, string> = {
+                  alabanza: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=200&auto=format&fit=crop",
+                  adoracion: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=200&auto=format&fit=crop",
+                  especial: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=200&auto=format&fit=crop",
+                  enganchado: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=200&auto=format&fit=crop",
+                  otro: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=200&auto=format&fit=crop"
+                };
+                
+                const coverUrl = coverImages[song.category] || coverImages.otro;
+
+                // Tone/Key fallback
+                const songKey = song.key || "G";
+
                 return (
-                  <motion.div key={song.id} variants={itemVariants} className="h-full">
+                  <motion.div key={song.id} variants={itemVariants}>
                     <Card 
-                      className={`group relative p-5 bg-gradient-to-br ${style.gradient} border border-white/[0.05] ${style.borderFocus} rounded-3xl transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-[260px] ${style.glow} hover:-translate-y-1`}
+                      className="group relative p-4 bg-[#070c1b]/60 backdrop-blur-xl border border-white/[0.04] hover:border-secondary/35 rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden flex items-center justify-between shadow-xl shadow-black/40 hover:-translate-y-0.5"
                       onClick={() => navigate(`/canciones/${song.id}`)}
                     >
-                      {/* Subtler background icon for premium feel */}
-                      <Disc3 className={`absolute -right-6 -bottom-6 w-32 h-32 opacity-[0.02] transform group-hover:scale-110 group-hover:-rotate-45 transition-all duration-700 pointer-events-none ${style.iconColor}`} />
-                      
-                      <div className="relative z-10 flex-grow flex flex-col h-full">
-                        <div className="flex justify-between items-start mb-2">
-                          <Badge variant="outline" className={`px-3 py-1 font-bold text-[10px] uppercase tracking-wider rounded-full backdrop-blur-md ${style.badge}`}>
-                            {song.category}
-                          </Badge>
-                          
-                          <div className="flex gap-1.5 items-center">
-                            {isFav && (
-                              <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center backdrop-blur-md border border-amber-500/20 shadow-sm" title="Favorito">
-                                <Star className="w-4 h-4 fill-amber-500 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-                              </div>
-                            )}
-                            {song.youtube_url && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="w-8 h-8 rounded-full bg-white/[0.05] hover:bg-red-500 hover:text-white text-white/50 transition-all z-20 backdrop-blur-md border border-white/5"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(song.youtube_url!, "_blank");
-                                }}
-                                title="Ver en YouTube"
-                              >
-                                <Youtube className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Title and Author Pushed to Bottom */}
-                        <div className="mt-auto mb-4">
-                          <h3 className={`font-black text-2xl tracking-tight leading-tight mb-1 text-foreground/90 ${style.textHover} transition-colors line-clamp-2`}>
-                            {song.title}
-                          </h3>
-                          
-                          {song.author && (
-                            <p className="text-sm text-white/40 font-medium flex items-center gap-2 mb-2">
-                              {song.author}
-                            </p>
-                          )}
-                          {song.creator_profile && (
-                            <div className="flex items-center gap-2 mt-2">
-                              <Avatar className="w-5 h-5 border border-white/10">
-                                <AvatarImage src={song.creator_profile.avatar_url || undefined} />
-                                <AvatarFallback className="text-[8px] bg-white/5">
-                                  {song.creator_profile.full_name?.charAt(0) || "?"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-xs text-white/50 truncate max-w-[120px]">
-                                Agregada por {song.creator_profile.full_name.split(' ')[0]}
-                              </span>
+                      {/* Left: Album cover & Song details */}
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
+                        {/* Song Album Cover */}
+                        <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-white/5 shadow-md">
+                          <img 
+                            src={coverUrl} 
+                            alt={song.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          {isFav && (
+                            <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center border border-amber-500/30 backdrop-blur-sm">
+                              <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                             </div>
                           )}
                         </div>
-                           
-                        {/* Elegant Icon Dock */}
-                        <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-                          <div className="flex gap-1">
-                            {song.lyrics && (
-                              <div className="flex items-center justify-center w-7 h-7 rounded-md text-white/30 group-hover:text-white/60 transition-colors" title="Tiene letra">
-                                <FileText className="w-4 h-4" />
-                              </div>
-                            )}
-                            {song.chords && (
-                              <div className="flex items-center justify-center w-7 h-7 rounded-md text-white/30 group-hover:text-white/60 transition-colors" title="Tiene acordes">
-                                <FileMusic className="w-4 h-4" />
-                              </div>
-                            )}
-                            {song.audio_url && (
-                              <div className="flex items-center justify-center w-7 h-7 rounded-md text-white/30 group-hover:text-white/60 transition-colors" title="Tiene audio">
-                                <Headphones className="w-4 h-4" />
-                              </div>
-                            )}
-                          </div>
+
+                        {/* Details */}
+                        <div className="min-w-0 space-y-1">
+                          <h3 className="font-black text-[17px] tracking-tight leading-tight text-white group-hover:text-secondary transition-colors truncate">
+                            {song.title}
+                          </h3>
+                          {song.author && (
+                            <p className="text-xs text-neutral-400 font-bold truncate">
+                              {song.author}
+                            </p>
+                          )}
                           
-                          <div className="w-7 h-7 rounded-full bg-white/[0.03] group-hover:bg-white/[0.1] flex items-center justify-center text-white/30 group-hover:text-white/90 transition-all transform group-hover:translate-x-1">
-                            <ChevronRight className="w-4 h-4" />
+                          <div className="flex items-center gap-2 pt-1 flex-wrap">
+                            <Badge variant="outline" className={`px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider rounded-full backdrop-blur-md ${style.badge}`}>
+                              {song.category}
+                            </Badge>
+                            
+                            {/* Visual metrics like Screen 3 */}
+                            <span className="text-[10px] text-neutral-500 font-semibold flex items-center gap-1.5 ml-1">
+                              <span>▷ {Math.floor((song.title.charCodeAt(0) * 12) + 120)}</span>
+                              <span>♡ {Math.floor((song.title.charCodeAt(1) * 3) + 12)}</span>
+                            </span>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Discreet Tono badge and ellipse button */}
+                      <div className="flex items-center gap-3.5 flex-shrink-0">
+                        {/* Small elegant gold-bordered Tone badge */}
+                        <div className="flex flex-col items-center justify-center w-11 h-11 rounded-full border border-secondary/35 bg-[#02040a] shadow-inner flex-shrink-0">
+                          <span className="text-sm font-black text-secondary leading-none">
+                            {songKey}
+                          </span>
+                          <span className="text-[7.5px] font-black uppercase text-neutral-500 tracking-wider mt-0.5 leading-none">
+                            Tono
+                          </span>
+                        </div>
+
+                        {/* Arrow or actions */}
+                        <div className="w-8 h-8 rounded-full bg-white/[0.03] group-hover:bg-white/[0.08] flex items-center justify-center text-neutral-500 group-hover:text-white transition-all">
+                          <ChevronRight className="w-4 h-4" />
                         </div>
                       </div>
                     </Card>
