@@ -203,7 +203,7 @@ const Index = () => {
 
   return (
     <>
-      <main className="flex-1 pt-24 pb-28 px-4 safe-top safe-bottom w-full bg-[#02040a]">
+      <main className="flex-1 pt-24 pb-28 px-4 safe-top safe-bottom w-full bg-background transition-colors duration-300">
         <div className="max-w-4xl mx-auto space-y-8">
           
           {/* Welcome Banner */}
@@ -289,28 +289,28 @@ const Index = () => {
                       {/* Premium Concert Lights Background Event Card */}
                       <Card 
                         onClick={() => navigate("/eventos")}
-                        className="relative overflow-hidden cursor-pointer group bg-gradient-to-r from-[#070c1b]/90 to-[#040814]/85 border border-white/5 p-6 rounded-3xl shadow-2xl transition-all duration-300 min-h-[160px]"
+                        className="relative overflow-hidden cursor-pointer group bg-card border border-border p-6 rounded-3xl shadow-2xl transition-all duration-300 min-h-[160px]"
                       >
                         {/* Concert glow image placeholder */}
                         <div 
                           className="absolute inset-0 bg-cover bg-center opacity-10 group-hover:opacity-15 transition-opacity pointer-events-none"
                           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600&auto=format&fit=crop')` }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent dark:from-black dark:via-black/80 dark:to-transparent pointer-events-none" />
                         
                         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 justify-between h-full">
                           <div className="flex items-center gap-5 w-full md:w-auto">
                             {/* Flotante Gold Date Calendar Box */}
-                            <div className="flex flex-col items-center justify-center w-20 h-24 rounded-2xl bg-[#02040a] border border-secondary/35 text-center px-2 flex-shrink-0 relative shadow-lg shadow-black/50">
+                            <div className="flex flex-col items-center justify-center w-20 h-24 rounded-2xl bg-background border border-secondary/35 text-center px-2 flex-shrink-0 relative shadow-lg">
                               {/* Amber Glow border */}
                               <div className="absolute inset-0 rounded-2xl bg-secondary/5 opacity-50" />
                               <span className="text-[10px] font-black uppercase text-secondary tracking-widest leading-none mb-1">
                                 {format(eventDate, "MMM", { locale: es })}
                               </span>
-                              <span className="text-3xl font-black text-white leading-none">
+                              <span className="text-3xl font-black text-foreground leading-none">
                                 {format(eventDate, "d")}
                               </span>
-                              <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mt-1">
+                              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mt-1">
                                 {format(eventDate, "eeee", { locale: es }).slice(0, 3)}
                               </span>
                             </div>
@@ -320,7 +320,7 @@ const Index = () => {
                               <span className="text-[9px] font-black uppercase tracking-widest text-secondary bg-secondary/10 px-2 py-0.5 rounded-full border border-secondary/20">
                                 Próximo Evento
                               </span>
-                              <h4 className="text-xl font-black text-white group-hover:text-secondary transition-colors truncate mt-1.5">
+                              <h4 className="text-xl font-black text-foreground group-hover:text-secondary transition-colors truncate mt-1.5">
                                 {event.title}
                               </h4>
                               
@@ -399,15 +399,15 @@ const Index = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-0.5">
-                              <h4 className="font-bold text-white text-sm line-clamp-1">{announcement.title}</h4>
+                              <h4 className="font-bold text-foreground text-sm line-clamp-1">{announcement.title}</h4>
                               {announcement.priority === 'urgent' && (
-                                <Badge className="bg-red-500/20 text-red-300 border border-red-500/40 text-[9px] px-1.5 uppercase font-black tracking-wider">
+                                <Badge className="bg-red-500/20 text-red-600 dark:text-red-300 border border-red-500/40 text-[9px] px-1.5 uppercase font-black tracking-wider">
                                   Urgente
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">{announcement.content}</p>
-                            <p className="text-[10px] text-neutral-500 font-semibold mt-2">
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{announcement.content}</p>
+                            <p className="text-[10px] text-muted-foreground/60 font-semibold mt-2">
                               {formatDistanceToNow(new Date(announcement.created_at), { addSuffix: true, locale: es })}
                             </p>
                           </div>
@@ -439,7 +439,7 @@ const Index = () => {
               </button>
             </div>
 
-            <Card className="bg-[#070c1b]/60 backdrop-blur-xl border border-white/5 p-4 rounded-3xl shadow-2xl divide-y divide-white/[0.04] space-y-3.5">
+            <Card className="bg-card border border-border p-4 rounded-3xl shadow-2xl divide-y divide-border space-y-3.5">
               {[
                 {
                   id: "act-1",
@@ -450,7 +450,7 @@ const Index = () => {
                   time: "2h",
                   grad: "from-blue-500/20 to-indigo-500/10",
                   icon: Music,
-                  iconColor: "text-blue-400"
+                  iconColor: "text-blue-500 dark:text-blue-400"
                 },
                 {
                   id: "act-2",
@@ -461,7 +461,7 @@ const Index = () => {
                   time: "5h",
                   grad: "from-amber-500/20 to-yellow-500/10",
                   icon: ListMusic,
-                  iconColor: "text-amber-400"
+                  iconColor: "text-amber-500 dark:text-amber-400"
                 },
                 {
                   id: "act-3",
@@ -472,7 +472,7 @@ const Index = () => {
                   time: "1d",
                   grad: "from-purple-500/20 to-fuchsia-500/10",
                   icon: CalendarDays,
-                  iconColor: "text-purple-400"
+                  iconColor: "text-purple-500 dark:text-purple-400"
                 },
                 {
                   id: "act-4",
@@ -483,23 +483,23 @@ const Index = () => {
                   time: "1d",
                   grad: "from-emerald-500/20 to-teal-500/10",
                   icon: MessageSquare,
-                  iconColor: "text-emerald-400"
+                  iconColor: "text-emerald-500 dark:text-emerald-400"
                 }
               ].map((act, index) => (
                 <div key={act.id} className={`flex items-center justify-between gap-4 ${index > 0 ? "pt-3.5" : ""}`}>
                   <div className="flex items-center gap-3.5 min-w-0">
                     {/* Circle Gradient Icon */}
-                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${act.grad} flex items-center justify-center flex-shrink-0 border border-white/[0.04]`}>
+                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${act.grad} flex items-center justify-center flex-shrink-0 border border-border`}>
                       <act.icon className={`w-5 h-5 ${act.iconColor}`} />
                     </div>
                     
                     {/* Description Text */}
                     <div className="min-w-0 leading-tight">
-                      <p className="text-xs text-neutral-400 font-semibold">
+                      <p className="text-xs text-muted-foreground font-semibold">
                         {act.title}
                       </p>
-                      <h5 className="text-[13.5px] font-black text-white mt-0.5 truncate max-w-[280px] sm:max-w-md">
-                        {act.detail} <span className="text-neutral-500 font-bold text-xs">{act.by}</span>
+                      <h5 className="text-[13.5px] font-black text-foreground mt-0.5 truncate max-w-[280px] sm:max-w-md">
+                        {act.detail} <span className="text-muted-foreground/60 font-bold text-xs">{act.by}</span>
                       </h5>
                     </div>
                   </div>

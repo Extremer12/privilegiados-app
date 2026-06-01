@@ -44,7 +44,7 @@ export const QuickActions = () => {
         animate={{ opacity: 1, y: 0 }}
       >
         <div>
-          <h3 className="text-base font-black uppercase tracking-wider text-neutral-300">
+          <h3 className="text-base font-black uppercase tracking-wider text-muted-foreground">
             Accesos Rápidos
           </h3>
         </div>
@@ -67,7 +67,7 @@ export const QuickActions = () => {
               type="button"
             >
               {/* Glass Circle Button */}
-              <div className="relative w-14 h-14 rounded-full bg-[#070c1b]/60 backdrop-blur-xl border border-white/5 flex items-center justify-center transition-all duration-300 group-hover:border-secondary/40 shadow-lg group-hover:shadow-secondary/15 group-active:scale-95">
+              <div className="relative w-14 h-14 rounded-full bg-card/60 backdrop-blur-xl border border-border flex items-center justify-center transition-all duration-300 group-hover:border-secondary/40 shadow-lg group-hover:shadow-secondary/15 group-active:scale-95">
                 {/* Glow ring */}
                 <div className="absolute inset-0 rounded-full bg-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 
@@ -76,7 +76,7 @@ export const QuickActions = () => {
               </div>
 
               {/* Label */}
-              <span className="text-[10px] font-bold text-neutral-400 group-hover:text-white transition-colors tracking-wide leading-tight px-1 max-w-[80px]">
+              <span className="text-[10px] font-bold text-muted-foreground group-hover:text-foreground transition-colors tracking-wide leading-tight px-1 max-w-[80px]">
                 {action.label}
               </span>
             </motion.button>

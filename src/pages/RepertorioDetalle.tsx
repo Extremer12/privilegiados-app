@@ -390,7 +390,7 @@ const RepertorioDetalle = () => {
 
   return (
     <>
-      <main className="flex-1 pt-24 pb-28 px-4 safe-top safe-bottom w-full bg-[#02040a]">
+      <main className="flex-1 pt-24 pb-28 px-4 safe-top safe-bottom w-full bg-background transition-colors duration-300">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <motion.div 
@@ -402,20 +402,20 @@ const RepertorioDetalle = () => {
             <Button
               variant="ghost"
               onClick={() => navigate('/repertorios')}
-              className="mb-6 -ml-2 gap-2 text-neutral-400 hover:text-white hover:bg-white/5 transition-all rounded-xl h-10"
+              className="mb-6 -ml-2 gap-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-all rounded-xl h-10"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm font-semibold">Volver</span>
             </Button>
-
+ 
             {/* Title & Stats Banner Card (Screen 1 style) */}
-            <Card className="p-6 md:p-8 bg-[#070c1b]/60 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl relative overflow-hidden mb-6">
+            <Card className="p-6 md:p-8 bg-card border border-border rounded-3xl shadow-2xl relative overflow-hidden mb-6">
               {/* Cover background gradient */}
               <div 
                 className="absolute inset-0 bg-cover bg-center opacity-10 pointer-events-none"
                 style={{ backgroundImage: `url('https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=600&auto=format&fit=crop')` }}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent dark:from-black dark:via-black/80 dark:to-transparent pointer-events-none" />
 
               <div className="relative z-10 flex flex-col gap-6">
                 <div className="flex-1 min-w-0">
@@ -426,10 +426,10 @@ const RepertorioDetalle = () => {
                         value={editForm.status}
                         onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value as any }))}
                       >
-                        <SelectTrigger className="w-auto h-8 text-xs font-semibold bg-white/5 border-white/10 rounded-lg text-white">
+                        <SelectTrigger className="w-auto h-8 text-xs font-semibold bg-muted border border-border rounded-lg text-foreground">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#070c1b] border-white/10 text-white">
+                        <SelectContent className="bg-popover border border-border text-popover-foreground">
                           {statusOptions.map(opt => (
                             <SelectItem key={opt.value} value={opt.value}>
                               {opt.label}
@@ -438,11 +438,11 @@ const RepertorioDetalle = () => {
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Badge className={`border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg bg-white/5 ${currentStatus.color}`}>
+                      <Badge className={`border-none px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg bg-muted ${currentStatus.color}`}>
                         {currentStatus.label}
                       </Badge>
                     )}
-                    <span className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
+                    <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                       {songs.length} canciones
                     </span>
                   </div>
@@ -452,10 +452,10 @@ const RepertorioDetalle = () => {
                     <Input
                       value={editForm.title}
                       onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                      className="text-2xl md:text-3xl font-black bg-white/[0.03] border-white/10 focus:border-secondary/40 h-auto py-3 rounded-xl text-white"
+                      className="text-2xl md:text-3xl font-black bg-muted border border-border focus:border-secondary/40 h-auto py-3 rounded-xl text-foreground"
                     />
                   ) : (
-                    <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground leading-tight">
                       {setlist.title}
                     </h1>
                   )}
@@ -468,36 +468,36 @@ const RepertorioDetalle = () => {
 
                 {/* Grid of 4 transparent stat cards matching Screen 1 */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-4 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl flex flex-col justify-center text-center">
+                  <div className="p-4 bg-muted border border-border rounded-2xl flex flex-col justify-center text-center">
                     <Music className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
-                    <span className="text-lg font-black text-white">{songs.length}</span>
-                    <span className="text-[9px] uppercase font-black text-neutral-500 tracking-wider mt-1">Canciones</span>
+                    <span className="text-lg font-black text-foreground">{songs.length}</span>
+                    <span className="text-[9px] uppercase font-black text-muted-foreground/60 tracking-wider mt-1">Canciones</span>
                   </div>
-                  <div className="p-4 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl flex flex-col justify-center text-center">
+                  <div className="p-4 bg-muted border border-border rounded-2xl flex flex-col justify-center text-center">
                     <Users className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
-                    <span className="text-lg font-black text-white">{participants.length}</span>
-                    <span className="text-[9px] uppercase font-black text-neutral-500 tracking-wider mt-1">Integrantes</span>
+                    <span className="text-lg font-black text-foreground">{participants.length}</span>
+                    <span className="text-[9px] uppercase font-black text-muted-foreground/60 tracking-wider mt-1">Integrantes</span>
                   </div>
-                  <div className="p-4 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl flex flex-col justify-center text-center">
+                  <div className="p-4 bg-muted border border-border rounded-2xl flex flex-col justify-center text-center">
                     <Clock className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
-                    <span className="text-lg font-black text-white">{Math.floor(songs.length * 4.5)} min</span>
-                    <span className="text-[9px] uppercase font-black text-neutral-500 tracking-wider mt-1">Duración</span>
+                    <span className="text-lg font-black text-foreground">{Math.floor(songs.length * 4.5)} min</span>
+                    <span className="text-[9px] uppercase font-black text-muted-foreground/60 tracking-wider mt-1">Duración</span>
                   </div>
-                  <div className="p-4 bg-[#02040a]/40 border border-white/[0.03] rounded-2xl flex flex-col justify-center text-center">
+                  <div className="p-4 bg-muted border border-border rounded-2xl flex flex-col justify-center text-center">
                     <Eye className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
-                    <span className="text-lg font-black text-white">{Math.floor((setlist.title.charCodeAt(0) * 1.5) + 20)}</span>
-                    <span className="text-[9px] uppercase font-black text-neutral-500 tracking-wider mt-1">Vistas</span>
+                    <span className="text-lg font-black text-foreground">{Math.floor((setlist.title.charCodeAt(0) * 1.5) + 20)}</span>
+                    <span className="text-[9px] uppercase font-black text-muted-foreground/60 tracking-wider mt-1">Vistas</span>
                   </div>
                 </div>
 
                 {/* Primary action buttons matching Screen 1 layout */}
-                <div className="flex gap-2 flex-wrap pt-2 border-t border-white/[0.04] mt-2">
+                <div className="flex gap-2 flex-wrap pt-2 border-t border-border mt-2">
                   {isEditing ? (
                     <>
                       <Button 
                         variant="ghost" 
                         onClick={() => setIsEditing(false)} 
-                        className="h-11 px-5 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-white/5 text-neutral-400"
+                        className="h-11 px-5 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-muted text-muted-foreground"
                       >
                         <X className="h-4 w-4 mr-2" />
                         Cancelar
@@ -535,9 +535,9 @@ const RepertorioDetalle = () => {
                           variant="ghost" 
                           onClick={() => setIsEditing(true)} 
                           disabled={setlist.status === 'completed'}
-                          className={`h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-neutral-300 border border-white/5 ${setlist.status === 'completed' ? 'opacity-50 grayscale' : ''}`}
+                          className={`h-11 px-5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-foreground border border-border ${setlist.status === 'completed' ? 'opacity-50 grayscale' : ''}`}
                         >
-                          <Edit3 className="h-4 w-4 mr-2 text-neutral-400" />
+                          <Edit3 className="h-4 w-4 mr-2 text-muted-foreground" />
                           {setlist.status === 'completed' ? 'Cerrado' : 'Editar información'}
                         </Button>
                       )}
@@ -545,9 +545,9 @@ const RepertorioDetalle = () => {
                       <Button 
                         variant="ghost" 
                         onClick={handleExportPDF} 
-                        className="h-11 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-neutral-300 border border-white/5 ml-auto"
+                        className="h-11 px-5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-foreground border border-border ml-auto"
                       >
-                        <FileDown className="h-4 w-4 mr-2 text-neutral-400" />
+                        <FileDown className="h-4 w-4 mr-2 text-muted-foreground" />
                         PDF
                       </Button>
                     </>
@@ -564,7 +564,7 @@ const RepertorioDetalle = () => {
             transition={{ delay: 0.15 }}
             className="space-y-6 mb-10"
           >
-            {/* Theme verse */}
+                   {/* Theme verse */}
             {(isEditing || setlist.theme_verse) && (
               <div className="space-y-2">
                 <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
@@ -575,7 +575,7 @@ const RepertorioDetalle = () => {
                     value={editForm.theme_verse}
                     onChange={(e) => setEditForm(prev => ({ ...prev, theme_verse: e.target.value }))}
                     placeholder="Escribe el versículo temático..."
-                    className="bg-white/[0.03] border-white/10 focus:border-secondary/40 min-h-[80px] text-base italic rounded-xl"
+                    className="bg-muted border border-border focus:border-secondary/40 min-h-[80px] text-base italic rounded-xl text-foreground"
                   />
                 ) : (
                   <div className="border-l-[3px] border-secondary/40 pl-5 py-2">
@@ -586,7 +586,7 @@ const RepertorioDetalle = () => {
                 )}
               </div>
             )}
-
+ 
             {/* Leadership & Team */}
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -599,10 +599,10 @@ const RepertorioDetalle = () => {
                       value={editForm.service_director}
                       onChange={(e) => setEditForm(prev => ({ ...prev, service_director: e.target.value }))}
                       placeholder="Director del servicio"
-                      className="bg-white/[0.03] border-white/10 focus:border-secondary/40 rounded-xl h-11"
+                      className="bg-muted border border-border focus:border-secondary/40 rounded-xl h-11 text-foreground"
                     />
                   ) : (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
                       <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
                         <Users className="h-4 w-4 text-secondary" />
                       </div>
@@ -612,7 +612,7 @@ const RepertorioDetalle = () => {
                     </div>
                   )}
                 </div>
-
+ 
                 <div className="space-y-2">
                   <h3 className="text-xs uppercase tracking-widest font-bold text-muted-foreground/60">
                     Palabra
@@ -622,10 +622,10 @@ const RepertorioDetalle = () => {
                       value={editForm.preacher}
                       onChange={(e) => setEditForm(prev => ({ ...prev, preacher: e.target.value }))}
                       placeholder="Persona que predica"
-                      className="bg-white/[0.03] border-white/10 focus:border-secondary/40 rounded-xl h-11"
+                      className="bg-muted border border-border focus:border-secondary/40 rounded-xl h-11 text-foreground"
                     />
                   ) : (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border">
                       <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
                         <Mic className="h-4 w-4 text-secondary" />
                       </div>
@@ -657,7 +657,7 @@ const RepertorioDetalle = () => {
                 {participants.length > 0 ? (
                   <div className="flex flex-wrap gap-3">
                     {participants.map((p: any) => (
-                      <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/5 border border-white/5">
+                      <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-muted border border-border">
                         <div className="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center overflow-hidden">
                           {p.profiles?.avatar_url ? (
                             <img src={p.profiles.avatar_url} alt={p.profiles.full_name} className="w-full h-full object-cover" />
@@ -666,7 +666,7 @@ const RepertorioDetalle = () => {
                           )}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-xs font-bold text-white/90">{p.profiles?.full_name}</span>
+                          <span className="text-xs font-bold text-foreground">{p.profiles?.full_name}</span>
                           <span className="text-[9px] font-medium text-secondary/60 uppercase">{p.role_in_service}</span>
                         </div>
                       </div>

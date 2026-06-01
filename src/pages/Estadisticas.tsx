@@ -97,9 +97,7 @@ const Estadisticas = () => {
   }
 
   return (
-    <div className="flex-1 pt-20 pb-20 min-h-screen" style={{
-      background: "linear-gradient(135deg, hsl(222 47% 6%) 0%, hsl(222 47% 10%) 50%, hsl(222 47% 6%) 100%)",
-    }}>
+    <div className="flex-1 pt-24 pb-20 min-h-screen bg-background transition-colors duration-300">
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <motion.div
@@ -121,7 +119,7 @@ const Estadisticas = () => {
               <div className="p-2 bg-secondary/20 rounded-lg">
                 <BarChart3 className="w-6 h-6 text-secondary" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Estadísticas</h1>
+              <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight">Estadísticas</h1>
             </div>
             <p className="text-muted-foreground text-lg">
               Análisis y rendimiento de los servicios musicales
@@ -137,8 +135,8 @@ const Estadisticas = () => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-3 rounded-xl transition-all font-medium whitespace-nowrap ${
                 activeTab === tab.id
-                  ? "bg-secondary text-primary shadow-[0_0_20px_rgba(251,191,36,0.3)] scale-105"
-                  : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white"
+                  ? "bg-secondary text-primary-foreground shadow-[0_0_20px_rgba(251,191,36,0.3)] scale-105"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -156,9 +154,9 @@ const Estadisticas = () => {
         ) : !statsData?.reports.length ? (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center p-12 text-center bg-white/5 rounded-3xl border border-white/10"
+            className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-3xl border border-border"
           >
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
               <LineChart className="w-10 h-10 text-muted-foreground/50" />
             </div>
             <h3 className="text-2xl font-bold mb-2">Aún no hay datos</h3>

@@ -84,8 +84,7 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
           whileTap={{ scale: 0.97 }}
         >
           <Card
-            variant="stats"
-            className="relative p-5 cursor-pointer group overflow-hidden border border-white/[0.04] bg-[#070c1b]/60 backdrop-blur-xl rounded-2xl flex flex-col justify-between min-h-[170px]"
+            className="card-stats p-5 cursor-pointer group flex flex-col justify-between min-h-[170px]"
             onClick={() => navigate(stat.path)}
             role="button"
             aria-label={`Ver ${stat.label}`}
@@ -105,12 +104,12 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
               </div>
 
               {/* Stat Value */}
-              <div className="text-3xl font-black tracking-tight text-white mb-0.5">
+              <div className="text-3xl font-black tracking-tight text-foreground mb-0.5">
                 {stat.value.toLocaleString()}
               </div>
 
               {/* Label */}
-              <div className="text-xs text-neutral-400 font-bold uppercase tracking-wider">
+              <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                 {stat.label}
               </div>
             </div>

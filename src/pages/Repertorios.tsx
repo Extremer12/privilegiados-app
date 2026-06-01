@@ -285,7 +285,7 @@ const Repertorios = () => {
                 {upcomingSetlists.map(setlist => (
                   <Card 
                     key={setlist.id}
-                    className="shrink-0 w-60 cursor-pointer rounded-xl border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-secondary/30 transition-all duration-300 active:scale-[0.98]"
+                    className="shrink-0 w-60 cursor-pointer rounded-xl border-border bg-card hover:bg-muted/30 hover:border-secondary/30 transition-all duration-300 active:scale-[0.98]"
                     onClick={() => navigate(`/repertorios/${setlist.id}`)}
                   >
                     <CardContent className="p-5">
@@ -320,9 +320,9 @@ const Repertorios = () => {
                     setPage(1);
                   }}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all active:scale-[0.97] ${
-                    isActive
-                      ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20'
-                      : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                      isActive
+                        ? 'bg-secondary text-primary-foreground shadow-lg shadow-secondary/20'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                   }`}
                 >
                   <tab.icon className="h-4 w-4" />
@@ -336,15 +336,15 @@ const Repertorios = () => {
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="rounded-2xl border-white/10 bg-white/[0.03] p-6 h-[180px] overflow-hidden">
+                <Card key={i} className="rounded-2xl border-border bg-card p-6 h-[180px] overflow-hidden">
                   <div className="flex flex-col h-full gap-4">
                     <div className="flex justify-between">
-                      <Skeleton className="w-24 h-6 rounded-full bg-white/5" />
-                      <Skeleton className="w-8 h-8 rounded-full bg-white/5" />
+                      <Skeleton className="w-24 h-6 rounded-full bg-muted" />
+                      <Skeleton className="w-8 h-8 rounded-full bg-muted" />
                     </div>
                     <div className="space-y-2 mt-auto">
-                      <Skeleton className="h-7 w-3/4 bg-white/5" />
-                      <Skeleton className="h-4 w-1/2 bg-white/5" />
+                      <Skeleton className="h-7 w-3/4 bg-muted" />
+                      <Skeleton className="h-4 w-1/2 bg-muted" />
                     </div>
                   </div>
                 </Card>
@@ -410,7 +410,7 @@ const Repertorios = () => {
               <Button 
                 variant="outline" 
                 onClick={() => setPage(p => p + 1)}
-                className="rounded-xl border-white/10 hover:bg-white/5 font-bold px-8"
+                className="rounded-xl border-border hover:bg-muted font-bold px-8"
               >
                 Cargar más
               </Button>
