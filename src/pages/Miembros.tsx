@@ -71,7 +71,7 @@ const Miembros = () => {
   const navigate = useNavigate();
   
   const { data: membersRaw, isLoading: loadingMembers } = useQuery({
-    queryKey: ['profiles'],
+    queryKey: ['profilesList'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -134,7 +134,7 @@ const Miembros = () => {
         description: "Los roles del miembro han sido actualizados correctamente",
       });
       queryClient.invalidateQueries({ queryKey: ['user_roles'] });
-      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['profilesList'] });
       setEditingMember(null);
     },
     onError: (error: any) => {
@@ -154,7 +154,7 @@ const Miembros = () => {
       toast.success("Usuario eliminado", {
         description: "El usuario ha sido eliminado completamente del sistema.",
       });
-      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['profilesList'] });
       queryClient.invalidateQueries({ queryKey: ['user_roles'] });
       setMemberToDelete(null);
     },

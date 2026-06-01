@@ -94,6 +94,7 @@ const Profile = () => {
       toast.success("Perfil actualizado exitosamente");
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] }); // Invalidate global members cache too
+      queryClient.invalidateQueries({ queryKey: ['profilesList'] });
     },
     onError: (error: any) => {
       toast.error("Error al actualizar perfil: " + error.message);

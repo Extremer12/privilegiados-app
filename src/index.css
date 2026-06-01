@@ -8,14 +8,14 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
-    --foreground: 210 40% 98%;
+    --background: 210 20% 98%;
+    --foreground: 224 71% 4%;
 
-    --card: 220 30% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
 
-    --popover: 220 30% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
 
     --primary: 224 71% 4%;
     --primary-foreground: 210 40% 98%;
@@ -23,8 +23,8 @@ All colors MUST be HSL.
     --secondary: 41 83% 55%;
     --secondary-foreground: 224 71% 4%;
 
-    --muted: 220 15% 10%;
-    --muted-foreground: 215 16% 65%;
+    --muted: 220 15% 94%;
+    --muted-foreground: 215 16% 45%;
 
     --accent: 41 83% 55%;
     --accent-foreground: 224 71% 4%;
@@ -32,8 +32,8 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 15% 13%;
-    --input: 220 15% 13%;
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
     --ring: 41 83% 55%;
 
     --radius: 1.25rem;
@@ -41,20 +41,20 @@ All colors MUST be HSL.
     /* Custom worship theme colors */
     --deep-blue: 224 71% 4%;
     --gold: 41 83% 55%;
-    --light-text: 210 40% 98%;
-    --secondary-text: 215 16% 70%;
-    --card-bg: 220 30% 6%;
-    --dark-bg: 224 71% 2%;
+    --light-text: 224 71% 4%;
+    --secondary-text: 215 16% 45%;
+    --card-bg: 0 0% 100%;
+    --dark-bg: 210 20% 95%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(224 71% 4%) 0%, hsl(220 30% 7%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(210 20% 98%) 0%, hsl(220 15% 94%) 100%);
     --gradient-gold: linear-gradient(135deg, #d9a032 0%, #fbbf24 100%);
-    --gradient-card: linear-gradient(145deg, rgba(7, 12, 27, 0.7) 0%, rgba(4, 8, 20, 0.85) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(245, 247, 250, 0.95) 100%);
 
     /* Shadows */
-    --shadow-gold: 0 10px 40px -10px rgba(217, 160, 50, 0.25);
-    --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    --shadow-glow: 0 0 30px rgba(217, 160, 50, 0.15);
+    --shadow-gold: 0 10px 40px -10px rgba(217, 160, 50, 0.15);
+    --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+    --shadow-glow: 0 0 30px rgba(217, 160, 50, 0.1);
 
     /* Transitions */
     --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -96,6 +96,23 @@ All colors MUST be HSL.
     --border: 220 15% 13%;
     --input: 220 15% 13%;
     --ring: 41 83% 55%;
+
+    /* Custom worship theme colors for dark mode */
+    --deep-blue: 224 71% 4%;
+    --gold: 41 83% 55%;
+    --light-text: 210 40% 98%;
+    --secondary-text: 215 16% 70%;
+    --card-bg: 220 30% 6%;
+    --dark-bg: 224 71% 2%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(224 71% 4%) 0%, hsl(220 30% 7%) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(7, 12, 27, 0.7) 0%, rgba(4, 8, 20, 0.85) 100%);
+
+    /* Shadows */
+    --shadow-gold: 0 10px 40px -10px rgba(217, 160, 50, 0.25);
+    --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --shadow-glow: 0 0 30px rgba(217, 160, 50, 0.15);
   }
 }
 
@@ -109,7 +126,8 @@ All colors MUST be HSL.
     overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #02040a;
+    background-color: hsl(var(--background));
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
 
   /* Mobile-first utilities */

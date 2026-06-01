@@ -7,16 +7,19 @@ import {
   Users, CalendarDays, BarChart3, ChevronUp, Bell, BellOff, MoreHorizontal, HelpCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalSearch } from "./GlobalSearch";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Switch } from "./ui/switch";
+import { Sun, Moon } from "lucide-react";
 
 export const Navigation = () => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { isSupported, isSubscribed, subscribe, unsubscribe, loading } = usePushNotifications();
 
   const handleNotificationToggle = async () => {
@@ -127,6 +130,17 @@ export const Navigation = () => {
 
             {/* Actions (Search, Notification Bell, Profile) */}
             <div className="flex items-center gap-3">
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="w-10 h-10 rounded-xl bg-white/5 hover:bg-secondary/15 text-neutral-400 hover:text-secondary border border-white/5 transition-all"
+                  title={theme === "dark" ? "Activar Modo Claro" : "Activar Modo Oscuro"}
+                >
+                  {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </Button>
+              )}
               {user && <GlobalSearch />}
               {user && <NotificationBell />}
               
@@ -277,6 +291,24 @@ export const Navigation = () => {
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Theme Toggle row */}
+              <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/[0.04] mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${theme === "dark" ? "bg-white/5" : "bg-secondary/10"}`}>
+                    {theme === "dark" ? <Moon className="w-4.5 h-4.5 text-neutral-400" /> : <Sun className="w-4.5 h-4.5 text-secondary animate-pulse" />}
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-foreground block">Modo Claro</span>
+                    <span className="text-[9px] text-muted-foreground/60 font-semibold">{theme === "light" ? "Activado" : "Desactivado"}</span>
+                  </div>
+                </div>
+                <Switch 
+                  checked={theme === "light"} 
+                  onCheckedChange={toggleTheme}
+                  className="scale-90"
+                />
               </div>
 
               {/* Native Push Notification Toggle */}

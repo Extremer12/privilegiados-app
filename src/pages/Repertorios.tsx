@@ -232,7 +232,7 @@ const Repertorios = () => {
 
   return (
     <>
-      <main className="flex-1 pt-24 pb-20 px-4 safe-top safe-bottom w-full">
+      <main className="flex-1 pt-24 pb-28 px-4 safe-top safe-bottom w-full bg-background transition-colors duration-300">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <motion.div 

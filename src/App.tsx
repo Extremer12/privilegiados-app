@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -78,40 +79,42 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/auth" element={<Auth />} />
-                  {/* Layout wrapper for protected and catch-all routes */}
-                  <Route element={<Layout />}>
-                    {/* Protected routes */}
-                    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                    <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
-                    <Route path="/canciones/nueva" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
-                    <Route path="/canciones/:id/editar" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
-                    <Route path="/canciones/:id" element={<ProtectedRoute><SongDetail /></ProtectedRoute>} />
-                    <Route path="/foro" element={<ProtectedRoute><Foro /></ProtectedRoute>} />
-                    <Route path="/miembros" element={<ProtectedRoute><Miembros /></ProtectedRoute>} />
-                    <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
-                    <Route path="/estadisticas" element={<ProtectedRoute><Estadisticas /></ProtectedRoute>} />
-                    <Route path="/repertorios" element={<ProtectedRoute><Repertorios /></ProtectedRoute>} />
-                    <Route path="/repertorios/:id" element={<ProtectedRoute><RepertorioDetalle /></ProtectedRoute>} />
-                    <Route path="/en-vivo/:id" element={<ProtectedRoute><EnVivo /></ProtectedRoute>} />
-                    <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                    <Route path="/perfil/:id" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
+        <ThemeProvider>
+          <TooltipProvider>
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/auth" element={<Auth />} />
+                    {/* Layout wrapper for protected and catch-all routes */}
+                    <Route element={<Layout />}>
+                      {/* Protected routes */}
+                      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                      <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
+                      <Route path="/canciones/nueva" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
+                      <Route path="/canciones/:id/editar" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
+                      <Route path="/canciones/:id" element={<ProtectedRoute><SongDetail /></ProtectedRoute>} />
+                      <Route path="/foro" element={<ProtectedRoute><Foro /></ProtectedRoute>} />
+                      <Route path="/miembros" element={<ProtectedRoute><Miembros /></ProtectedRoute>} />
+                      <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
+                      <Route path="/estadisticas" element={<ProtectedRoute><Estadisticas /></ProtectedRoute>} />
+                      <Route path="/repertorios" element={<ProtectedRoute><Repertorios /></ProtectedRoute>} />
+                      <Route path="/repertorios/:id" element={<ProtectedRoute><RepertorioDetalle /></ProtectedRoute>} />
+                      <Route path="/en-vivo/:id" element={<ProtectedRoute><EnVivo /></ProtectedRoute>} />
+                      <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                      <Route path="/perfil/:id" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
 
-                    {/* Catch-all */}
-                    <Route path="*" element={<NotFound />} />
-                  </Route>
-                </Routes>
-              </Suspense>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
+                      {/* Catch-all */}
+                      <Route path="*" element={<NotFound />} />
+                    </Route>
+                  </Routes>
+                </Suspense>
+              </AuthProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
