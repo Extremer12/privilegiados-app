@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchSongById } from "@/services/songService";
 import { 
   ArrowLeft, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, 
-  Printer, Youtube, Star, BarChart3, Disc, Clock, ShieldAlert, BadgeInfo, Radio
+  Printer, Youtube, Star, BarChart3, Disc, Clock, ShieldAlert, BadgeInfo, Radio, Music
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";

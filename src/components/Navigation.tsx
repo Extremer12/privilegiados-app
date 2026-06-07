@@ -78,7 +78,7 @@ export const Navigation = () => {
   return (
     <>
       {/* HEADER BAR (Desktop & Mobile Top Slim Bar) */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#02040a]/60 backdrop-blur-2xl border-b border-white/[0.04]">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-border">
         <nav className="container mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo and Branding */}
@@ -174,7 +174,7 @@ export const Navigation = () => {
 
       {/* FLOATING BOTTOM NAVIGATION BAR (Mobile Only) */}
       {user && (
-        <nav className="fixed bottom-6 left-4 right-4 z-40 md:hidden bg-[#070c1b]/70 backdrop-blur-2xl border border-white/5 shadow-2xl rounded-2xl px-2 py-2 flex items-center justify-around shadow-black/60">
+        <nav className="fixed bottom-6 left-4 right-4 z-40 md:hidden bg-background/80 backdrop-blur-2xl border border-border shadow-2xl rounded-2xl px-2 py-2 flex items-center justify-around shadow-black/20 dark:shadow-black/60">
           {mainTabs.map((tab) => {
             const Icon = tab.icon;
             const active = isActive(tab.path) && !isMoreOpen;
@@ -248,7 +248,7 @@ export const Navigation = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="fixed bottom-24 left-4 right-4 z-50 md:hidden bg-[#070c1b]/95 backdrop-blur-3xl border border-white/10 shadow-2xl rounded-3xl p-5 shadow-black/80 flex flex-col max-h-[70vh] overflow-y-auto"
+              className="fixed bottom-24 left-4 right-4 z-50 md:hidden bg-background/95 backdrop-blur-3xl border border-border shadow-2xl rounded-3xl p-5 shadow-black/20 dark:shadow-black/80 flex flex-col max-h-[70vh] overflow-y-auto"
             >
               {/* Header inside Bottom Sheet */}
               <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/[0.06]">

@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -56,7 +55,6 @@ const PublicProfile = () => {
             <p className="text-muted-foreground">Perfil no encontrado</p>
           </div>
         </main>
-      <Footer />
     </>
   );
   }

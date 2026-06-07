@@ -89,7 +89,7 @@ const RepertorioDetalle = () => {
         .from('setlist_songs')
         .select(`
           *,
-          songs (id, title, category, key, lyrics, chords, youtube_url)
+          songs (id, title, category, lyrics, chords, youtube_url)
         `)
         .eq('setlist_id', id)
         .order('position');

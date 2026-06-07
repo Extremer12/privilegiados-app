@@ -264,7 +264,7 @@ const Canciones = () => {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <Card key={i} className="p-6 bg-white/[0.02] border-white/5 rounded-3xl relative overflow-hidden h-[240px]">
+                <Card key={i} className="p-6 bg-card border-border rounded-3xl relative overflow-hidden h-[240px]">
                   <div className="space-y-4 h-full flex flex-col">
                     <div className="flex justify-between">
                       <Skeleton className="w-20 h-6 rounded-full bg-white/5" />
@@ -318,7 +318,7 @@ const Canciones = () => {
                 return (
                   <motion.div key={song.id} variants={itemVariants}>
                     <Card 
-                      className="group relative p-4 bg-[#070c1b]/60 backdrop-blur-xl border border-white/[0.04] hover:border-secondary/35 rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden flex items-center justify-between shadow-xl shadow-black/40 hover:-translate-y-0.5"
+                      className="group relative p-4 bg-card/80 backdrop-blur-xl border border-border hover:border-secondary/35 rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden flex items-center justify-between shadow-xl shadow-black/5 dark:shadow-black/40 hover:-translate-y-0.5"
                       onClick={() => navigate(`/canciones/${song.id}`)}
                     >
                       {/* Left: Album cover & Song details */}
@@ -365,7 +365,7 @@ const Canciones = () => {
                       {/* Right: Discreet Tono badge and ellipse button */}
                       <div className="flex items-center gap-3.5 flex-shrink-0">
                         {/* Small elegant gold-bordered Tone badge */}
-                        <div className="flex flex-col items-center justify-center w-11 h-11 rounded-full border border-secondary/35 bg-[#02040a] shadow-inner flex-shrink-0">
+                        <div className="flex flex-col items-center justify-center w-11 h-11 rounded-full border border-secondary/35 bg-background shadow-inner flex-shrink-0">
                           <span className="text-sm font-black text-secondary leading-none">
                             {songKey}
                           </span>

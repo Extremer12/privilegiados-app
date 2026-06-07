@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -213,7 +212,6 @@ const Profile = () => {
           </Card>
         </div>
       </main>
-      <Footer />
     </>
   );
 };
