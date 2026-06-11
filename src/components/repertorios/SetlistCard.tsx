@@ -65,20 +65,20 @@ export function SetlistCard({
 
   return (
     <Card 
-      className={`relative overflow-hidden rounded-[2.5rem] border transition-all duration-300 active:scale-[0.98] ${
+      className={`relative overflow-hidden rounded-2xl border transition-all duration-300 hover:border-secondary/35 shadow-lg shadow-black/5 dark:shadow-black/30 hover:-translate-y-0.5 ${
         isToday 
-          ? 'border-secondary bg-card text-card-foreground shadow-2xl shadow-secondary/20' 
-          : 'border-border bg-card text-card-foreground shadow-xl'
+          ? 'border-secondary/60 bg-card text-card-foreground shadow-2xl shadow-secondary/10' 
+          : 'border-border bg-card text-card-foreground'
       }`}
     >
       {/* Background Gradient Accent */}
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${status.gradient} blur-2xl opacity-50`} />
       
-      <CardContent className="p-6 relative z-10">
-        <div className="flex flex-col gap-5">
+      <CardContent className="p-5 relative z-10">
+        <div className="flex flex-col gap-4">
           {/* Header Section */}
           <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-2 min-w-0 flex-1">
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge className={`${status.bgColor} ${status.color} border ${status.borderColor} rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider whitespace-nowrap`}>
                   <StatusIcon className="w-3 h-3 mr-1.5" />
@@ -96,83 +96,83 @@ export function SetlistCard({
                   </Badge>
                 )}
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-tight mt-1 line-clamp-2">
+              <h3 className="text-lg sm:text-xl font-black tracking-tight text-foreground leading-tight mt-1 line-clamp-2">
                 {setlist.title}
               </h3>
             </div>
             
             <div className="shrink-0">
-              <div className="bg-muted rounded-2xl p-2 sm:p-3 border border-border flex flex-col items-center min-w-[45px] sm:min-w-[60px]">
-                <span className="text-base sm:text-xl font-black text-secondary leading-none">{songsCount}</span>
+              <div className="bg-muted rounded-xl p-2 border border-border flex flex-col items-center min-w-[40px]">
+                <span className="text-base font-black text-secondary leading-none">{songsCount}</span>
                 <Music className="w-3 h-3 text-secondary/60 mt-1" />
               </div>
             </div>
           </div>
- 
+  
           {/* Date & Info Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-y border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center shrink-0">
-                <Calendar className="w-5 h-5 text-secondary" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-3 border-y border-border">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                <Calendar className="w-4.5 h-4.5 text-secondary" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-widest">Fecha</p>
-                <p className="text-sm font-bold text-foreground/90 capitalize truncate">
+                <p className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-widest">Fecha</p>
+                <p className="text-xs font-bold text-foreground/90 capitalize truncate">
                   {format(serviceDate, "EEEE d 'de' MMMM", { locale: es })}
                 </p>
               </div>
             </div>
             {setlist.service_director && (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-muted flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5 text-purple-400" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                  <User className="w-4.5 h-4.5 text-purple-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-widest">Director</p>
-                  <p className="text-sm font-bold text-foreground/90 truncate">{setlist.service_director}</p>
+                  <p className="text-[9px] uppercase font-bold text-muted-foreground/60 tracking-widest">Director</p>
+                  <p className="text-xs font-bold text-foreground/90 truncate">{setlist.service_director}</p>
                 </div>
               </div>
             )}
           </div>
- 
+  
           {/* Secondary Info */}
           {setlist.preacher && (
-            <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 bg-muted/50 rounded-2xl border border-border">
-              <Mic className="w-4 h-4 text-secondary/80 shrink-0" />
-              <p className="text-xs font-semibold text-muted-foreground truncate">
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-xl border border-border">
+              <Mic className="w-3.5 h-3.5 text-secondary/80 shrink-0" />
+              <p className="text-[11px] font-semibold text-muted-foreground truncate">
                 <span className="text-secondary/60 mr-1">Palabra:</span> {setlist.preacher}
               </p>
             </div>
           )}
- 
+  
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-2">
-            <div className="flex gap-3 flex-1">
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex gap-2 flex-1">
               <Button
                 onClick={onView}
-                className="flex-1 h-12 sm:h-14 rounded-2xl bg-muted hover:bg-muted/80 text-foreground font-bold text-sm transition-all border border-border"
+                className="flex-1 h-10 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs transition-all border border-border"
               >
-                <Eye className="w-5 h-5 mr-2" />
-                <span className="sm:inline">Detalles</span>
+                <Eye className="w-4 h-4 mr-1.5" />
+                <span>Detalles</span>
               </Button>
               
               <Button
                 onClick={onStartLive}
                 disabled={isCompleted || songsCount === 0}
-                className={`flex-[1.2] h-12 sm:h-14 rounded-2xl bg-secondary text-primary-foreground font-black text-sm shadow-xl transition-all active:scale-95 ${
+                className={`flex-[1.2] h-10 rounded-xl bg-secondary text-primary-foreground font-black text-xs shadow-md transition-all active:scale-95 ${
                   isCompleted 
                     ? 'bg-muted text-muted-foreground shadow-none border border-border' 
                     : songsCount === 0 
                       ? 'opacity-50 cursor-not-allowed shadow-none' 
-                      : 'hover:opacity-90 shadow-secondary/20'
+                      : 'hover:opacity-90 shadow-secondary/10'
                 }`}
               >
-                <Play className="w-5 h-5 mr-2 fill-current" />
+                <Play className="w-4 h-4 mr-1.5 fill-current" />
                 {isCompleted ? 'FINAL' : 'VIVO'}
               </Button>
             </div>
- 
-            <div className="flex gap-3 sm:w-auto">
+  
+            <div className="flex gap-2 shrink-0">
               {onDuplicate && (
                 <Button
                   onClick={(e) => {
@@ -180,10 +180,10 @@ export function SetlistCard({
                     onDuplicate();
                   }}
                   variant="ghost"
-                  className="flex-1 sm:h-14 sm:w-14 h-12 rounded-2xl bg-muted hover:bg-secondary/10 text-muted-foreground hover:text-secondary transition-all border border-border"
+                  className="h-10 w-10 rounded-xl bg-muted hover:bg-secondary/10 text-muted-foreground hover:text-secondary transition-all border border-border p-0"
                   title="Duplicar"
                 >
-                  <Copy className="h-5 w-5" />
+                  <Copy className="h-4 w-4" />
                 </Button>
               )}
               
@@ -194,9 +194,10 @@ export function SetlistCard({
                     onDelete();
                   }}
                   variant="ghost"
-                  className="flex-1 sm:h-14 sm:w-14 h-12 rounded-2xl bg-red-500/5 hover:bg-red-500/20 text-red-400 transition-all border border-red-500/10"
+                  className="h-10 w-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 text-red-400 transition-all border border-red-500/10 p-0"
+                  title="Eliminar"
                 >
-                  <Trash2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>

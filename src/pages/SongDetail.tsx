@@ -306,25 +306,10 @@ const SongDetail = () => {
               )}
             </div>
  
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 relative z-10">
-              <div className="p-3 bg-muted border border-border rounded-xl flex flex-col justify-center">
+            <div className="grid grid-cols-1 gap-3 mb-6 relative z-10">
+              <div className="p-3 bg-muted border border-border rounded-xl flex flex-col justify-center max-w-xs">
                 <span className="text-[8.5px] font-black uppercase text-muted-foreground tracking-wider mb-1 block">Tonalidad</span>
                 <span className="text-sm font-extrabold text-foreground">{song.key || "—"}</span>
-              </div>
-              <div className="p-3 bg-muted border border-border rounded-xl flex flex-col justify-center">
-                <span className="text-[8.5px] font-black uppercase text-muted-foreground tracking-wider mb-1 block">Tempo</span>
-                <span className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
-                  120 BPM
-                  <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-ping" />
-                </span>
-              </div>
-              <div className="p-3 bg-muted border border-border rounded-xl flex flex-col justify-center">
-                <span className="text-[8.5px] font-black uppercase text-muted-foreground tracking-wider mb-1 block">Capo sugerido</span>
-                <span className="text-sm font-extrabold text-foreground">0</span>
-              </div>
-              <div className="p-3 bg-muted border border-border rounded-xl flex flex-col justify-center">
-                <span className="text-[8.5px] font-black uppercase text-muted-foreground tracking-wider mb-1 block">Dificultad</span>
-                <span className="text-sm font-extrabold text-secondary">Media</span>
               </div>
             </div>
 
@@ -337,6 +322,40 @@ const SongDetail = () => {
               <Button variant="outline" className="flex-1 rounded-xl h-11 border-border" onClick={() => setShowPrintPreview(true)}>
                 <Printer className="w-4 h-4 mr-2 text-muted-foreground" /> Imprimir
               </Button>
+            </div>
+
+            {/* Tabs Selector */}
+            <div className="flex border-b border-border mb-6 relative z-10">
+              <button
+                onClick={() => setActiveTab("lyrics")}
+                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
+                  activeTab === "lyrics"
+                    ? "border-secondary text-secondary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Letra y Acordes
+              </button>
+              <button
+                onClick={() => setActiveTab("details")}
+                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
+                  activeTab === "details"
+                    ? "border-secondary text-secondary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Multimedia
+              </button>
+              <button
+                onClick={() => setActiveTab("comments")}
+                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
+                  activeTab === "comments"
+                    ? "border-secondary text-secondary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Comentarios
+              </button>
             </div>
  
             {activeTab === "lyrics" && (
@@ -400,6 +419,24 @@ const SongDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showPresentation && (
+        <PresentationMode 
+          lyrics={song.lyrics || ""} 
+          title={song.title} 
+          onClose={() => setShowPresentation(false)} 
+        />
+      )}
+
+      {showPrintPreview && (
+        <PrintPreviewMode 
+          title={song.title}
+          author={song.author}
+          category={song.category}
+          content={transposedChords || song.lyrics}
+          onClose={() => setShowPrintPreview(false)}
+        />
+      )}
     </>
   );
 };

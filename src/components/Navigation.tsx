@@ -278,21 +278,21 @@ export const Navigation = () => {
                   const Icon = option.icon;
                   const active = isActive(option.path);
                   return (
-                    <button
+                    <Link
                       key={option.path}
-                      onClick={(e) => handleNavigation(option.path, e)}
+                      to={option.path}
+                      onClick={() => setIsMoreOpen(false)}
                       className={`flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 border text-left ${
                         active
                           ? "bg-secondary/15 text-secondary border-secondary/20 shadow-md shadow-secondary/5"
                           : "bg-muted/40 text-foreground/90 border-border/50 hover:bg-muted/80"
                       }`}
-                      type="button"
                     >
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${active ? "bg-secondary/20" : "bg-muted/50"}`}>
                         <Icon className="w-4.5 h-4.5" />
                       </div>
                       <span className="text-sm font-bold">{option.name}</span>
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
