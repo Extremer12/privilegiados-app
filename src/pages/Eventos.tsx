@@ -200,7 +200,7 @@ const Eventos = () => {
         {/* Minimalist Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
           <div>
-            <h1 className="text-3xl font-black text-white tracking-tight mb-1">Eventos</h1>
+            <h1 className="text-3xl font-black text-foreground tracking-tight mb-1">Eventos</h1>
             <p className="text-muted-foreground text-sm">Organización y coordinación del grupo</p>
           </div>
 
@@ -211,7 +211,7 @@ const Eventos = () => {
                 placeholder="Buscar eventos..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-white/5 border-white/10 rounded-xl h-10 text-sm focus:ring-secondary/20"
+                className="pl-9 bg-muted/50 border-border rounded-xl h-10 text-sm focus:ring-secondary/20"
               />
             </div>
             
@@ -222,7 +222,7 @@ const Eventos = () => {
                   Nuevo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[450px] rounded-3xl bg-[#0d1117] border-white/10 shadow-2xl">
+              <DialogContent className="sm:max-w-[450px] rounded-3xl bg-card border-border shadow-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold">Nuevo Evento</DialogTitle>
                 </DialogHeader>
@@ -233,7 +233,7 @@ const Eventos = () => {
                       value={newEvent.title}
                       onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
                       placeholder="Ej: Ensayo General" 
-                      className="bg-white/5 border-white/10 rounded-xl"
+                      className="bg-muted/50 border-border rounded-xl"
                     />
                   </div>
                   
@@ -244,7 +244,7 @@ const Eventos = () => {
                         type="time"
                         value={newEvent.event_time}
                         onChange={(e) => setNewEvent({...newEvent, event_time: e.target.value})}
-                        className="bg-white/5 border-white/10 rounded-xl"
+                        className="bg-muted/50 border-border rounded-xl"
                       />
                     </div>
                     <div className="space-y-2">
@@ -252,10 +252,10 @@ const Eventos = () => {
                       <select
                         value={newEvent.event_type}
                         onChange={(e) => setNewEvent({ ...newEvent, event_type: e.target.value as Event["event_type"] })}
-                        className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-sm"
+                        className="w-full h-10 px-3 rounded-xl border border-border bg-muted/50 text-sm"
                       >
                         {Object.entries(EVENT_TYPE_LABELS).map(([value, label]) => (
-                          <option key={value} value={value} className="bg-[#0d1117]">{label}</option>
+                          <option key={value} value={value} className="bg-card">{label}</option>
                         ))}
                       </select>
                     </div>
@@ -267,13 +267,13 @@ const Eventos = () => {
                       value={newEvent.location}
                       onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
                       placeholder="Lugar" 
-                      className="bg-white/5 border-white/10 rounded-xl"
+                      className="bg-muted/50 border-border rounded-xl"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Fecha</Label>
-                    <div className="flex justify-center bg-white/5 p-2 rounded-2xl border border-white/5">
+                    <div className="flex justify-center bg-muted/50 p-2 rounded-2xl border border-border">
                       <Calendar
                         mode="single"
                         selected={newEvent.event_date}
@@ -298,7 +298,7 @@ const Eventos = () => {
             variant="ghost" 
             size="sm"
             onClick={() => setFilterType("todos")}
-            className={`rounded-full px-4 h-8 text-[11px] font-bold uppercase tracking-wider transition-all ${filterType === 'todos' ? 'bg-secondary text-primary shadow-lg shadow-secondary/10' : 'bg-white/5 text-muted-foreground border border-white/5'}`}
+            className={`rounded-full px-4 h-8 text-[11px] font-bold uppercase tracking-wider transition-all ${filterType === 'todos' ? 'bg-secondary text-primary shadow-lg shadow-secondary/10' : 'bg-muted text-muted-foreground border border-border'}`}
           >
             Todos
           </Button>
@@ -308,7 +308,7 @@ const Eventos = () => {
               variant="ghost" 
               size="sm"
               onClick={() => setFilterType(val)}
-              className={`rounded-full px-4 h-8 text-[11px] font-bold uppercase tracking-wider transition-all ${filterType === val ? 'bg-secondary text-primary shadow-lg shadow-secondary/10' : 'bg-white/5 text-muted-foreground border border-white/5'}`}
+              className={`rounded-full px-4 h-8 text-[11px] font-bold uppercase tracking-wider transition-all ${filterType === val ? 'bg-secondary text-primary shadow-lg shadow-secondary/10' : 'bg-muted text-muted-foreground border border-border'}`}
             >
               {label}
             </Button>
@@ -345,14 +345,14 @@ const Eventos = () => {
               <div className="space-y-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xs font-black uppercase tracking-widest text-white/40">Próximas Actividades</h2>
+                    <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Próximas Actividades</h2>
                   </div>
                   <span className="text-[10px] font-bold text-muted-foreground/40">{upcomingEvents.length} total</span>
                 </div>
                 
                 {upcomingEvents.length === 0 ? (
-                  <Card className="p-12 text-center bg-white/5 border-dashed border-white/10 rounded-3xl">
-                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <Card className="p-12 text-center bg-muted/50 border-dashed border-border rounded-3xl">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                       <Info className="w-8 h-8 text-muted-foreground/30" />
                     </div>
                     <p className="text-muted-foreground font-medium">No hay eventos próximos programados.</p>
@@ -384,13 +384,13 @@ const Eventos = () => {
 
             {/* Sidebar Column */}
             <div className="lg:col-span-4 space-y-6">
-              <Card className="p-6 bg-white/5 border-white/10 rounded-[2rem] shadow-xl overflow-hidden sticky top-24">
+              <Card className="p-6 bg-card border-border rounded-[2rem] shadow-xl overflow-hidden sticky top-24">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-2xl pointer-events-none" />
-                <h2 className="text-sm font-black uppercase tracking-widest text-white/60 mb-6 flex items-center gap-2">
+                <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
                   <CalendarIcon className="w-3.5 h-3.5 text-secondary" />
                   Calendario
                 </h2>
-                <div className="flex justify-center p-2 rounded-2xl bg-black/20 border border-white/5">
+                <div className="flex justify-center p-2 rounded-2xl bg-muted/50 border border-border">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -413,12 +413,12 @@ const Eventos = () => {
                   <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground px-1">Tipos de Actividad</h3>
                   <div className="grid gap-2">
                     {Object.entries(EVENT_TYPE_LABELS).map(([key, label]) => (
-                      <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                      <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border">
                         <div className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${EVENT_TYPE_COLORS[key as keyof typeof EVENT_TYPE_COLORS].split(' ')[0]}`} />
-                          <span className="text-sm font-medium text-white/80">{label}</span>
+                          <span className="text-sm font-medium text-foreground/80">{label}</span>
                         </div>
-                        <Badge variant="outline" className="text-[10px] bg-black/20 border-white/5">
+                        <Badge variant="outline" className="text-[10px] bg-muted border-border">
                           {events.filter(e => e.event_type === key).length}
                         </Badge>
                       </div>
@@ -440,7 +440,7 @@ const Eventos = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="pt-4">
-            <AlertDialogCancel className="rounded-xl border-white/10 font-bold">Mantener Evento</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl border-border font-bold">Mantener Evento</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => deleteEventId && deleteMutation.mutate(deleteEventId)}
               className="rounded-xl bg-destructive text-white font-black uppercase tracking-widest hover:bg-destructive/90"
@@ -473,8 +473,8 @@ const EventCard = ({ event, isAdmin, currentUserId, onDelete, isToday, isPast }:
         isToday 
           ? 'bg-secondary/10 border-secondary/20 p-5' 
           : isPast
-            ? 'bg-white/5 border-white/5 p-4 opacity-50'
-            : 'bg-white/[0.02] border-white/5 p-4 hover:bg-white/[0.04] hover:border-white/10'
+            ? 'bg-muted/50 border-border p-4 opacity-50'
+            : 'bg-card border-border p-4 hover:bg-muted/50 hover:border-border'
       }`}
     >
       <div className="flex gap-4">
@@ -482,7 +482,7 @@ const EventCard = ({ event, isAdmin, currentUserId, onDelete, isToday, isPast }:
         <div className={`flex flex-col items-center justify-center min-w-[50px] h-[50px] rounded-xl ${
           isToday 
             ? 'bg-secondary text-primary' 
-            : 'bg-white/5 text-white/70'
+            : 'bg-muted text-muted-foreground'
         }`}>
           <span className="text-[8px] font-black uppercase tracking-widest opacity-60">{format(date, "MMM", { locale: es })}</span>
           <span className="text-lg font-black tracking-tighter">{format(date, "d")}</span>
@@ -498,7 +498,7 @@ const EventCard = ({ event, isAdmin, currentUserId, onDelete, isToday, isPast }:
                 </span>
                 {isToday && <span className="w-1 h-1 rounded-full bg-secondary animate-pulse" />}
               </div>
-              <h3 className="font-bold text-sm text-white tracking-tight truncate">
+              <h3 className="font-bold text-sm text-foreground tracking-tight truncate">
                 {event.title}
               </h3>
             </div>

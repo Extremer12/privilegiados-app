@@ -253,8 +253,8 @@ const Index = () => {
           {/* Upcoming Events (Screen 2 Theme) */}
           {loadingEvents ? (
             <div className="space-y-4">
-              <Skeleton className="h-6 w-40 bg-white/5 rounded-lg" />
-              <Skeleton className="h-36 w-full bg-white/5 rounded-3xl" />
+              <Skeleton className="h-6 w-40 bg-muted rounded-lg" />
+              <Skeleton className="h-36 w-full bg-muted rounded-3xl" />
             </div>
           ) : upcomingEvents.length > 0 && (
             <motion.div
@@ -264,7 +264,7 @@ const Index = () => {
               transition={{ delay: 0.15 }}
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-black uppercase tracking-wider text-neutral-300">
+                <h3 className="text-base font-black uppercase tracking-wider text-muted-foreground">
                   Próximo Evento
                 </h3>
                 <button 
@@ -323,7 +323,7 @@ const Index = () => {
                                 {event.title}
                               </h4>
                               
-                              <div className="flex flex-col gap-1 text-xs text-neutral-400 font-semibold mt-1">
+                              <div className="flex flex-col gap-1 text-xs text-muted-foreground font-semibold mt-1">
                                 <span className="flex items-center gap-1.5">
                                   <Clock className="w-3.5 h-3.5 text-secondary" />
                                   {format(eventDate, "EEEE d 'de' MMMM - HH:mm", { locale: es })} hrs
@@ -362,8 +362,8 @@ const Index = () => {
           {/* Announcements Section */}
           {loadingAnnouncements ? (
             <div className="space-y-3">
-              <Skeleton className="h-6 w-40 bg-white/5 rounded-lg" />
-              <Skeleton className="h-24 w-full bg-white/5 rounded-2xl" />
+              <Skeleton className="h-6 w-40 bg-muted rounded-lg" />
+              <Skeleton className="h-24 w-full bg-muted rounded-2xl" />
             </div>
           ) : announcements.length > 0 && (
             <motion.div

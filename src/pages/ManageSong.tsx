@@ -259,7 +259,7 @@ const ManageSong = () => {
           <Button
             variant="ghost"
             onClick={() => navigate(editMode ? `/canciones/${id}` : "/canciones")}
-            className="text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-lg transition-all h-9 px-3"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all h-9 px-3"
           >
             <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
             Volver
@@ -273,7 +273,7 @@ const ManageSong = () => {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
             {editMode ? "Editar Canción" : "Nueva Canción"}
           </h1>
           <p className="text-muted-foreground text-sm">
@@ -294,7 +294,7 @@ const ManageSong = () => {
               <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
               <div>
                 <h4 className="text-amber-500 text-sm font-bold">Posible duplicado</h4>
-                <p className="text-amber-200/60 text-xs mb-2">
+                <p className="text-muted-foreground text-xs mb-2">
                   Ya existe: <strong>{duplicateWarning.title}</strong> {duplicateWarning.author ? `(${duplicateWarning.author})` : ""}.
                 </p>
                 <Button 
@@ -310,11 +310,11 @@ const ManageSong = () => {
           )}
         </AnimatePresence>
 
-        <Card className="p-6 md:p-8 bg-white/[0.01] border-white/5 rounded-2xl relative overflow-hidden">
+        <Card className="p-6 md:p-8 bg-card border-border rounded-2xl relative overflow-hidden">
           <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-white/70 text-xs font-bold uppercase tracking-wider ml-1">Título *</Label>
+                <Label htmlFor="title" className="text-muted-foreground text-xs font-bold uppercase tracking-wider ml-1">Título *</Label>
                 <div className="relative">
                   <Input
                     id="title"
@@ -322,7 +322,7 @@ const ManageSong = () => {
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
                     placeholder="Ej: Dios Incomparable"
-                    className="h-11 bg-white/[0.02] border-white/10 focus:border-secondary/40 focus:ring-0 rounded-xl pl-3 transition-all"
+                    className="h-11 bg-muted/50 border-border focus:border-secondary/40 focus:ring-0 rounded-xl pl-3 transition-all"
                   />
                   {formData.title.length > 3 && !duplicateWarning && (
                     <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/40" />
@@ -331,27 +331,27 @@ const ManageSong = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="author" className="text-white/70 text-xs font-bold uppercase tracking-wider ml-1">Autor o Grupo</Label>
+                <Label htmlFor="author" className="text-muted-foreground text-xs font-bold uppercase tracking-wider ml-1">Autor o Grupo</Label>
                 <Input
                   id="author"
                   value={formData.author}
                   onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                   placeholder="Ej: Miel San Marcos"
-                  className="h-11 bg-white/[0.02] border-white/10 focus:border-secondary/40 focus:ring-0 rounded-xl pl-3 transition-all"
+                  className="h-11 bg-muted/50 border-border focus:border-secondary/40 focus:ring-0 rounded-xl pl-3 transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category" className="text-white/70 text-xs font-bold uppercase tracking-wider ml-1">Categoría *</Label>
+              <Label htmlFor="category" className="text-muted-foreground text-xs font-bold uppercase tracking-wider ml-1">Categoría *</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value: any) => setFormData({ ...formData, category: value })}
               >
-                <SelectTrigger className="h-11 bg-white/[0.02] border-white/10 focus:border-secondary/40 focus:ring-0 rounded-xl pl-3">
+                <SelectTrigger className="h-11 bg-muted/50 border-border focus:border-secondary/40 focus:ring-0 rounded-xl pl-3">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A1F2C] border-white/10 rounded-xl overflow-hidden backdrop-blur-xl">
+                <SelectContent className="bg-card border-border rounded-xl overflow-hidden backdrop-blur-xl">
                   <SelectItem value="alabanza" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Alabanza</SelectItem>
                   <SelectItem value="adoracion" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Adoración</SelectItem>
                   <SelectItem value="especial" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Especial</SelectItem>
@@ -363,7 +363,7 @@ const ManageSong = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
-                  <Label htmlFor="chords" className="text-white/70 text-xs font-bold uppercase tracking-wider">Acordes</Label>
+                  <Label htmlFor="chords" className="text-muted-foreground text-xs font-bold uppercase tracking-wider">Acordes</Label>
                   <span className="text-[9px] font-black text-secondary">PRO</span>
                 </div>
                 <Textarea
@@ -372,13 +372,13 @@ const ManageSong = () => {
                   onChange={(e) => setFormData({ ...formData, chords: e.target.value })}
                   placeholder="G C D..."
                   rows={10}
-                  className="resize-none font-mono text-sm p-4 bg-white/[0.01] border-white/10 focus:border-secondary/40 focus:ring-0 rounded-xl transition-all"
+                  className="resize-none font-mono text-sm p-4 bg-muted/30 border-border focus:border-secondary/40 focus:ring-0 rounded-xl transition-all"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
-                  <Label htmlFor="lyrics" className="text-white/70 text-xs font-bold uppercase tracking-wider">Letra</Label>
+                  <Label htmlFor="lyrics" className="text-muted-foreground text-xs font-bold uppercase tracking-wider">Letra</Label>
                 </div>
                 <Textarea
                   id="lyrics"
@@ -386,44 +386,44 @@ const ManageSong = () => {
                   onChange={(e) => setFormData({ ...formData, lyrics: e.target.value })}
                   placeholder="Solo letra..."
                   rows={10}
-                  className="resize-none font-mono text-sm p-4 bg-white/[0.01] border-white/10 focus:border-secondary/40 focus:ring-0 rounded-xl transition-all"
+                  className="resize-none font-mono text-sm p-4 bg-muted/30 border-border focus:border-secondary/40 focus:ring-0 rounded-xl transition-all"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="youtube" className="text-white/70 text-xs font-bold uppercase tracking-wider ml-1">YouTube</Label>
+                <Label htmlFor="youtube" className="text-muted-foreground text-xs font-bold uppercase tracking-wider ml-1">YouTube</Label>
                 <Input
                   id="youtube"
                   type="url"
                   value={formData.youtube_url}
                   onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })}
                   placeholder="URL del video..."
-                  className="h-11 bg-white/[0.02] border-white/10 focus:border-secondary/40 focus:ring-0 rounded-xl pl-3 transition-all"
+                  className="h-11 bg-muted/50 border-border focus:border-secondary/40 focus:ring-0 rounded-xl pl-3 transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="audio" className="text-white/70 text-xs font-bold uppercase tracking-wider ml-1">Audio</Label>
+                <Label htmlFor="audio" className="text-muted-foreground text-xs font-bold uppercase tracking-wider ml-1">Audio</Label>
                 <div className="relative group">
                   <Input
                     id="audio"
                     type="file"
                     accept="audio/*"
                     onChange={handleAudioChange}
-                    className="h-11 bg-white/[0.02] border-white/10 focus:border-secondary/40 focus:ring-0 rounded-xl pl-3 pt-2 transition-all cursor-pointer file:mr-3 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-black file:bg-secondary file:text-primary"
+                    className="h-11 bg-muted/50 border-border focus:border-secondary/40 focus:ring-0 rounded-xl pl-3 pt-2 transition-all cursor-pointer file:mr-3 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-black file:bg-secondary file:text-primary"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-6 border-t border-white/5">
+            <div className="flex gap-3 pt-6 border-t border-border">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate(editMode ? `/canciones/${id}` : "/canciones")}
-                className="flex-1 h-11 rounded-xl bg-transparent border-white/10 hover:bg-white/5 text-white font-bold text-sm transition-all"
+                className="flex-1 h-11 rounded-xl bg-transparent border-border hover:bg-muted text-foreground font-bold text-sm transition-all"
                 disabled={loading || uploading}
               >
                 Cancelar

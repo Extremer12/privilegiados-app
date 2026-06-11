@@ -56,9 +56,48 @@ const Estadisticas = () => {
         .from("service_participants")
         .select(`
           *,
-          service_reports (service_date),
+          service_reports (service_date, setlist_id),
           profiles (full_name, avatar_url, role)
         `);
+
+      // Fetch all setlist participants (worship team)
+      const { data: setlistParticipants } = await supabase
+        .from("setlist_participants")
+        .select(`
+          *,
+          setlists (service_date, id),
+          profiles (full_name, avatar_url, role)
+        `);
+
+      // Combine and deduplicate
+      const combinedParticipants = [...(participants || [])];
+      if (setlistParticipants) {
+        setlistParticipants.forEach((sp: any) => {
+          const userId = sp.user_id;
+          const name = sp.profiles?.full_name || sp.participant_name;
+          const setlistId = sp.setlists?.id;
+          const date = sp.setlists?.service_date;
+
+          const exists = combinedParticipants.some((ap: any) => {
+            const apUserId = ap.user_id;
+            const apName = ap.profiles?.full_name || ap.participant_name;
+            const apSetlistId = ap.service_reports?.setlist_id;
+            return (userId && apUserId && userId === apUserId && setlistId === apSetlistId) ||
+                   (name && apName && name === apName && setlistId === apSetlistId);
+          });
+
+          if (!exists) {
+            combinedParticipants.push({
+              id: sp.id || `setlist-part-${sp.user_id || sp.participant_name}-${setlistId}`,
+              user_id: sp.user_id,
+              participant_name: sp.participant_name,
+              role_in_service: sp.role_in_service,
+              service_reports: { service_date: date, setlist_id: setlistId },
+              profiles: sp.profiles
+            });
+          }
+        });
+      }
 
       // 4. Fetch all available feedback
       const { data: feedback } = await supabase
@@ -76,7 +115,7 @@ const Estadisticas = () => {
       return {
         reports: reports || [],
         songsPlayed: songsPlayed || [],
-        participants: participants || [],
+        participants: combinedParticipants,
         allSongs: allSongs || [],
         feedback: feedback || [],
       };

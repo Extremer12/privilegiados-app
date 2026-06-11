@@ -122,17 +122,13 @@ export const DashboardOverview = ({ data }: { data: any }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             key={i}
-            className="p-6 rounded-3xl relative overflow-hidden group"
-            style={{
-              background: "linear-gradient(145deg, hsl(217 33% 14%) 0%, hsl(222 47% 8%) 100%)",
-              border: "1px solid hsl(217 33% 25% / 0.5)",
-            }}
+            className="p-6 rounded-3xl relative overflow-hidden group card-stats border border-border"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex items-start justify-between relative z-10">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
-                <h3 className="text-3xl font-black text-white tracking-tight truncate max-w-[150px]">{stat.value}</h3>
+                <h3 className="text-3xl font-black text-foreground tracking-tight truncate max-w-[150px]">{stat.value}</h3>
                 {stat.sub && <p className="text-xs text-secondary mt-1 font-bold">{stat.sub}</p>}
               </div>
               <div className={`p-3 rounded-2xl ${stat.bg} shadow-inner`}>
@@ -149,12 +145,11 @@ export const DashboardOverview = ({ data }: { data: any }) => {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="lg:col-span-2 p-6 rounded-3xl border border-white/10"
-          style={{ background: "linear-gradient(180deg, hsl(217 33% 12%) 0%, hsl(222 47% 6%) 100%)" }}
+          className="lg:col-span-2 p-6 rounded-3xl border border-border card-gradient"
         >
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                 <Music className="w-5 h-5 text-secondary" /> Distribución de Tonos
               </h2>
               <p className="text-sm text-muted-foreground">Tonos más utilizados en los últimos servicios</p>
@@ -165,14 +160,14 @@ export const DashboardOverview = ({ data }: { data: any }) => {
             {stats.topKeys.length > 0 ? stats.topKeys.map((item, i) => (
               <div key={item.key} className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="font-bold text-white">{item.key}</span>
+                  <span className="font-bold text-foreground">{item.key}</span>
                   <span className="text-muted-foreground">{item.count} veces</span>
                 </div>
-                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                   <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(item.count / stats.topKeys[0].count) * 100}%` }}
-                    className="h-full bg-secondary shadow-[0_0_10px_rgba(251,191,36,0.3)]"
+                     initial={{ width: 0 }}
+                     animate={{ width: `${(item.count / stats.topKeys[0].count) * 100}%` }}
+                     className="h-full bg-secondary shadow-[0_0_10px_rgba(251,191,36,0.3)]"
                   />
                 </div>
               </div>
@@ -189,24 +184,23 @@ export const DashboardOverview = ({ data }: { data: any }) => {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4 }}
-          className="p-6 rounded-3xl border border-white/10"
-          style={{ background: "linear-gradient(180deg, hsl(217 33% 12%) 0%, hsl(222 47% 6%) 100%)" }}
+          className="p-6 rounded-3xl border border-border card-gradient"
         >
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400" /> Racha de Servicio
           </h2>
           <div className="space-y-4">
             {stats.topStreaks.length > 0 ? stats.topStreaks.map(([name, count]: any, i: number) => (
               <div
                 key={name}
-                className="flex items-center justify-between group bg-white/5 p-3 rounded-2xl border border-white/5 transition-all hover:border-secondary/20"
+                className="flex items-center justify-between group bg-muted/40 p-3 rounded-2xl border border-border/50 transition-all hover:border-secondary/20"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center font-bold text-secondary text-sm">
                     {name.charAt(0)}
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm">
+                    <h4 className="font-bold text-foreground text-sm">
                       {name.split(' ')[0]}
                     </h4>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
@@ -215,7 +209,7 @@ export const DashboardOverview = ({ data }: { data: any }) => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xl font-black text-white">{count}</span>
+                  <span className="text-xl font-black text-foreground">{count}</span>
                   <span className="text-[10px] text-secondary ml-1 font-bold">CULTOS</span>
                 </div>
               </div>
@@ -227,7 +221,7 @@ export const DashboardOverview = ({ data }: { data: any }) => {
       </div>
 
       {/* Song Momentum Section */}
-      <h2 className="text-xl font-bold text-white mt-8 mb-4 flex items-center gap-2">
+      <h2 className="text-xl font-bold text-foreground mt-8 mb-4 flex items-center gap-2">
         <TrendingUp className="w-5 h-5 text-secondary" /> Momentum de Canciones
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -237,7 +231,7 @@ export const DashboardOverview = ({ data }: { data: any }) => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 + (i * 0.1) }}
             key={title}
-            className="p-5 rounded-3xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.06] transition-all group"
+            className="p-5 rounded-3xl border border-border bg-card hover:bg-muted/40 transition-all group"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
@@ -245,14 +239,14 @@ export const DashboardOverview = ({ data }: { data: any }) => {
               </div>
               <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px]">EN TENDENCIA</Badge>
             </div>
-            <h4 className="font-bold text-white text-lg truncate group-hover:text-secondary transition-colors">{title}</h4>
-            <p className="text-sm text-muted-foreground mt-1">Tocada <span className="text-white font-bold">{count} veces</span> en los últimos 30 días</p>
+            <h4 className="font-bold text-foreground text-lg truncate group-hover:text-secondary transition-colors">{title}</h4>
+            <p className="text-sm text-muted-foreground mt-1">Tocada <span className="text-foreground font-bold">{count} veces</span> en los últimos 30 días</p>
           </motion.div>
         ))}
       </div>
 
       {/* Insights Section */}
-      <h2 className="text-xl font-bold text-white mt-8 mb-4 flex items-center gap-2">
+      <h2 className="text-xl font-bold text-foreground mt-8 mb-4 flex items-center gap-2">
         <Lightbulb className="w-5 h-5 text-secondary" /> Insights Inteligentes
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -284,9 +278,9 @@ export const DashboardOverview = ({ data }: { data: any }) => {
                   {insight.type === 'success' && <Star className="w-5 h-5" />}
                   {insight.type === 'info' && <Lightbulb className="w-5 h-5" />}
                 </div>
-                <h4 className="font-bold text-white text-lg tracking-tight">{insight.title}</h4>
+                <h4 className="font-bold text-foreground text-lg tracking-tight">{insight.title}</h4>
               </div>
-              <p className="text-sm text-white/70 leading-relaxed font-medium">{insight.text}</p>
+              <p className="text-sm text-foreground/70 leading-relaxed font-medium">{insight.text}</p>
             </div>
           </motion.div>
         ))}

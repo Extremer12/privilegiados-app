@@ -48,16 +48,13 @@ export const MembersParticipation = ({ data }: { data: any }) => {
   }, [data]);
 
   return (
-    <div className="p-6 rounded-3xl" style={{
-      background: "linear-gradient(145deg, hsl(217 33% 14%) 0%, hsl(222 47% 8%) 100%)",
-      border: "1px solid hsl(217 33% 25% / 0.5)",
-    }}>
+    <div className="p-6 rounded-3xl border border-border card-gradient">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-secondary/20 rounded-xl">
             <Award className="w-5 h-5 text-secondary" />
           </div>
-          <h2 className="text-xl font-bold text-white">Rendimiento de Miembros</h2>
+          <h2 className="text-xl font-bold text-foreground">Rendimiento de Miembros</h2>
         </div>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Total: {data.reports.length} servicios registrados</p>
@@ -71,7 +68,7 @@ export const MembersParticipation = ({ data }: { data: any }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
             key={member.name}
-            className="p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-secondary/5"
+            className="p-5 rounded-2xl bg-card border border-border flex items-center justify-between group hover:bg-muted/40 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-secondary/5"
           >
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -83,18 +80,18 @@ export const MembersParticipation = ({ data }: { data: any }) => {
                   )}
                 </div>
                 {i < 3 && (
-                  <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[12px] font-black text-primary shadow-lg border-2 border-[#131722]">
+                  <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[12px] font-black text-primary shadow-lg border-2 border-background">
                     {i + 1}
                   </div>
                 )}
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-white text-lg truncate pr-2">
+                <h3 className="font-bold text-foreground text-lg truncate pr-2">
                   {member.name}
                 </h3>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {member.roles.length > 0 ? member.roles.map((role: string) => (
-                    <Badge key={role} variant="outline" className="bg-white/5 border-white/10 text-[9px] uppercase px-1.5 py-0">
+                    <Badge key={role} variant="outline" className="bg-muted border-border text-[9px] uppercase px-1.5 py-0">
                       {role}
                     </Badge>
                   )) : (
@@ -106,9 +103,9 @@ export const MembersParticipation = ({ data }: { data: any }) => {
             
             <div className="text-right shrink-0">
               <div className="flex flex-col items-end">
-                <span className="text-2xl font-black text-white tracking-tighter leading-none">{member.consistency}%</span>
+                <span className="text-2xl font-black text-foreground tracking-tighter leading-none">{member.consistency}%</span>
                 <span className="text-[9px] uppercase tracking-tighter text-muted-foreground font-black mt-1">Consistencia</span>
-                <div className="mt-2 h-1 w-16 bg-white/5 rounded-full overflow-hidden">
+                <div className="mt-2 h-1 w-16 bg-muted rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${member.consistency}%` }}
@@ -120,7 +117,7 @@ export const MembersParticipation = ({ data }: { data: any }) => {
           </motion.div>
         ))}
         {members.length === 0 && (
-          <div className="col-span-full text-center py-12 bg-white/5 rounded-3xl border border-dashed border-white/10">
+          <div className="col-span-full text-center py-12 bg-muted/40 rounded-3xl border border-dashed border-border">
             <p className="text-muted-foreground font-medium">Aún no hay registros de canciones agregadas.</p>
           </div>
         )}

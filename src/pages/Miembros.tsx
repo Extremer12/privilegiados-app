@@ -201,7 +201,7 @@ const Miembros = () => {
           {/* Header - Minimalist */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Miembros</h1>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">Miembros</h1>
               <p className="text-muted-foreground text-sm font-medium">
                 {members.length} integrantes en el equipo
               </p>
@@ -222,18 +222,18 @@ const Miembros = () => {
               placeholder="Busca por nombre, rol o instrumento..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11 h-11 bg-white/[0.02] border-white/10 rounded-xl text-sm focus:ring-secondary/20 transition-all placeholder:text-muted-foreground/30"
+              className="pl-11 h-11 bg-muted/50 border-border rounded-xl text-sm focus:ring-secondary/20 transition-all placeholder:text-muted-foreground/50"
             />
           </div>
 
           {loading ? (
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-                <div key={i} className="p-4 bg-white/[0.01] border border-white/5 rounded-2xl flex flex-col items-center text-center space-y-4">
-                  <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/5" />
+                <div key={i} className="p-4 bg-card border border-border rounded-2xl flex flex-col items-center text-center space-y-4">
+                  <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted" />
                   <div className="space-y-2 w-full">
-                    <Skeleton className="h-4 w-3/4 mx-auto bg-white/5" />
-                    <Skeleton className="h-3 w-1/2 mx-auto bg-white/5" />
+                    <Skeleton className="h-4 w-3/4 mx-auto bg-muted" />
+                    <Skeleton className="h-3 w-1/2 mx-auto bg-muted" />
                   </div>
                 </div>
               ))}
@@ -261,30 +261,30 @@ const Miembros = () => {
                 return (
                   <div
                     key={member.id}
-                    className="group relative p-4 bg-white/[0.01] border border-white/5 cursor-pointer transition-all duration-300 hover:bg-white/[0.03] hover:border-white/10 rounded-2xl flex flex-col items-center text-center h-full"
+                    className="group relative p-4 bg-card border border-border cursor-pointer transition-all duration-300 hover:bg-muted/50 hover:border-border rounded-2xl flex flex-col items-center text-center h-full"
                     onClick={() => navigate(`/perfil/${member.id}`)}
                   >
                     {/* Avatar - Compact */}
                     <div className="relative mb-3">
-                      <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border border-white/10 group-hover:border-secondary/40 transition-all">
+                      <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border border-border group-hover:border-secondary/40 transition-all">
                         <AvatarImage 
                           src={member.avatar_url || undefined} 
                           alt={member.full_name}
                           className="object-cover"
                         />
-                        <AvatarFallback className="bg-white/5 text-white/50 text-xl font-bold">
+                        <AvatarFallback className="bg-muted text-muted-foreground text-xl font-bold">
                           {member.full_name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-background border border-white/10 flex items-center justify-center">
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-background border border-border flex items-center justify-center">
                         {ROLE_ICONS[primaryRole] || ROLE_ICONS.default}
                       </div>
                     </div>
                     
                     {/* Info - Minimal */}
                     <div className="space-y-1 mb-4 flex-1">
-                      <h3 className="font-bold text-sm text-white group-hover:text-secondary transition-colors line-clamp-1">
+                      <h3 className="font-bold text-sm text-foreground group-hover:text-secondary transition-colors line-clamp-1">
                         {member.full_name}
                       </h3>
                       <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight line-clamp-1">
@@ -294,7 +294,7 @@ const Miembros = () => {
 
                     {/* Minimal Controls */}
                     {(isAdmin || isModerator) && member.id !== user.id && (
-                      <div className="w-full flex gap-1 mt-auto pt-3 border-t border-white/5">
+                      <div className="w-full flex gap-1 mt-auto pt-3 border-t border-border">
                         {isAdmin && (
                           <Button
                             variant="ghost"
@@ -304,7 +304,7 @@ const Miembros = () => {
                               setEditingMember(member);
                               setSelectedRoles(getMemberRoles(member.id));
                             }}
-                            className="flex-1 h-8 bg-white/5 hover:bg-secondary hover:text-primary rounded-lg transition-all"
+                            className="flex-1 h-8 bg-muted hover:bg-secondary hover:text-primary rounded-lg transition-all"
                           >
                             <Edit2 className="w-3 h-3" />
                           </Button>
@@ -316,7 +316,7 @@ const Miembros = () => {
                             e.stopPropagation();
                             setMemberToDelete(member);
                           }}
-                          className="flex-1 h-8 bg-white/5 hover:bg-red-500 hover:text-white rounded-lg transition-all"
+                          className="flex-1 h-8 bg-muted hover:bg-red-500 hover:text-white rounded-lg transition-all"
                         >
                           <UserCircle className="w-3 h-3" />
                         </Button>

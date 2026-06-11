@@ -218,9 +218,9 @@ const Foro = () => {
                         const profile = profiles[userId];
                         return (
                           <motion.div key={userId} initial={{ scale: 0, x: -10 }} animate={{ scale: 1, x: 0 }} transition={{ delay: index * 0.05, type: "spring", stiffness: 300 }}>
-                            <Avatar className="w-10 h-10 squircle-sm border-4 border-[#0d1117] relative z-10 shadow-xl">
+                            <Avatar className="w-10 h-10 squircle-sm border-4 border-background relative z-10 shadow-xl">
                               <AvatarImage src={profile?.avatar_url || undefined} />
-                              <AvatarFallback className="bg-white/5 text-muted-foreground text-[10px] uppercase font-bold">
+                              <AvatarFallback className="bg-muted text-muted-foreground text-[10px] uppercase font-bold">
                                 {profile?.full_name?.charAt(0) || "?"}
                               </AvatarFallback>
                             </Avatar>
@@ -228,7 +228,7 @@ const Foro = () => {
                         );
                       })}
                       {onlineUsers.length > 5 && (
-                        <div className="w-10 h-10 squircle-sm bg-white/[0.03] border-4 border-[#0d1117] flex items-center justify-center relative z-0">
+                        <div className="w-10 h-10 squircle-sm bg-muted border-4 border-background flex items-center justify-center relative z-0">
                           <span className="text-[10px] text-muted-foreground/60 font-bold">+{onlineUsers.length - 5}</span>
                         </div>
                       )}
@@ -242,7 +242,7 @@ const Foro = () => {
                       <FolderOpen className="w-5 h-5" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent className="p-0 border-l border-white/5 w-full sm:max-w-md bg-card">
+                  <SheetContent className="p-0 border-l border-border w-full sm:max-w-md bg-card">
                     <ChatFilesPanel messages={messages} />
                   </SheetContent>
                 </Sheet>

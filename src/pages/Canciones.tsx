@@ -177,7 +177,7 @@ const Canciones = () => {
           {/* Header Section - Minimalist */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 Canciones
               </h1>
               <p className="text-muted-foreground text-sm font-medium">
@@ -219,7 +219,7 @@ const Canciones = () => {
                 placeholder="Busca por título o autor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-11 h-12 text-base rounded-xl bg-white/[0.02] border-white/10 focus-visible:ring-secondary/20 transition-all placeholder:text-muted-foreground/30"
+                className="pl-11 h-12 text-base rounded-xl bg-muted/50 border-border focus-visible:ring-secondary/20 transition-all placeholder:text-muted-foreground/50"
               />
             </div>
 
@@ -246,7 +246,7 @@ const Canciones = () => {
                       px-5 py-2 rounded-lg text-sm font-bold transition-all duration-200
                       ${isActive 
                         ? `bg-secondary text-primary shadow-sm` 
-                        : `text-muted-foreground hover:text-white hover:bg-white/5 border border-transparent`}
+                        : `text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent`}
                     `}
                   >
                     <span className="flex items-center gap-2">
@@ -267,16 +267,16 @@ const Canciones = () => {
                 <Card key={i} className="p-6 bg-card border-border rounded-3xl relative overflow-hidden h-[240px]">
                   <div className="space-y-4 h-full flex flex-col">
                     <div className="flex justify-between">
-                      <Skeleton className="w-20 h-6 rounded-full bg-white/5" />
-                      <Skeleton className="w-8 h-8 rounded-full bg-white/5" />
+                      <Skeleton className="w-20 h-6 rounded-full bg-muted" />
+                      <Skeleton className="w-8 h-8 rounded-full bg-muted" />
                     </div>
                     <div className="mt-auto space-y-3">
-                      <Skeleton className="h-8 w-3/4 bg-white/5" />
-                      <Skeleton className="h-4 w-1/2 bg-white/5" />
+                      <Skeleton className="h-8 w-3/4 bg-muted" />
+                      <Skeleton className="h-4 w-1/2 bg-muted" />
                     </div>
-                    <div className="flex gap-2 pt-4 border-t border-white/5 mt-4">
-                      <Skeleton className="w-6 h-6 rounded bg-white/5" />
-                      <Skeleton className="w-6 h-6 rounded bg-white/5" />
+                    <div className="flex gap-2 pt-4 border-t border-border mt-4">
+                      <Skeleton className="w-6 h-6 rounded bg-muted" />
+                      <Skeleton className="w-6 h-6 rounded bg-muted" />
                     </div>
                   </div>
                 </Card>
@@ -318,13 +318,13 @@ const Canciones = () => {
                 return (
                   <motion.div key={song.id} variants={itemVariants}>
                     <Card 
-                      className="group relative p-4 bg-card/80 backdrop-blur-xl border border-border hover:border-secondary/35 rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden flex items-center justify-between shadow-xl shadow-black/5 dark:shadow-black/40 hover:-translate-y-0.5"
+                      className="group relative p-4 bg-card backdrop-blur-xl border border-border hover:border-secondary/35 rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden flex items-center justify-between shadow-lg shadow-black/5 dark:shadow-black/30 hover:-translate-y-0.5"
                       onClick={() => navigate(`/canciones/${song.id}`)}
                     >
                       {/* Left: Album cover & Song details */}
                       <div className="flex items-center gap-4 min-w-0 flex-1">
                         {/* Song Album Cover */}
-                        <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-white/5 shadow-md">
+                        <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-border shadow-md">
                           <img 
                             src={coverUrl} 
                             alt={song.title} 
@@ -339,11 +339,11 @@ const Canciones = () => {
 
                         {/* Details */}
                         <div className="min-w-0 space-y-1">
-                          <h3 className="font-black text-[17px] tracking-tight leading-tight text-white group-hover:text-secondary transition-colors truncate">
+                          <h3 className="font-black text-[17px] tracking-tight leading-tight text-foreground group-hover:text-secondary transition-colors truncate">
                             {song.title}
                           </h3>
                           {song.author && (
-                            <p className="text-xs text-neutral-400 font-bold truncate">
+                            <p className="text-xs text-muted-foreground font-bold truncate">
                               {song.author}
                             </p>
                           )}
@@ -354,7 +354,7 @@ const Canciones = () => {
                             </Badge>
                             
                             {/* Visual metrics like Screen 3 */}
-                            <span className="text-[10px] text-neutral-500 font-semibold flex items-center gap-1.5 ml-1">
+                            <span className="text-[10px] text-muted-foreground/70 font-semibold flex items-center gap-1.5 ml-1">
                               <span>▷ {Math.floor((song.title.charCodeAt(0) * 12) + 120)}</span>
                               <span>♡ {Math.floor((song.title.charCodeAt(1) * 3) + 12)}</span>
                             </span>
@@ -369,13 +369,13 @@ const Canciones = () => {
                           <span className="text-sm font-black text-secondary leading-none">
                             {songKey}
                           </span>
-                          <span className="text-[7.5px] font-black uppercase text-neutral-500 tracking-wider mt-0.5 leading-none">
+                          <span className="text-[7.5px] font-black uppercase text-muted-foreground tracking-wider mt-0.5 leading-none">
                             Tono
                           </span>
                         </div>
 
                         {/* Arrow or actions */}
-                        <div className="w-8 h-8 rounded-full bg-white/[0.03] group-hover:bg-white/[0.08] flex items-center justify-center text-neutral-500 group-hover:text-white transition-all">
+                        <div className="w-8 h-8 rounded-full bg-muted/50 group-hover:bg-muted flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-all">
                           <ChevronRight className="w-4 h-4" />
                         </div>
                       </div>
@@ -393,7 +393,7 @@ const Canciones = () => {
                 variant="outline" 
                 size="lg"
                 onClick={handleLoadMore}
-                className="rounded-full px-8 py-6 bg-white/[0.03] border-white/10 hover:bg-white/10 text-white font-medium shadow-xl shadow-black/20"
+                className="rounded-full px-8 py-6 bg-muted/50 border-border hover:bg-muted text-foreground font-medium shadow-lg shadow-black/5 dark:shadow-black/20"
               >
                 Cargar más canciones...
               </Button>

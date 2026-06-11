@@ -53,7 +53,11 @@ export const Navigation = () => {
     return location.pathname.startsWith(path);
   };
 
-  const handleNavigation = useCallback((path: string) => {
+  const handleNavigation = useCallback((path: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setIsMoreOpen(false);
     navigate(path);
   }, [navigate]);
@@ -251,7 +255,7 @@ export const Navigation = () => {
               className="fixed bottom-24 left-4 right-4 z-50 md:hidden bg-background/95 backdrop-blur-3xl border border-border shadow-2xl rounded-3xl p-5 shadow-black/20 dark:shadow-black/80 flex flex-col max-h-[70vh] overflow-y-auto"
             >
               {/* Header inside Bottom Sheet */}
-              <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-border/40">
                 <div className="flex items-center gap-2.5">
                   <img src="/logo.jpg" alt="Logo" className="w-8 h-8 rounded-full border border-white/10" />
                   <div>
@@ -261,7 +265,7 @@ export const Navigation = () => {
                 </div>
                 <button
                   onClick={() => setIsMoreOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.06] active:bg-white/[0.12] text-foreground transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors"
                   type="button"
                 >
                   <ChevronUp className="w-4 h-4 rotate-180 text-neutral-400" />
@@ -276,15 +280,15 @@ export const Navigation = () => {
                   return (
                     <button
                       key={option.path}
-                      onClick={() => handleNavigation(option.path)}
+                      onClick={(e) => handleNavigation(option.path, e)}
                       className={`flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 border text-left ${
                         active
                           ? "bg-secondary/15 text-secondary border-secondary/20 shadow-md shadow-secondary/5"
-                          : "bg-white/[0.02] text-foreground/90 border-white/[0.04] active:bg-white/[0.08]"
+                          : "bg-muted/40 text-foreground/90 border-border/50 hover:bg-muted/80"
                       }`}
                       type="button"
                     >
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${active ? "bg-secondary/20" : "bg-white/5"}`}>
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${active ? "bg-secondary/20" : "bg-muted/50"}`}>
                         <Icon className="w-4.5 h-4.5" />
                       </div>
                       <span className="text-sm font-bold">{option.name}</span>
@@ -294,9 +298,9 @@ export const Navigation = () => {
               </div>
 
               {/* Theme Toggle row */}
-              <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/[0.04] mb-4">
+              <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-muted/40 border border-border/50 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${theme === "dark" ? "bg-white/5" : "bg-secondary/10"}`}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${theme === "dark" ? "bg-muted/50" : "bg-secondary/10"}`}>
                     {theme === "dark" ? <Moon className="w-4.5 h-4.5 text-neutral-400" /> : <Sun className="w-4.5 h-4.5 text-secondary animate-pulse" />}
                   </div>
                   <div>
@@ -313,9 +317,9 @@ export const Navigation = () => {
 
               {/* Native Push Notification Toggle */}
               {isSupported && (
-                <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/[0.04] mb-4">
+                <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-muted/40 border border-border/50 mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isSubscribed ? "bg-secondary/10" : "bg-white/5"}`}>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isSubscribed ? "bg-secondary/10" : "bg-muted/50"}`}>
                       {isSubscribed ? <Bell className="w-4.5 h-4.5 text-secondary animate-pulse" /> : <BellOff className="w-4.5 h-4.5 text-neutral-500" />}
                     </div>
                     <div>

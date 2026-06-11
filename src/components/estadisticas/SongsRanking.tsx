@@ -86,16 +86,13 @@ export const SongsRanking = ({ data }: { data: any }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
           {/* Top Ranking */}
-          <div className="p-8 rounded-3xl" style={{
-            background: "linear-gradient(145deg, hsl(217 33% 14%) 0%, hsl(222 47% 8%) 100%)",
-            border: "1px solid hsl(217 33% 25% / 0.5)",
-          }}>
+          <div className="p-8 rounded-3xl border border-border card-gradient">
             <div className="flex items-center gap-3 mb-8">
               <div className="p-3 bg-secondary/20 rounded-2xl">
                 <TrendingUp className="w-6 h-6 text-secondary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Top 10 Canciones</h2>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Top 10 Canciones</h2>
                 <p className="text-sm text-muted-foreground">Las más elegidas por el equipo</p>
               </div>
             </div>
@@ -105,20 +102,20 @@ export const SongsRanking = ({ data }: { data: any }) => {
                 <div key={song.id} className="relative group">
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center gap-4 min-w-0 flex-1">
-                      <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-muted-foreground group-hover:bg-secondary group-hover:text-primary transition-colors shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground group-hover:bg-secondary group-hover:text-primary transition-colors shrink-0">
                         {i + 1}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-white text-base truncate group-hover:text-secondary transition-colors">{song.title}</p>
+                        <p className="font-bold text-foreground text-base truncate group-hover:text-secondary transition-colors">{song.title}</p>
                         <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">{song.category}</p>
                       </div>
                     </div>
                     <div className="text-right shrink-0 pl-4">
-                      <span className="text-xl font-black text-white">{song.count}</span>
+                      <span className="text-xl font-black text-foreground">{song.count}</span>
                       <span className="text-[10px] uppercase font-black text-secondary block">Veces</span>
                     </div>
                   </div>
-                  <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${song.percentage}%` }}
@@ -134,16 +131,13 @@ export const SongsRanking = ({ data }: { data: any }) => {
 
         <div className="space-y-6">
           {/* Category Distribution */}
-          <div className="p-8 rounded-3xl flex flex-col" style={{
-            background: "linear-gradient(145deg, hsl(217 33% 14%) 0%, hsl(222 47% 8%) 100%)",
-            border: "1px solid hsl(217 33% 25% / 0.5)",
-          }}>
+          <div className="p-8 rounded-3xl flex flex-col border border-border card-gradient">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-3 bg-blue-500/20 rounded-2xl">
                 <PieChartIcon className="w-6 h-6 text-blue-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Balance de Géneros</h2>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Balance de Géneros</h2>
                 <p className="text-sm text-muted-foreground">Distribución de categorías tocadas</p>
               </div>
             </div>
@@ -167,19 +161,19 @@ export const SongsRanking = ({ data }: { data: any }) => {
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'hsl(222.2 84% 4.9%)', borderColor: 'hsl(217 33% 25%)', borderRadius: '16px', fontSize: '14px', fontWeight: 'bold' }}
-                    itemStyle={{ color: '#fff' }}
+                    contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '16px', fontSize: '14px', fontWeight: 'bold' }}
+                    itemStyle={{ color: 'var(--foreground)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
 
               <div className="grid grid-cols-2 gap-4 w-full mt-8">
                 {categoryData.map((cat, i) => (
-                  <div key={cat.name} className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
+                  <div key={cat.name} className="flex items-center gap-3 bg-card p-3 rounded-2xl border border-border hover:bg-muted/50 transition-colors">
                     <div className="w-3 h-3 rounded-full shadow-lg" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                     <div className="flex flex-col">
                       <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest leading-none mb-1.5">{cat.name}</span>
-                      <span className="text-base font-bold text-white">{cat.percentage}% <span className="text-muted-foreground text-xs font-normal ml-1">({cat.value})</span></span>
+                      <span className="text-base font-bold text-foreground">{cat.percentage}% <span className="text-muted-foreground text-xs font-normal ml-1">({cat.value})</span></span>
                     </div>
                   </div>
                 ))}
@@ -188,25 +182,22 @@ export const SongsRanking = ({ data }: { data: any }) => {
           </div>
 
           {/* Unused Songs */}
-          <div className="p-8 rounded-3xl" style={{
-            background: "linear-gradient(145deg, hsl(0 50% 12%) 0%, hsl(0 50% 8%) 100%)",
-            border: "1px solid hsl(0 50% 25% / 0.3)",
-          }}>
+          <div className="p-8 rounded-3xl border border-rose-500/20 bg-rose-500/5">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-3 bg-rose-500/20 rounded-2xl">
                 <AlertTriangle className="w-6 h-6 text-rose-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Repertorio en Espera</h2>
-                <p className="text-sm text-rose-200/60">No han debutado en vivo aún</p>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Repertorio en Espera</h2>
+                <p className="text-sm text-rose-400/70">No han debutado en vivo aún</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 max-h-[250px] overflow-y-auto no-scrollbar pr-2">
               {unusedSongs.length > 0 ? unusedSongs.map((song: any) => (
-                <div key={song.id} className="bg-black/20 border border-white/5 px-4 py-2.5 rounded-xl flex items-center gap-2 group hover:bg-white/10 hover:border-rose-500/30 transition-all cursor-default">
+                <div key={song.id} className="bg-card border border-border px-4 py-2.5 rounded-xl flex items-center gap-2 group hover:bg-muted hover:border-rose-500/30 transition-all cursor-default">
                   <Music className="w-4 h-4 text-rose-400/50 group-hover:text-rose-400 transition-colors" />
-                  <span className="text-sm text-white/90 font-bold">{song.title}</span>
+                  <span className="text-sm text-foreground/95 font-bold">{song.title}</span>
                 </div>
               )) : (
                 <p className="text-muted-foreground w-full text-center py-8">¡Excelente! Has tocado todas las canciones de tu biblioteca.</p>

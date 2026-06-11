@@ -53,15 +53,15 @@ export const ChatFilesPanel = ({ messages }: ChatFilesPanelProps) => {
   }, [filteredFiles]);
 
   const FileCard = ({ file }: { file: FileItem }) => (
-    <Card className="p-3 bg-white/5 border-white/10 hover:bg-white/10 transition-colors mb-3 group">
+    <Card className="p-3 bg-muted/50 border-border hover:bg-muted transition-colors mb-3 group">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-lg bg-black/20 flex items-center justify-center shrink-0">
+        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
           {file.file_type === 'image' && <ImageIcon className="w-6 h-6 text-blue-400" />}
           {file.file_type === 'audio' && <Mic className="w-6 h-6 text-purple-400" />}
           {file.file_type === 'file' && <FileText className="w-6 h-6 text-emerald-400" />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white truncate">{file.content}</p>
+          <p className="text-sm font-medium text-foreground truncate">{file.content}</p>
           <p className="text-[10px] text-muted-foreground">
             {new Date(file.created_at).toLocaleDateString()}
           </p>
@@ -71,7 +71,7 @@ export const ChatFilesPanel = ({ messages }: ChatFilesPanelProps) => {
             href={file.file_url} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="p-2 hover:bg-white/10 rounded-lg text-secondary"
+            className="p-2 hover:bg-muted rounded-lg text-secondary"
           >
             <ExternalLink className="w-4 h-4" />
           </a>
@@ -82,8 +82,8 @@ export const ChatFilesPanel = ({ messages }: ChatFilesPanelProps) => {
 
   return (
     <div className="flex flex-col h-full bg-card">
-      <div className="p-6 border-b border-white/5">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+      <div className="p-6 border-b border-border">
+        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
           <FolderOpen className="w-5 h-5 text-secondary" /> Multimedia y Archivos
         </h2>
         <p className="text-xs text-muted-foreground mt-1">
@@ -97,14 +97,14 @@ export const ChatFilesPanel = ({ messages }: ChatFilesPanelProps) => {
             placeholder="Buscar por nombre..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-white/5 border-white/10 h-10 rounded-xl focus:border-secondary/40"
+            className="pl-10 bg-muted/50 border-border h-10 rounded-xl focus:border-secondary/40"
           />
           {searchTerm && (
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setSearchTerm("")}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-white"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -114,7 +114,7 @@ export const ChatFilesPanel = ({ messages }: ChatFilesPanelProps) => {
 
       <div className="flex-1 overflow-hidden p-4">
         <Tabs defaultValue="all" className="h-full flex flex-col">
-          <TabsList className="bg-black/20 border-white/5 w-full justify-start mb-4 overflow-x-auto no-scrollbar">
+          <TabsList className="bg-muted border-border w-full justify-start mb-4 overflow-x-auto no-scrollbar">
             <TabsTrigger value="all" className="data-[state=active]:bg-secondary data-[state=active]:text-primary">Todos</TabsTrigger>
             <TabsTrigger value="images" className="data-[state=active]:bg-secondary data-[state=active]:text-primary">Fotos</TabsTrigger>
             <TabsTrigger value="audio" className="data-[state=active]:bg-secondary data-[state=active]:text-primary">Audios</TabsTrigger>

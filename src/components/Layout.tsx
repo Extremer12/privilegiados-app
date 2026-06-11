@@ -8,7 +8,7 @@ export const Layout = () => {
   const isLivePage = location.pathname.startsWith("/en-vivo");
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary via-primary/95 to-primary/80 custom-scrollbar overflow-x-hidden relative">
+    <div className="min-h-screen flex flex-col worship-gradient custom-scrollbar overflow-x-hidden relative">
       <GlobalOfflineBanner />
       <LiveSessionInviteModal />
       {/* Main Content Rendered Here */}
