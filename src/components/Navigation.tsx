@@ -243,7 +243,7 @@ export const Navigation = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMoreOpen(false)}
-              className="fixed inset-0 z-45 bg-black/60 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-[45] bg-black/60 backdrop-blur-sm md:hidden cursor-pointer"
             />
 
             {/* Bottom Sheet Menu */}
@@ -252,7 +252,7 @@ export const Navigation = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="fixed bottom-24 left-4 right-4 z-50 md:hidden bg-background/95 backdrop-blur-3xl border border-border shadow-2xl rounded-3xl p-5 shadow-black/20 dark:shadow-black/80 flex flex-col max-h-[70vh] overflow-y-auto"
+              className="fixed bottom-24 left-4 right-4 z-[46] md:hidden bg-background/95 backdrop-blur-3xl border border-border shadow-2xl rounded-3xl p-5 shadow-black/20 dark:shadow-black/80 flex flex-col max-h-[70vh] overflow-y-auto"
             >
               {/* Header inside Bottom Sheet */}
               <div className="flex items-center justify-between pb-4 mb-4 border-b border-border/40">

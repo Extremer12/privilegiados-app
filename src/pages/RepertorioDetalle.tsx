@@ -412,10 +412,10 @@ const RepertorioDetalle = () => {
             <Card className="p-6 md:p-8 bg-card border border-border rounded-3xl shadow-2xl relative overflow-hidden mb-6">
               {/* Cover background gradient */}
               <div 
-                className="absolute inset-0 bg-cover bg-center opacity-10 pointer-events-none"
+                className="absolute inset-0 bg-cover bg-center opacity-[0.04] dark:opacity-10 pointer-events-none"
                 style={{ backgroundImage: `url('https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=600&auto=format&fit=crop')` }}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent dark:from-black dark:via-black/80 dark:to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent pointer-events-none" />
 
               <div className="relative z-10 flex flex-col gap-6">
                 <div className="flex-1 min-w-0">

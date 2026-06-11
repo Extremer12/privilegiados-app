@@ -3,18 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSongById } from "@/services/songService";
 import { 
-  ArrowLeft, Edit, Trash2, Maximize2, ChevronUp, ChevronDown, 
-  Printer, Youtube, Star, BarChart3, Disc, Clock, ShieldAlert, BadgeInfo, Radio, Music
+  ArrowLeft, Edit, Trash2, Maximize2, ZoomIn, ZoomOut,
+  Printer, Youtube, Star, Music, BadgeInfo
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { toast } from "sonner";
 import { PresentationMode } from "@/components/PresentationMode";
@@ -22,7 +20,7 @@ import { PrintPreviewMode } from "@/components/PrintPreviewMode";
 import { SongComments } from "@/components/SongComments";
 import { transposeChords } from "@/utils/chordTransposer";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { vibrateLight, vibrateMedium } from "@/utils/haptics";
+import { vibrateLight } from "@/utils/haptics";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -190,7 +188,7 @@ const SongDetail = () => {
     ? transposeChords(song.chords, transposeSteps)
     : null;
 
-  // Chord Highlighting Parser Function matching Screen 4/5
+  // Chord Highlighting Parser Function
   const renderHighlightedChords = (chordsText: string | null) => {
     if (!chordsText) return "";
     
@@ -199,21 +197,21 @@ const SongDetail = () => {
       const trimmed = line.trim();
       if (trimmed.length === 0) return `<span class="block h-4"></span>`;
       
-      // Recognition of chord lines: spaces, notes, numbers, modifiers, slashes
       const isChordLine = /^[A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?(?:\s+[A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?)*\s*$/.test(trimmed);
       
       if (isChordLine) {
-        // Wrap chords in gold bold text, preserving spaces
         const replaced = line.replace(/\b([A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?)\b/g, 
           `<span class="text-secondary font-black font-mono tracking-wider">$1</span>`
         );
         return `<span class="block leading-none h-[1.3rem] font-mono whitespace-pre">${replaced}</span>`;
       }
-      return `<span class="block text-neutral-200 font-sans leading-relaxed py-0.5">${line}</span>`;
       return `<span class="block text-foreground font-sans leading-relaxed py-0.5">${line}</span>`;
     });
     return parsedLines.join("");
   };
+
+  const increaseFontSize = () => setFontSize((prev) => Math.min(prev + 2, 32));
+  const decreaseFontSize = () => setFontSize((prev) => Math.max(prev - 2, 12));
 
   if (loading || authLoading) {
     return (
@@ -252,158 +250,172 @@ const SongDetail = () => {
             <ArrowLeft className="w-4 h-4 mr-2" /> Volver
           </Button>
 
-          <Card className="p-6 md:p-8 bg-card border border-border rounded-3xl shadow-2xl relative overflow-hidden">
-            <div 
-              className="absolute inset-0 bg-cover bg-center opacity-[0.03] dark:opacity-10 pointer-events-none"
-              style={{ backgroundImage: `url('https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=600&auto=format&fit=crop')` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent dark:from-black dark:via-black/80 dark:to-transparent pointer-events-none" />
- 
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 justify-between mb-8 pb-6 border-b border-border">
-              <div className="flex items-center gap-4.5 w-full md:w-auto">
-                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-full border-2 border-secondary/35 bg-background shadow-xl flex-shrink-0">
-                  <Music className="w-6 h-6 text-secondary" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <Badge className="bg-secondary/15 text-secondary border border-secondary/20 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
-                      {categoryConfig[song.category]?.label || "Otro"}
-                    </Badge>
-                    <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
-                      Tono: {song.key || "—"}
-                    </Badge>
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground leading-tight">
-                    {song.title}
-                  </h2>
-                  <p className="text-xs text-muted-foreground font-semibold mt-1">
-                    por {song.author || "Autor Desconocido"}
-                  </p>
-                </div>
+          {/* Song Header — full-width, theme-aware */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col md:flex-row items-start md:items-center gap-5 justify-between pb-6 border-b border-border"
+          >
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="flex flex-col items-center justify-center w-14 h-14 rounded-full border-2 border-secondary/35 bg-muted shadow-xl flex-shrink-0">
+                <Music className="w-6 h-6 text-secondary" />
               </div>
- 
-              {isAuthorized && (
-                <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
-                  <Button
-                    onClick={() => navigate(`/canciones/${song.id}/editar`)}
-                    className="flex-1 md:flex-initial h-10 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-xs uppercase tracking-wider shadow-md shadow-secondary/10"
-                  >
-                    <Edit className="w-3.5 h-3.5 mr-2" />
-                    Editar
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      vibrateLight();
-                      setShowDeleteDialog(true);
-                    }}
-                    variant="ghost"
-                    className="flex-1 md:flex-initial h-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 text-red-500 border border-red-500/10 text-xs font-bold uppercase tracking-wider"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 mr-2" />
-                    Eliminar
-                  </Button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <Badge className="bg-secondary/15 text-secondary border border-secondary/20 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                    {categoryConfig[song.category]?.label || "Otro"}
+                  </Badge>
+                  <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                    Tono: {song.key || "—"}
+                  </Badge>
                 </div>
-              )}
-            </div>
- 
-            <div className="grid grid-cols-1 gap-3 mb-6 relative z-10">
-              <div className="p-3 bg-muted border border-border rounded-xl flex flex-col justify-center max-w-xs">
-                <span className="text-[8.5px] font-black uppercase text-muted-foreground tracking-wider mb-1 block">Tonalidad</span>
-                <span className="text-sm font-extrabold text-foreground">{song.key || "—"}</span>
+                <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground leading-tight">
+                  {song.title}
+                </h2>
+                <p className="text-xs text-muted-foreground font-semibold mt-1">
+                  por {song.author || "Autor Desconocido"}
+                </p>
               </div>
             </div>
-
-            <div className="mb-6 flex flex-wrap gap-2.5 relative z-10">
-              {song.lyrics && (
-                <Button onClick={() => setShowPresentation(true)} className="flex-1 rounded-xl h-11 bg-secondary text-primary-foreground font-bold">
-                  <Maximize2 className="w-4 h-4 mr-2" /> Presentación
+ 
+            {isAuthorized && (
+              <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
+                <Button
+                  onClick={() => navigate(`/canciones/${song.id}/editar`)}
+                  className="flex-1 md:flex-initial h-10 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-xs uppercase tracking-wider shadow-md shadow-secondary/10"
+                >
+                  <Edit className="w-3.5 h-3.5 mr-2" />
+                  Editar
                 </Button>
-              )}
-              <Button variant="outline" className="flex-1 rounded-xl h-11 border-border" onClick={() => setShowPrintPreview(true)}>
-                <Printer className="w-4 h-4 mr-2 text-muted-foreground" /> Imprimir
-              </Button>
-            </div>
-
-            {/* Tabs Selector */}
-            <div className="flex border-b border-border mb-6 relative z-10">
-              <button
-                onClick={() => setActiveTab("lyrics")}
-                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
-                  activeTab === "lyrics"
-                    ? "border-secondary text-secondary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Letra y Acordes
-              </button>
-              <button
-                onClick={() => setActiveTab("details")}
-                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
-                  activeTab === "details"
-                    ? "border-secondary text-secondary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Multimedia
-              </button>
-              <button
-                onClick={() => setActiveTab("comments")}
-                className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
-                  activeTab === "comments"
-                    ? "border-secondary text-secondary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Comentarios
-              </button>
-            </div>
- 
-            {activeTab === "lyrics" && (
-              <div className="relative z-10 flex flex-col md:flex-row gap-6 items-start w-full">
-                <div className="flex-1 min-w-0 flex flex-col gap-4 w-full">
-                  {song.youtube_url && (
-                    <div className="bg-muted/50 border border-border rounded-2xl p-4">
-                      <details className="group" open>
-                        <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-xs text-foreground/80">
-                          <span className="flex items-center gap-2"><Youtube className="w-5 h-5 text-red-500" /> Reproductor de Video</span>
-                          <span className="text-[10px] text-secondary">Mostrar/Ocultar</span>
-                        </summary>
-                        <div className="mt-3 pt-3 border-t border-border"><YouTubePlayer url={song.youtube_url} /></div>
-                      </details>
-                    </div>
-                  )}
-                  <div className="bg-muted/40 border border-border p-5 rounded-2xl relative w-full">
-                    {transposedChords ? (
-                      <div className="whitespace-pre-wrap select-text text-foreground" style={{ fontSize: `${fontSize}px` }} dangerouslySetInnerHTML={{ __html: renderHighlightedChords(transposedChords) }} />
-                    ) : (
-                      <pre className="text-foreground whitespace-pre-wrap font-sans" style={{ fontSize: `${fontSize}px` }}>{song.lyrics}</pre>
-                    )}
-                  </div>
-                </div>
+                <Button
+                  onClick={() => {
+                    vibrateLight();
+                    setShowDeleteDialog(true);
+                  }}
+                  variant="ghost"
+                  className="flex-1 md:flex-initial h-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 text-red-500 border border-red-500/10 text-xs font-bold uppercase tracking-wider"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-2" />
+                  Eliminar
+                </Button>
               </div>
             )}
+          </motion.div>
 
-            {activeTab === "details" && (
-              <div className="space-y-6 relative z-10">
-                {song.youtube_url && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider"><Youtube className="w-4.5 h-4.5 text-red-500" /> Video Guía</h3>
+          {/* Quick Action Buttons */}
+          <div className="flex flex-wrap gap-2.5">
+            {song.lyrics && (
+              <Button onClick={() => setShowPresentation(true)} className="flex-1 rounded-xl h-11 bg-secondary text-primary-foreground font-bold">
+                <Maximize2 className="w-4 h-4 mr-2" /> Presentación
+              </Button>
+            )}
+            <Button variant="outline" className="flex-1 rounded-xl h-11 border-border" onClick={() => setShowPrintPreview(true)}>
+              <Printer className="w-4 h-4 mr-2 text-muted-foreground" /> Imprimir
+            </Button>
+          </div>
+
+          {/* Tabs Selector */}
+          <div className="flex border-b border-border">
+            <button
+              onClick={() => setActiveTab("lyrics")}
+              className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === "lyrics"
+                  ? "border-secondary text-secondary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Letra y Acordes
+            </button>
+            <button
+              onClick={() => setActiveTab("details")}
+              className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === "details"
+                  ? "border-secondary text-secondary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Multimedia
+            </button>
+            <button
+              onClick={() => setActiveTab("comments")}
+              className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === "comments"
+                  ? "border-secondary text-secondary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Comentarios
+            </button>
+          </div>
+ 
+          {activeTab === "lyrics" && (
+            <div className="flex flex-col gap-5 w-full">
+              {/* YouTube Player — Prominent */}
+              {song.youtube_url && (
+                <div className="w-full rounded-2xl overflow-hidden border border-border shadow-lg">
+                  <YouTubePlayer url={song.youtube_url} />
+                </div>
+              )}
+
+              {/* Font Size Controls */}
+              <div className="flex items-center justify-between bg-muted/60 border border-border rounded-xl px-4 py-2.5">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tamaño de letra</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={decreaseFontSize}
+                    className="h-8 w-8 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </Button>
+                  <span className="text-xs font-bold text-foreground min-w-[3rem] text-center">{fontSize}px</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={increaseFontSize}
+                    className="h-8 w-8 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Lyrics / Chords */}
+              <div className="bg-muted/40 border border-border p-5 rounded-2xl w-full">
+                {transposedChords ? (
+                  <div className="whitespace-pre-wrap select-text text-foreground" style={{ fontSize: `${fontSize}px` }} dangerouslySetInnerHTML={{ __html: renderHighlightedChords(transposedChords) }} />
+                ) : (
+                  <pre className="text-foreground whitespace-pre-wrap font-sans" style={{ fontSize: `${fontSize}px` }}>{song.lyrics}</pre>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "details" && (
+            <div className="space-y-6">
+              {song.youtube_url && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Youtube className="w-4.5 h-4.5 text-red-500" /> Video Guía
+                  </h3>
+                  <div className="w-full rounded-2xl overflow-hidden border border-border shadow-lg">
                     <YouTubePlayer url={song.youtube_url} />
                   </div>
-                )}
-                {song.audio_url && (
-                  <div className="p-5 bg-muted/50 border border-border rounded-2xl space-y-3">
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider"><Disc className="w-4.5 h-4.5 text-secondary" /> Audio</h3>
-                    <audio controls className="w-full"><source src={song.audio_url} /></audio>
-                  </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+              {song.audio_url && (
+                <div className="p-5 bg-muted/50 border border-border rounded-2xl space-y-3">
+                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">Audio</h3>
+                  <audio controls className="w-full"><source src={song.audio_url} /></audio>
+                </div>
+              )}
+            </div>
+          )}
 
-            {activeTab === "comments" && (
-              <div className="relative z-10"><SongComments songId={song.id} /></div>
-            )}
-          </Card>
+          {activeTab === "comments" && (
+            <div><SongComments songId={song.id} /></div>
+          )}
         </div>
       </main>
 

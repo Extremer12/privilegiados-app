@@ -129,22 +129,22 @@ function SortableSongItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-4 p-3.5 rounded-2xl bg-[#070c1b]/60 backdrop-blur-xl border border-white/[0.04] hover:border-secondary/25 transition-all group select-none hover:-translate-y-0.5 shadow-md shadow-black/20"
+      className="flex items-center gap-4 p-3.5 rounded-2xl bg-muted/60 backdrop-blur-xl border border-border hover:border-secondary/25 transition-all group select-none hover:-translate-y-0.5 shadow-md shadow-black/5 dark:shadow-black/20"
     >
       {/* Grip handle — visible when user can drag (authorized), not just editing */}
       {canDrag && (
         <div 
           {...attributes} 
           {...listeners}
-          className="cursor-grab active:cursor-grabbing p-2 -ml-2 text-neutral-500 hover:text-secondary transition-colors touch-none flex-shrink-0"
+          className="cursor-grab active:cursor-grabbing p-2 -ml-2 text-muted-foreground hover:text-secondary transition-colors touch-none flex-shrink-0"
         >
           <GripVertical className="h-5 w-5" />
         </div>
       )}
 
       {/* Number badge */}
-      <div className="w-8 h-8 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center shrink-0">
-        <span className="text-xs font-bold text-neutral-400">
+      <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
+        <span className="text-xs font-bold text-muted-foreground">
           {songIndex + 1}
         </span>
       </div>
@@ -156,10 +156,10 @@ function SortableSongItem({
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[15px] font-black text-white group-hover:text-secondary transition-colors truncate">
+            <p className="text-[15px] font-black text-foreground group-hover:text-secondary transition-colors truncate">
               {song.songs?.title || 'Sin título'}
             </p>
-            <p className="text-[11px] text-neutral-400 font-bold mt-0.5">
+            <p className="text-[11px] text-muted-foreground font-bold mt-0.5">
               Tono: <span className="text-secondary">{song.songs?.key || "G"}</span> &bull; 4:20
             </p>
           </div>
@@ -176,7 +176,7 @@ function SortableSongItem({
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 rounded-xl hover:bg-red-500/10 text-neutral-500 hover:text-red-400 transition-all active:scale-[0.9]"
+          className="h-9 w-9 shrink-0 rounded-xl hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-all active:scale-[0.9]"
           onClick={(e) => {
             e.stopPropagation();
             onRemoveSong(song.id);
@@ -193,18 +193,18 @@ function SortableSongItem({
 // --- Static Song Item (for DragOverlay) ---
 function SongOverlayItem({ song, songIndex }: { song: SetlistSong; songIndex: number }) {
   return (
-    <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-[#070c1b] border border-secondary/50 shadow-2xl shadow-secondary/15 select-none w-full max-w-lg">
+    <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-popover border border-secondary shadow-2xl select-none w-full max-w-lg">
       <div className="p-2 -ml-2 text-secondary">
         <GripVertical className="h-5 w-5" />
       </div>
-      <div className="w-8 h-8 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center shrink-0">
-        <span className="text-xs font-bold text-neutral-400">{songIndex + 1}</span>
+      <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center shrink-0">
+        <span className="text-xs font-bold text-muted-foreground">{songIndex + 1}</span>
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[15px] font-black text-secondary truncate">
           {song.songs?.title || 'Sin título'}
         </p>
-        <p className="text-[11px] text-neutral-500 font-bold mt-0.5">
+        <p className="text-[11px] text-muted-foreground font-bold mt-0.5">
           Tono: {song.songs?.key || "G"}
         </p>
       </div>
@@ -217,14 +217,14 @@ function SectionOverlayItem({ section, songCount }: { section: SectionConfig; so
   const Icon = iconMap[section.icon] || Sparkles;
   return (
     <div className="mb-4">
-      <Card className="rounded-2xl border-2 border-secondary/50 bg-[#1a1f2c] shadow-2xl shadow-secondary/20 overflow-hidden">
+      <Card className="rounded-2xl border-2 border-secondary bg-popover shadow-2xl overflow-hidden">
         <CardHeader className="py-5 px-5 md:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <div className="p-1 -ml-2 text-secondary">
                 <GripVertical className="h-5 w-5" />
               </div>
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-white/[0.05] shrink-0 ${section.color}`}>
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-muted shrink-0 ${section.color}`}>
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0">
@@ -265,11 +265,11 @@ function SectionSongList({
   return (
     <CardContent className="px-5 md:px-6 pb-5 pt-0">
       {songs.length === 0 ? (
-        <div className="py-6 border-t border-white/5 text-center">
+        <div className="py-6 border-t border-border text-center">
           <p className="text-sm text-muted-foreground/60">Sin canciones asignadas</p>
         </div>
       ) : (
-        <div className="space-y-2 border-t border-white/5 pt-4">
+        <div className="space-y-2 border-t border-border pt-4">
           <SortableContext items={songs.map(s => s.id)} strategy={verticalListSortingStrategy}>
             {songs.map((song, songIdx) => (
               <SortableSongItem 
@@ -288,7 +288,7 @@ function SectionSongList({
 
       <Button
         variant="ghost"
-        className="w-full mt-4 h-12 rounded-xl border border-dashed border-white/10 hover:border-secondary/40 hover:bg-secondary/5 text-sm font-semibold text-muted-foreground hover:text-secondary transition-all"
+        className="w-full mt-4 h-12 rounded-xl border border-dashed border-border hover:border-secondary/45 hover:bg-secondary/5 text-sm font-semibold text-muted-foreground hover:text-secondary transition-all"
         onClick={() => onAddSong(section.id)}
       >
         <Plus className="h-4 w-4 mr-2" />
@@ -368,8 +368,8 @@ function SortableSectionItem({
           isDragging ? 'shadow-2xl border-secondary/50 ring-1 ring-secondary/20' : ''
         } ${
           songs.length > 0 
-            ? 'border-l-[3px] border-l-secondary/60 border-white/10 bg-white/[0.02]' 
-            : 'border-white/5 bg-white/[0.01]'
+            ? 'border-l-[3px] border-l-secondary/60 border-border bg-card' 
+            : 'border-border bg-card/60'
         }`}>
           <CollapsibleTrigger asChild>
             <CardHeader className={`cursor-pointer py-5 px-5 md:px-6 ${isRenaming ? 'pointer-events-none' : ''}`}>
@@ -388,8 +388,8 @@ function SortableSectionItem({
                   )}
 
                   {/* Section icon */}
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-white/[0.05] shrink-0 ${section.color}`}>
-                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-muted shrink-0">
+                    <Icon className={`h-5 w-5 ${section.color}`} aria-hidden="true" />
                   </div>
                   
                   {/* Section name */}
