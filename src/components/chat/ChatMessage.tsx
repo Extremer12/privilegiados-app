@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check, CheckCheck, Loader2, FileText, Paperclip, Mic, Pencil, Trash2, X, Check as CheckIcon } from "lucide-react";
 import { AudioPlayer } from "./AudioPlayer";
@@ -31,7 +31,7 @@ interface ChatMessageProps {
   onUpdate?: (id: string, content: string) => void;
 }
 
-export const ChatMessage = ({
+export const ChatMessage = React.memo(function ChatMessage({
   id,
   content,
   file_url,
@@ -42,7 +42,7 @@ export const ChatMessage = ({
   author,
   onDelete,
   onUpdate,
-}: ChatMessageProps) => {
+}: ChatMessageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(content);
   const authorName = author?.full_name || "Usuario";
@@ -187,4 +187,4 @@ export const ChatMessage = ({
       </div>
     </div>
   );
-};
+});

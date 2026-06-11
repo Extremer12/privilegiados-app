@@ -467,7 +467,7 @@ const RepertorioDetalle = () => {
                 </div>
 
                 {/* Grid of 4 transparent stat cards matching Screen 1 */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-4 bg-muted border border-border rounded-2xl flex flex-col justify-center text-center">
                     <Music className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
                     <span className="text-lg font-black text-foreground">{songs.length}</span>
@@ -482,11 +482,6 @@ const RepertorioDetalle = () => {
                     <Clock className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
                     <span className="text-lg font-black text-foreground">{Math.floor(songs.length * 4.5)} min</span>
                     <span className="text-[9px] uppercase font-black text-muted-foreground/60 tracking-wider mt-1">Duración</span>
-                  </div>
-                  <div className="p-4 bg-muted border border-border rounded-2xl flex flex-col justify-center text-center">
-                    <Eye className="w-4.5 h-4.5 text-secondary mx-auto mb-1.5" />
-                    <span className="text-lg font-black text-foreground">{Math.floor((setlist.title.charCodeAt(0) * 1.5) + 20)}</span>
-                    <span className="text-[9px] uppercase font-black text-muted-foreground/60 tracking-wider mt-1">Vistas</span>
                   </div>
                 </div>
 
@@ -513,39 +508,32 @@ const RepertorioDetalle = () => {
                     </>
                   ) : (
                     <>
-                      {isAuthorized && (
+                      {isAuthorized && setlist.status !== 'completed' && (
                         <Button 
                           onClick={handleStartLive}
-                          disabled={setlist.status === 'completed' || songs.length === 0}
-                          className={`h-11 px-6 rounded-xl bg-gradient-to-r from-secondary to-amber-500 text-primary-foreground font-black text-xs uppercase tracking-wider shadow-lg active:scale-[0.97] transition-all ${
-                            setlist.status === 'completed' 
-                              ? 'bg-muted text-muted-foreground shadow-none' 
-                              : songs.length === 0 
-                                ? 'opacity-50 cursor-not-allowed hover:opacity-50 shadow-none' 
-                                : 'hover:opacity-90 shadow-secondary/25 shadow-gold'
-                          }`}
+                          disabled={songs.length === 0}
+                          className="h-11 px-6 rounded-xl bg-gradient-to-r from-secondary to-amber-500 text-primary-foreground font-black text-xs uppercase tracking-wider shadow-lg active:scale-[0.97] transition-all hover:opacity-90 shadow-secondary/25 shadow-gold"
                         >
                           <Play className="h-4 w-4 mr-2" />
-                          {setlist.status === 'completed' ? 'Finalizado' : 'Abrir en vivo'}
+                          Abrir en vivo
                         </Button>
                       )}
                       
-                      {isAuthorized && (
+                      {isAuthorized && setlist.status !== 'completed' && (
                         <Button 
                           variant="ghost" 
                           onClick={() => setIsEditing(true)} 
-                          disabled={setlist.status === 'completed'}
-                          className={`h-11 px-5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-foreground border border-border ${setlist.status === 'completed' ? 'opacity-50 grayscale' : ''}`}
+                          className="h-11 px-5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-foreground border border-border"
                         >
                           <Edit3 className="h-4 w-4 mr-2 text-muted-foreground" />
-                          {setlist.status === 'completed' ? 'Cerrado' : 'Editar información'}
+                          Editar información
                         </Button>
                       )}
                       
                       <Button 
                         variant="ghost" 
                         onClick={handleExportPDF} 
-                        className="h-11 px-5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-foreground border border-border ml-auto"
+                        className={`h-11 px-5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold uppercase tracking-wider active:scale-[0.97] transition-all text-foreground border border-border ${setlist.status === 'completed' ? 'w-full justify-center' : 'ml-auto'}`}
                       >
                         <FileDown className="h-4 w-4 mr-2 text-muted-foreground" />
                         PDF

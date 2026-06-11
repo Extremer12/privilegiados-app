@@ -188,13 +188,13 @@ const Foro = () => {
 
   return (
     <>
-      <main className="flex-1 pt-20 pb-4 px-3 sm:px-4 flex flex-col w-full">
-        <div className="max-w-4xl mx-auto w-full flex flex-col h-[calc(100vh-120px)]">
+      <main className="flex-1 pt-20 pb-24 md:pb-4 px-3 sm:px-4 flex flex-col w-full">
+        <div className="max-w-4xl mx-auto w-full flex flex-col h-[calc(100vh-180px)] md:h-[calc(100vh-120px)]">
           {/* Header */}
           <motion.div className="mb-8" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
               <div>
-                <h1 className="text-4xl md:text-5xl font-light tracking-tight text-foreground">Comunidad</h1>
+                <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">Comunidad</h1>
                 <div className="flex items-center gap-3 mt-3">
                   <div className="flex items-center gap-1.5">
                     <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />

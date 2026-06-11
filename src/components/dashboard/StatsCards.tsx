@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { Music, Users, CalendarDays, Eye, TrendingUp } from "lucide-react";
+import { Music, Users, CalendarDays, Eye, TrendingUp, ListMusic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface StatsCardsProps {
@@ -8,6 +8,7 @@ interface StatsCardsProps {
     totalSongs: number;
     totalMembers: number;
     totalSetlists: number;
+    totalEvents: number;
   };
 }
 
@@ -19,7 +20,7 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
     {
       value: stats.totalSongs,
       label: "Canciones",
-      subLabel: "+8 esta semana",
+      subLabel: "Biblioteca",
       trendColor: "text-emerald-400",
       icon: Music,
       path: "/canciones",
@@ -28,28 +29,28 @@ export const StatsCards = ({ stats }: StatsCardsProps) => {
     {
       value: stats.totalSetlists,
       label: "Repertorios",
-      subLabel: "Próximos",
-      trendColor: "text-neutral-400",
-      icon: CalendarDays,
+      subLabel: "Servicios",
+      trendColor: "text-amber-400",
+      icon: ListMusic,
       path: "/repertorios",
       sparklineD: "M0,25 Q15,12 30,22 T60,8 T90,5 T100,12",
     },
     {
       value: stats.totalMembers,
       label: "Miembros",
-      subLabel: "+2 este mes",
+      subLabel: "Equipo",
       trendColor: "text-emerald-400",
       icon: Users,
       path: "/miembros",
       sparklineD: "M0,20 Q15,8 30,14 T60,25 T90,6 T100,2",
     },
     {
-      value: 1248, // Visual mockup value
-      label: "Vistas (7 días)",
-      subLabel: "+15%",
-      trendColor: "text-emerald-400",
-      icon: Eye,
-      path: "/estadisticas",
+      value: stats.totalEvents,
+      label: "Eventos",
+      subLabel: "Próximos",
+      trendColor: "text-purple-400",
+      icon: CalendarDays,
+      path: "/eventos",
       sparklineD: "M0,24 Q15,18 30,8 T60,20 T90,2 T100,4",
     },
   ];

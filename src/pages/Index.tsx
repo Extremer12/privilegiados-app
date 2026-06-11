@@ -89,18 +89,20 @@ const Index = () => {
     enabled: !!user
   });
 
-  const { data: stats = { totalSongs: 0, totalMembers: 0, totalSetlists: 0 } } = useQuery({
+  const { data: stats = { totalSongs: 0, totalMembers: 0, totalSetlists: 0, totalEvents: 0 } } = useQuery({
     queryKey: ['stats'],
     queryFn: async () => {
-      const [songsResult, membersResult, setlistsResult] = await Promise.all([
+      const [songsResult, membersResult, setlistsResult, eventsResult] = await Promise.all([
         supabase.from("songs").select("id", { count: "exact" }),
         supabase.from("profiles").select("id", { count: "exact" }),
         supabase.from("setlists").select("id", { count: "exact" }),
+        supabase.from("events").select("id", { count: "exact" }),
       ]);
       return {
         totalSongs: songsResult.count || 0,
         totalMembers: membersResult.count || 0,
         totalSetlists: setlistsResult.count || 0,
+        totalEvents: eventsResult.count || 0,
       };
     },
     enabled: !!user
