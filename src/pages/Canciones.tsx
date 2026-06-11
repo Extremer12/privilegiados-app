@@ -65,14 +65,6 @@ const Canciones = () => {
     enabled: !!user,
   });
 
-  if (authLoading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader />
-      </div>
-    );
-  }
-
   const categoryStyles = useMemo<Record<string, { badge: string, iconColor: string, gradient: string, glow: string, textHover: string, dot: string, borderFocus: string }>>(() => ({
     alabanza: {
       badge: "bg-[#0A2540]/80 text-[#3B82F6] border-[#3B82F6]/30",
@@ -169,6 +161,14 @@ const Canciones = () => {
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + 40);
   };
+
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <>
