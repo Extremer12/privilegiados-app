@@ -14,6 +14,9 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Switch } from "./ui/switch";
 import { Sun, Moon } from "lucide-react";
 
+import { useQuery } from "@tanstack/react-query";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+
 export const Navigation = () => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const location = useLocation();
@@ -21,6 +24,21 @@ export const Navigation = () => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { isSupported, isSubscribed, subscribe, unsubscribe, loading } = usePushNotifications();
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", user.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
 
   const handleNotificationToggle = async () => {
     if (isSubscribed) {
@@ -145,21 +163,22 @@ export const Navigation = () => {
                   {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </Button>
               )}
-              {user && <GlobalSearch />}
               {user && <NotificationBell />}
               
-              {/* Desktop Profile Button */}
+              {/* Premium Avatar Header Button */}
               {user ? (
-                <Link to="/perfil" className="hidden md:block">
-                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                    <Button
-                      variant="hero"
-                      size="default"
-                      className="flex items-center gap-2 shadow-lg shadow-secondary/15 rounded-xl text-xs font-bold uppercase tracking-wider h-10 px-5"
-                    >
-                      <User className="w-4 h-4" />
-                      Mi Perfil
-                    </Button>
+                <Link to="/perfil" className="flex items-center">
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }} 
+                    whileTap={{ scale: 0.95 }}
+                    className="relative p-0.5 rounded-full bg-gradient-to-br from-secondary/40 via-transparent to-secondary/10 border border-secondary/25"
+                  >
+                    <Avatar className="w-9 h-9 border-2 border-background object-cover">
+                      <AvatarImage src={profile?.avatar_url || undefined} className="object-cover" />
+                      <AvatarFallback className="bg-secondary/20 text-secondary font-black text-xs uppercase">
+                        {profile?.full_name?.charAt(0) || "P"}
+                      </AvatarFallback>
+                    </Avatar>
                   </motion.div>
                 </Link>
               ) : (
@@ -278,21 +297,21 @@ export const Navigation = () => {
                   const Icon = option.icon;
                   const active = isActive(option.path);
                   return (
-                    <Link
+                    <button
                       key={option.path}
-                      to={option.path}
-                      onClick={() => setIsMoreOpen(false)}
+                      onClick={() => handleNavigation(option.path)}
                       className={`flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 border text-left ${
                         active
                           ? "bg-secondary/15 text-secondary border-secondary/20 shadow-md shadow-secondary/5"
                           : "bg-muted/40 text-foreground/90 border-border/50 hover:bg-muted/80"
                       }`}
+                      type="button"
                     >
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${active ? "bg-secondary/20" : "bg-muted/50"}`}>
                         <Icon className="w-4.5 h-4.5" />
                       </div>
                       <span className="text-sm font-bold">{option.name}</span>
-                    </Link>
+                    </button>
                   );
                 })}
               </div>

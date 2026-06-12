@@ -514,8 +514,6 @@ const Index = () => {
             </Card>
           </motion.div>
 
-          {/* Profile Card */}
-          <ProfileCard profile={profile} email={user.email} />
 
         </div>
       </main>

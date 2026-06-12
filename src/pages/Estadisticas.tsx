@@ -172,10 +172,10 @@ const Estadisticas = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3 rounded-xl transition-all font-medium whitespace-nowrap ${
+              className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl transition-all duration-300 font-bold text-sm border whitespace-nowrap ${
                 activeTab === tab.id
-                  ? "bg-secondary text-primary-foreground shadow-[0_0_20px_rgba(251,191,36,0.3)] scale-105"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                  ? "bg-secondary text-primary-foreground border-secondary shadow-lg shadow-secondary/20 scale-102"
+                  : "bg-card text-muted-foreground border-border hover:bg-muted/50 hover:text-foreground"
               }`}
             >
               <tab.icon className="w-4 h-4" />

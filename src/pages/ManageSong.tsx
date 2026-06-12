@@ -180,13 +180,17 @@ const ManageSong = () => {
         }
       }
 
+      // The Postgres enum song_category only supports: 'alabanza', 'adoracion', 'especial', 'otro'
+      // 'enganchado' is supported in the frontend but stored as 'otro' in the DB.
+      const dbCategory = formData.category === "enganchado" ? "otro" : formData.category;
+
       if (editMode && id) {
         const { error } = await supabase
           .from("songs")
           .update({
             title: formData.title,
             author: formData.author || null,
-            category: formData.category,
+            category: dbCategory as any,
             lyrics: formData.lyrics,
             chords: formData.chords,
             youtube_url: formData.youtube_url || null,
@@ -208,7 +212,7 @@ const ManageSong = () => {
         const { data: newSong, error } = await supabase.from("songs").insert({
           title: formData.title,
           author: formData.author || null,
-          category: formData.category,
+          category: dbCategory as any,
           lyrics: formData.lyrics,
           chords: formData.chords,
           youtube_url: formData.youtube_url || null,
