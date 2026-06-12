@@ -111,15 +111,10 @@ const ManageSong = () => {
 
   useEffect(() => {
     if (existingSong) {
-      // If category is 'otro' but title starts with 'Enganchado:', treat as 'enganchado'
-      const loadedCategory = (existingSong.category === "otro" && existingSong.title?.toLowerCase().includes("enganchado"))
-        ? "enganchado" 
-        : (existingSong.category || "otro");
-
       setFormData({
         title: existingSong.title || "",
         author: existingSong.author || "",
-        category: loadedCategory,
+        category: existingSong.category || "otro",
         lyrics: existingSong.lyrics || "",
         chords: existingSong.chords || "",
         youtube_url: existingSong.youtube_url || "",
@@ -185,9 +180,8 @@ const ManageSong = () => {
         }
       }
 
-      // The Postgres enum song_category only supports: 'alabanza', 'adoracion', 'especial', 'otro'
-      // 'enganchado' is supported in the frontend but stored as 'otro' in the DB.
-      const dbCategory = formData.category === "enganchado" ? "otro" : formData.category;
+      // song_category enum supports: 'alabanza', 'adoracion', 'especial', 'otro', 'enganchado'
+      const dbCategory = formData.category;
 
       if (editMode && id) {
         const { error } = await supabase

@@ -109,7 +109,7 @@ export function CreateEnganchadoDialog({
         .insert({
           title: finalTitle,
           author: 'Varios (Enganchado)',
-          category: 'otro', // Map 'enganchado' to 'otro' to satisfy database enum constraint
+          category: 'enganchado',
           lyrics: mergedLyrics,
           chords: mergedChords,
           created_by: user?.id,
