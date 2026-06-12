@@ -111,10 +111,15 @@ const ManageSong = () => {
 
   useEffect(() => {
     if (existingSong) {
+      // If category is 'otro' but title starts with 'Enganchado:', treat as 'enganchado'
+      const loadedCategory = (existingSong.category === "otro" && existingSong.title?.toLowerCase().includes("enganchado"))
+        ? "enganchado" 
+        : (existingSong.category || "otro");
+
       setFormData({
         title: existingSong.title || "",
         author: existingSong.author || "",
-        category: existingSong.category || "otro",
+        category: loadedCategory,
         lyrics: existingSong.lyrics || "",
         chords: existingSong.chords || "",
         youtube_url: existingSong.youtube_url || "",
@@ -359,6 +364,7 @@ const ManageSong = () => {
                   <SelectItem value="alabanza" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Alabanza</SelectItem>
                   <SelectItem value="adoracion" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Adoración</SelectItem>
                   <SelectItem value="especial" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Especial</SelectItem>
+                  <SelectItem value="enganchado" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Enganchado</SelectItem>
                   <SelectItem value="otro" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Otro</SelectItem>
                 </SelectContent>
               </Select>

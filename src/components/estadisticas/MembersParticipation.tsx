@@ -10,21 +10,24 @@ export const MembersParticipation = ({ data }: { data: any }) => {
     
     const grouped: Record<string, any> = {};
 
-    // 1. Process Participation (Services)
+    // 1. Process Participation (Services) - Only for registered profiles
     participants.forEach((p: any) => {
-      const name = p.profiles?.full_name || p.participant_name;
-      if (name) {
-        if (!grouped[name]) {
-          grouped[name] = { 
-            name,
-            services: 0, 
-            songsAdded: 0, 
-            avatar: p.profiles?.avatar_url,
-            roles: new Set()
-          };
+      // Ensure the participant is a registered user with a valid profile relation
+      if (p.user_id && p.profiles) {
+        const name = p.profiles.full_name;
+        if (name) {
+          if (!grouped[name]) {
+            grouped[name] = { 
+              name,
+              services: 0, 
+              songsAdded: 0, 
+              avatar: p.profiles?.avatar_url,
+              roles: new Set()
+            };
+          }
+          grouped[name].services += 1;
+          if (p.role_in_service) grouped[name].roles.add(p.role_in_service);
         }
-        grouped[name].services += 1;
-        if (p.role_in_service) grouped[name].roles.add(p.role_in_service);
       }
     });
 
@@ -70,8 +73,8 @@ export const MembersParticipation = ({ data }: { data: any }) => {
             key={member.name}
             className="p-5 rounded-2xl bg-card border border-border flex items-center justify-between group hover:bg-muted/40 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-secondary/5"
           >
-            <div className="flex items-center gap-4">
-              <div className="relative">
+            <div className="flex items-center gap-4 min-w-0 flex-1 mr-3">
+              <div className="relative shrink-0">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary/40 to-secondary/10 flex items-center justify-center font-bold text-secondary border border-secondary/20 overflow-hidden shadow-lg">
                   {member.avatar ? (
                     <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
@@ -85,13 +88,13 @@ export const MembersParticipation = ({ data }: { data: any }) => {
                   </div>
                 )}
               </div>
-              <div className="min-w-0">
-                <h3 className="font-bold text-foreground text-lg truncate pr-2">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bold text-foreground text-base truncate" title={member.name}>
                   {member.name}
                 </h3>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex flex-wrap gap-1 mt-1.5">
                   {member.roles.length > 0 ? member.roles.map((role: string) => (
-                    <Badge key={role} variant="outline" className="bg-muted border-border text-[9px] uppercase px-1.5 py-0">
+                    <Badge key={role} variant="outline" className="bg-muted border-border text-[9px] uppercase px-1.5 py-0 truncate max-w-[80px]">
                       {role}
                     </Badge>
                   )) : (
@@ -103,7 +106,7 @@ export const MembersParticipation = ({ data }: { data: any }) => {
             
             <div className="text-right shrink-0">
               <div className="flex flex-col items-end">
-                <span className="text-2xl font-black text-foreground tracking-tighter leading-none">{member.consistency}%</span>
+                <span className="text-xl font-black text-foreground tracking-tighter leading-none">{member.consistency}%</span>
                 <span className="text-[9px] uppercase tracking-tighter text-muted-foreground font-black mt-1">Consistencia</span>
                 <div className="mt-2 h-1 w-16 bg-muted rounded-full overflow-hidden">
                   <motion.div 

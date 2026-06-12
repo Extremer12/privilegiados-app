@@ -270,7 +270,7 @@ export const Navigation = () => {
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
               className="fixed bottom-24 left-4 right-4 z-[46] md:hidden bg-background/95 backdrop-blur-3xl border border-border shadow-2xl rounded-3xl p-5 shadow-black/20 dark:shadow-black/80 flex flex-col max-h-[70vh] overflow-y-auto"
             >
               {/* Header inside Bottom Sheet */}
