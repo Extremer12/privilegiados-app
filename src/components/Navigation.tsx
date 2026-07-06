@@ -101,7 +101,7 @@ export const Navigation = () => {
   return (
     <>
       {/* HEADER BAR (Desktop & Mobile Top Slim Bar) */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-30 bg-background/60 backdrop-blur-2xl border-b border-border">
         <nav className="container mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo and Branding */}
@@ -205,7 +205,7 @@ export const Navigation = () => {
             return (
               <button
                 key={tab.path}
-                onClick={() => handleNavigation(tab.path)}
+                onClick={(e) => handleNavigation(tab.path, e)}
                 className="relative flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all duration-200"
                 type="button"
               >
@@ -263,7 +263,7 @@ export const Navigation = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMoreOpen(false)}
-              className="fixed inset-0 z-[45] bg-black/60 backdrop-blur-sm md:hidden cursor-pointer"
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden cursor-pointer"
             />
 
             {/* Bottom Sheet Menu */}
@@ -272,7 +272,7 @@ export const Navigation = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "tween", duration: 0.2, ease: "easeOut" }}
-              className="fixed bottom-24 left-4 right-4 z-[46] md:hidden bg-background/95 backdrop-blur-3xl border border-border shadow-2xl rounded-3xl p-5 shadow-black/20 dark:shadow-black/80 flex flex-col max-h-[70vh] overflow-y-auto"
+              className="fixed bottom-24 left-4 right-4 z-[51] md:hidden bg-background/95 backdrop-blur-3xl border border-border shadow-2xl rounded-3xl p-5 shadow-black/20 dark:shadow-black/80 flex flex-col max-h-[70vh] overflow-y-auto"
             >
               {/* Header inside Bottom Sheet */}
               <div className="flex items-center justify-between pb-4 mb-4 border-b border-border/40">
@@ -300,7 +300,7 @@ export const Navigation = () => {
                   return (
                     <button
                       key={option.path}
-                      onClick={() => handleNavigation(option.path)}
+                      onClick={(e) => handleNavigation(option.path, e)}
                       className={`flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-200 border text-left ${
                         active
                           ? "bg-secondary/15 text-secondary border-secondary/20 shadow-md shadow-secondary/5"

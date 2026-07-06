@@ -140,6 +140,124 @@ const Index = () => {
     enabled: !!user
   });
 
+  const { data: recentActivities = [], isLoading: loadingActivities } = useQuery({
+    queryKey: ['recent_activities'],
+    queryFn: async () => {
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url");
+      if (profilesError) throw profilesError;
+      
+      const profilesMap: Record<string, { full_name: string | null, avatar_url: string | null }> = {};
+      profiles?.forEach(p => {
+        profilesMap[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url };
+      });
+
+      const getUserName = (id: string | null) => {
+        if (!id) return "Usuario";
+        return profilesMap[id]?.full_name || "Usuario";
+      };
+
+      const { data: songs, error: songsError } = await supabase
+        .from("songs")
+        .select("id, title, created_at, created_by")
+        .order("created_at", { ascending: false })
+        .limit(4);
+
+      const { data: setlists, error: setlistsError } = await supabase
+        .from("setlists")
+        .select("id, title, created_at, created_by")
+        .order("created_at", { ascending: false })
+        .limit(4);
+
+      const { data: events, error: eventsError } = await supabase
+        .from("events")
+        .select("id, title, created_at, created_by")
+        .order("created_at", { ascending: false })
+        .limit(4);
+
+      const { data: chatMessages, error: chatMessagesError } = await supabase
+        .from("chat_messages")
+        .select("id, content, created_at, author_id")
+        .order("created_at", { ascending: false })
+        .limit(4);
+
+      const activities: any[] = [];
+
+      if (songs) {
+        songs.forEach(s => {
+          activities.push({
+            id: `song-${s.id}`,
+            type: "song",
+            title: "Se agregó una nueva canción:",
+            detail: `“${s.title}”`,
+            by: `por ${getUserName(s.created_by)}`,
+            time: s.created_at ? new Date(s.created_at) : new Date(),
+            grad: "from-blue-500/20 to-indigo-500/10",
+            icon: Music,
+            iconColor: "text-blue-500 dark:text-blue-400",
+            targetPath: `/canciones/${s.id}`
+          });
+        });
+      }
+
+      if (setlists) {
+        setlists.forEach(s => {
+          activities.push({
+            id: `setlist-${s.id}`,
+            type: "setlist",
+            title: "Se creó un nuevo repertorio:",
+            detail: s.title,
+            by: `por ${getUserName(s.created_by)}`,
+            time: s.created_at ? new Date(s.created_at) : new Date(),
+            grad: "from-amber-500/20 to-yellow-500/10",
+            icon: ListMusic,
+            iconColor: "text-amber-500 dark:text-amber-400",
+            targetPath: `/repertorios/${s.id}`
+          });
+        });
+      }
+
+      if (events) {
+        events.forEach(e => {
+          activities.push({
+            id: `event-${e.id}`,
+            type: "event",
+            title: "Nuevo evento creado:",
+            detail: e.title,
+            by: e.created_by ? `por ${getUserName(e.created_by)}` : "",
+            time: e.created_at ? new Date(e.created_at) : new Date(),
+            grad: "from-purple-500/20 to-fuchsia-500/10",
+            icon: CalendarDays,
+            iconColor: "text-purple-500 dark:text-purple-400",
+            targetPath: "/eventos"
+          });
+        });
+      }
+
+      if (chatMessages) {
+        chatMessages.forEach(m => {
+          activities.push({
+            id: `chat-${m.id}`,
+            type: "chat",
+            title: "Nuevo mensaje en el foro:",
+            detail: m.content.length > 50 ? `${m.content.slice(0, 50)}...` : m.content,
+            by: `por ${getUserName(m.author_id)}`,
+            time: m.created_at ? new Date(m.created_at) : new Date(),
+            grad: "from-emerald-500/20 to-teal-500/10",
+            icon: MessageSquare,
+            iconColor: "text-emerald-500 dark:text-emerald-400",
+            targetPath: "/foro"
+          });
+        });
+      }
+
+      activities.sort((a, b) => b.time.getTime() - a.time.getTime());
+      return activities.slice(0, 4);
+    },
+    enabled: !!user
+  });
+
   const getPriorityConfig = (priority: string) => {
     switch (priority) {
       case 'urgent':
@@ -441,76 +559,56 @@ const Index = () => {
             </div>
 
             <Card className="bg-card border border-border p-4 rounded-3xl shadow-2xl divide-y divide-border space-y-3.5">
-              {[
-                {
-                  id: "act-1",
-                  avatar: "/logo.jpg",
-                  title: "Se agregó una nueva canción:",
-                  detail: "“Bondad de Dios”",
-                  by: "por Cristian",
-                  time: "2h",
-                  grad: "from-blue-500/20 to-indigo-500/10",
-                  icon: Music,
-                  iconColor: "text-blue-500 dark:text-blue-400"
-                },
-                {
-                  id: "act-2",
-                  avatar: "",
-                  title: "Se actualizó el repertorio:",
-                  detail: "Congreso Juvenil 2025",
-                  by: "por Ana María",
-                  time: "5h",
-                  grad: "from-amber-500/20 to-yellow-500/10",
-                  icon: ListMusic,
-                  iconColor: "text-amber-500 dark:text-amber-400"
-                },
-                {
-                  id: "act-3",
-                  avatar: "",
-                  title: "Nuevo evento creado:",
-                  detail: "Campamento de Alabanza",
-                  by: "por Juan Pablo",
-                  time: "1d",
-                  grad: "from-purple-500/20 to-fuchsia-500/10",
-                  icon: CalendarDays,
-                  iconColor: "text-purple-500 dark:text-purple-400"
-                },
-                {
-                  id: "act-4",
-                  avatar: "",
-                  title: "Nuevo mensaje en el foro:",
-                  detail: "Team Alabanza",
-                  by: "por Sofía",
-                  time: "1d",
-                  grad: "from-emerald-500/20 to-teal-500/10",
-                  icon: MessageSquare,
-                  iconColor: "text-emerald-500 dark:text-emerald-400"
-                }
-              ].map((act, index) => (
-                <div key={act.id} className={`flex items-center justify-between gap-4 ${index > 0 ? "pt-3.5" : ""}`}>
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    {/* Circle Gradient Icon */}
-                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${act.grad} flex items-center justify-center flex-shrink-0 border border-border`}>
-                      <act.icon className={`w-5 h-5 ${act.iconColor}`} />
+              {loadingActivities ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center justify-between gap-4 pt-3.5 first:pt-0">
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <Skeleton className="w-11 h-11 rounded-xl bg-muted" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-3 w-1/3 bg-muted rounded animate-pulse" />
+                          <Skeleton className="h-4 w-2/3 bg-muted rounded animate-pulse" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-3 w-10 bg-muted rounded animate-pulse" />
                     </div>
-                    
-                    {/* Description Text */}
-                    <div className="min-w-0 leading-tight">
-                      <p className="text-xs text-muted-foreground font-semibold">
-                        {act.title}
-                      </p>
-                      <h5 className="text-[13.5px] font-black text-foreground mt-0.5 truncate max-w-[280px] sm:max-w-md">
-                        {act.detail} <span className="text-muted-foreground/60 font-bold text-xs">{act.by}</span>
-                      </h5>
-                    </div>
-                  </div>
-
-                  {/* Timestamp */}
-                  <span className="text-[11px] font-bold text-neutral-500 flex-shrink-0">
-                    {act.time}
-                  </span>
+                  ))}
                 </div>
-              ))}
+              ) : recentActivities.length === 0 ? (
+                <div className="text-center py-6 text-xs text-muted-foreground font-semibold">
+                  No hay actividad reciente.
+                </div>
+              ) : (
+                recentActivities.map((act, index) => (
+                  <div 
+                    key={act.id} 
+                    className={`flex items-center justify-between gap-4 cursor-pointer hover:bg-neutral-500/5 p-2 rounded-xl transition-colors ${index > 0 ? "pt-3.5" : ""}`}
+                    onClick={() => navigate(act.targetPath)}
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {/* Circle Gradient Icon */}
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${act.grad} flex items-center justify-center flex-shrink-0 border border-border`}>
+                        <act.icon className={`w-5 h-5 ${act.iconColor}`} />
+                      </div>
+                      
+                      {/* Description Text */}
+                      <div className="min-w-0 leading-tight">
+                        <p className="text-xs text-muted-foreground font-semibold">
+                          {act.title}
+                        </p>
+                        <h5 className="text-[13.5px] font-black text-foreground mt-0.5 truncate max-w-[280px] sm:max-w-md">
+                          {act.detail} <span className="text-muted-foreground/60 font-bold text-xs">{act.by}</span>
+                        </h5>
+                      </div>
+                    </div>
+
+                    {/* Timestamp */}
+                    <span className="text-[11px] font-bold text-neutral-500 flex-shrink-0">
+                      {formatDistanceToNow(act.time, { addSuffix: true, locale: es })}
+                    </span>
+                  </div>
+                ))
+              )}
             </Card>
           </motion.div>
 

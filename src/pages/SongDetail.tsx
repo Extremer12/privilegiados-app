@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchSongById } from "@/services/songService";
 import { 
   ArrowLeft, Edit, Trash2, Maximize2, ZoomIn, ZoomOut,
-  Printer, Youtube, Star, Music, BadgeInfo
+  Printer, Youtube, Star, Music, BadgeInfo, Share2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
@@ -157,6 +157,36 @@ const SongDetail = () => {
 
   const handleDelete = async () => {
     deleteMutation.mutate();
+  };
+
+  const handleShare = async () => {
+    if (!song) return;
+    
+    const shareData = {
+      title: `Canción: ${song.title}`,
+      text: `Mira la canción "${song.title}" de ${song.author || "Autor Desconocido"} en la app Privilegiados`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        toast.success("¡Compartido con éxito!");
+      } catch (error: any) {
+        if (error.name !== "AbortError") {
+          toast.error("Error al compartir", { description: error.message });
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Enlace copiado", {
+          description: "El enlace de la canción se copió al portapapeles",
+        });
+      } catch (err: any) {
+        toast.error("No se pudo copiar el enlace");
+      }
+    }
   };
 
   const approveMutation = useMutation({
@@ -311,6 +341,9 @@ const SongDetail = () => {
             )}
             <Button variant="outline" className="flex-1 rounded-xl h-11 border-border" onClick={() => setShowPrintPreview(true)}>
               <Printer className="w-4 h-4 mr-2 text-muted-foreground" /> Imprimir
+            </Button>
+            <Button variant="outline" className="flex-1 rounded-xl h-11 border-border" onClick={handleShare}>
+              <Share2 className="w-4 h-4 mr-2 text-muted-foreground" /> Compartir
             </Button>
           </div>
 

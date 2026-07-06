@@ -352,12 +352,6 @@ const Canciones = () => {
                             <Badge variant="outline" className={`px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider rounded-full backdrop-blur-md ${style.badge}`}>
                               {song.category}
                             </Badge>
-                            
-                            {/* Visual metrics like Screen 3 */}
-                            <span className="text-[10px] text-muted-foreground/70 font-semibold flex items-center gap-1.5 ml-1">
-                              <span>▷ {Math.floor((song.title.charCodeAt(0) * 12) + 120)}</span>
-                              <span>♡ {Math.floor((song.title.charCodeAt(1) * 3) + 12)}</span>
-                            </span>
                           </div>
                         </div>
                       </div>
