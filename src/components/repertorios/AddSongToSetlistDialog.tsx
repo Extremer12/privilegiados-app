@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,18 +119,23 @@ export function AddSongToSetlistDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[100vw] w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 flex flex-col bg-background/95 backdrop-blur-3xl overflow-hidden shadow-none gap-0">
         <DialogHeader className="p-4 md:p-6 border-b border-white/10 bg-black/40 shrink-0 flex flex-row items-center justify-between">
-          <DialogTitle className="flex items-center gap-3 text-xl md:text-2xl font-bold">
-            {selectedSong ? (
-              <Button variant="ghost" size="icon" onClick={() => setSelectedSong(null)} className="h-8 w-8 mr-2 rounded-full hover:bg-white/10">
-                <Search className="h-4 w-4" />
-              </Button>
-            ) : (
-              <div className="p-2 rounded-xl bg-secondary/20 text-secondary">
-                <Plus className="h-5 w-5" />
-              </div>
-            )}
-            {selectedSong ? 'Configurar Canción' : `Agregar a ${sectionInfo?.name}`}
-          </DialogTitle>
+          <div>
+            <DialogTitle className="flex items-center gap-3 text-xl md:text-2xl font-bold">
+              {selectedSong ? (
+                <Button variant="ghost" size="icon" onClick={() => setSelectedSong(null)} className="h-8 w-8 mr-2 rounded-full hover:bg-white/10">
+                  <Search className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="p-2 rounded-xl bg-secondary/20 text-secondary">
+                  <Plus className="h-5 w-5" />
+                </div>
+              )}
+              {selectedSong ? 'Configurar Canción' : `Agregar a ${sectionInfo?.name}`}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Busca y configura canciones para añadir al repertorio.
+            </DialogDescription>
+          </div>
           <DialogClose asChild>
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white">
               <Plus className="h-6 w-6 rotate-45" />

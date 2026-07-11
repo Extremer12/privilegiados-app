@@ -249,12 +249,16 @@ const RepertorioDetalle = () => {
 
   const reorderSongsMutation = useMutation({
     mutationFn: async ({ sectionId, songIds }: { sectionId: string, songIds: string[] }) => {
-      const updates = songIds.map((songRowId, index) => ({
-        id: songRowId,
-        setlist_id: id,
-        position: index + 1,
-        section: sectionId
-      }));
+      const updates = songIds.map((songRowId, index) => {
+        const originalSong = songs.find(s => s.id === songRowId);
+        return {
+          id: songRowId,
+          setlist_id: id,
+          song_id: originalSong?.song_id,
+          position: index + 1,
+          section: sectionId
+        };
+      });
 
       const { error } = await supabase
         .from('setlist_songs')

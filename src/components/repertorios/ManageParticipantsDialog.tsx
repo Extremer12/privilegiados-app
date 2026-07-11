@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, UserPlus, Check, Users, X } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -167,7 +167,10 @@ export function ManageParticipantsDialog({
               <Users className="w-5 h-5 text-secondary" />
             </div>
             <div>
-              <h2 className="text-lg font-black tracking-tight text-white">Gestionar Equipo</h2>
+              <DialogTitle className="text-lg font-black tracking-tight text-white">Gestionar Equipo</DialogTitle>
+              <DialogDescription className="sr-only">
+                Gestionar los integrantes y roles asignados a este servicio.
+              </DialogDescription>
               <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">
                 {participants.length} participantes
               </p>

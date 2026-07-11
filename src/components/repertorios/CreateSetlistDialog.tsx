@@ -9,6 +9,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -192,7 +194,10 @@ export function CreateSetlistDialog({
             <X className="h-6 w-6" />
           </Button>
           <div className="text-center">
-            <h2 className="text-lg font-black tracking-tight uppercase">Nuevo Repertorio</h2>
+            <DialogTitle className="text-lg font-black tracking-tight uppercase">Nuevo Repertorio</DialogTitle>
+            <DialogDescription className="sr-only">
+              Formulario para crear un nuevo repertorio paso a paso.
+            </DialogDescription>
             <p className="text-[10px] font-bold text-secondary tracking-widest uppercase">Paso {step} de 2</p>
           </div>
           <div className="w-10" /> {/* Spacer */}
