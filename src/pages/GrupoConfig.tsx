@@ -403,13 +403,31 @@ const GrupoConfig = () => {
 
 function GroupSettingsForm({ group, onUpdate }: { group: any; onUpdate: () => void }) {
   const [loading, setLoading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [name, setName] = useState(group.name || "");
   const [description, setDescription] = useState(group.description || "");
+  const [logoUrl, setLogoUrl] = useState(group.logo_url || "");
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    try {
+      const url = await uploadGroupLogo(group.id, file);
+      setLogoUrl(url);
+      toast.success("Logo subido temporalmente. Guarda los cambios para confirmar.");
+    } catch (err: any) {
+      toast.error(err.message || "Error al subir el logo");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      await updateGroup(group.id, { name, description });
+      await updateGroup(group.id, { name, description, logo_url: logoUrl || null });
       toast.success("Configuración actualizada");
       onUpdate();
     } catch (e: any) {
@@ -421,6 +439,41 @@ function GroupSettingsForm({ group, onUpdate }: { group: any; onUpdate: () => vo
 
   return (
     <div className="space-y-6">
+      {/* Group Logo Selector */}
+      <div className="flex flex-col items-center justify-center space-y-3 mb-6">
+        <Label className="text-xs font-black uppercase tracking-wider text-secondary">
+          Logo del Grupo
+        </Label>
+        <div className="relative group/logo">
+          <Avatar className="w-24 h-24 border-2 border-secondary/20 group-hover/logo:border-secondary/60 transition-all duration-300">
+            <AvatarImage src={logoUrl || undefined} className="object-cover" />
+            <AvatarFallback className="bg-muted text-muted-foreground text-3xl font-black">
+              {name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          
+          <label 
+            htmlFor="logo-upload" 
+            className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover/logo:opacity-100 cursor-pointer transition-opacity duration-300"
+          >
+            {uploadingLogo ? (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+          </label>
+          <input 
+            type="file" 
+            id="logo-upload" 
+            accept="image/*" 
+            className="hidden" 
+            onChange={handleLogoChange}
+            disabled={uploadingLogo}
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground">Recomendado: Imagen cuadrada (PNG o JPG)</p>
+      </div>
+
       <div className="space-y-2">
         <Label className="text-xs font-black uppercase tracking-wider text-secondary">
           Nombre del Grupo
@@ -445,7 +498,7 @@ function GroupSettingsForm({ group, onUpdate }: { group: any; onUpdate: () => vo
 
       <Button
         onClick={handleSave}
-        disabled={loading}
+        disabled={loading || uploadingLogo}
         className="w-full h-14 rounded-2xl bg-secondary text-primary font-black uppercase tracking-widest"
       >
         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Guardar Cambios"}
