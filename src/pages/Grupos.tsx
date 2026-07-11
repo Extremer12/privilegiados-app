@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useGroup } from "@/hooks/useGroupContext";
 import { searchPublicGroups, fetchApprovedMemberCount } from "@/services/groupService";
 import {
-  Plus, Search, Users, Crown, ChevronRight, Music, Compass, Sparkles,
+  Plus, Search, Users, Crown, ChevronRight, Music, Compass, Sparkles, LogOut, ArrowLeft,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import type { MusicGroup } from "@/types";
 
 const Grupos = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { userGroups, switchGroup, loading, activeGroup } = useGroup();
   const [searchQuery, setSearchQuery] = useState("");
   const [showExplorer, setShowExplorer] = useState(false);
@@ -47,6 +47,165 @@ const Grupos = () => {
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-24 w-full rounded-2xl bg-muted" />
           ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (!activeGroup) {
+    return (
+      <main className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-background px-4 py-12 select-none">
+        {/* Cinematic Ambient Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-secondary/5 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+          <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-secondary/5 blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
+        </div>
+
+        <div className="max-w-md w-full relative z-10">
+          <AnimatePresence mode="wait">
+            {!showExplorer ? (
+              <motion.div
+                key="welcome"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="w-full text-center"
+              >
+                {/* Premium Animated Icon */}
+                <div className="relative mx-auto mb-8 w-24 h-24 rounded-3xl bg-secondary/5 border border-secondary/15 flex items-center justify-center overflow-hidden shadow-2xl shadow-secondary/5">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-secondary/10 to-transparent opacity-50" />
+                  <div className="absolute inset-0 blur-md bg-secondary/20 scale-75 rounded-full" />
+                  <Music className="w-10 h-10 text-secondary relative z-10 animate-bounce" style={{ animationDuration: '3s' }} />
+                </div>
+
+                <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground mb-4 uppercase">
+                  Comienza tu <span className="bg-gradient-to-r from-secondary via-secondary/80 to-secondary/60 bg-clip-text text-transparent">viaje musical</span>
+                </h1>
+                
+                <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto mb-10 font-medium">
+                  Crea tu propio grupo musical o busca uno existente para unirte y empezar a sincronizar tus canciones, eventos y repertorios.
+                </p>
+
+                <div className="flex flex-col gap-4 w-full">
+                  <Button
+                    onClick={() => navigate("/grupos/crear")}
+                    className="w-full h-14 rounded-2xl bg-secondary text-primary font-black uppercase tracking-widest text-sm shadow-xl shadow-secondary/10 hover:shadow-secondary/25 transition-all duration-300"
+                  >
+                    <Plus className="w-5 h-5 mr-2" /> Crear un Grupo
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowExplorer(true)}
+                    className="w-full h-14 rounded-2xl border-border bg-muted/20 hover:bg-muted/40 font-bold uppercase tracking-wider text-xs transition-all duration-300"
+                  >
+                    <Compass className="w-5 h-5 mr-2 text-secondary" /> Buscar tu Grupo
+                  </Button>
+                </div>
+
+                {/* Logout Button */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.6 }}
+                  whileHover={{ opacity: 1 }}
+                  className="mt-12 flex justify-center"
+                >
+                  <button
+                    onClick={signOut}
+                    type="button"
+                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-destructive transition-colors py-2 px-4 rounded-xl hover:bg-destructive/5 border border-transparent hover:border-destructive/10"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Cerrar Sesión
+                  </button>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="explorer"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="w-full"
+              >
+                {/* Back Button */}
+                <div className="flex items-center gap-3 mb-6">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowExplorer(false)}
+                    className="rounded-xl bg-muted/20 border border-border"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <div className="text-left">
+                    <h2 className="text-xl font-black uppercase text-foreground">Buscar Grupo</h2>
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Explorar grupos públicos</p>
+                  </div>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative mb-6">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
+                  <Input
+                    placeholder="Buscar por nombre..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-11 h-14 bg-muted/30 border-border/80 focus:border-secondary rounded-2xl font-medium text-sm"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Search Results */}
+                {searchLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-20 rounded-2xl bg-muted/30 border border-border/10" />
+                    ))}
+                  </div>
+                ) : discoverableGroups.length === 0 ? (
+                  <Card className="p-8 text-center bg-card-gradient border-border rounded-2xl">
+                    <p className="text-muted-foreground text-sm font-medium">
+                      {searchQuery ? "No se encontraron grupos" : "Ingresa un nombre para buscar grupos disponibles"}
+                    </p>
+                  </Card>
+                ) : (
+                  <div className="space-y-3 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1">
+                    {discoverableGroups.map((group) => (
+                      <Card
+                        key={group.id}
+                        className="p-4 bg-muted/10 border-border/50 rounded-2xl hover:border-secondary/30 transition-all cursor-pointer group"
+                        onClick={() => navigate(`/unirse/${group.slug}`)}
+                      >
+                        <div className="flex items-center gap-4">
+                          <Avatar className="w-12 h-12 rounded-xl border border-border">
+                            <AvatarImage src={group.logo_url || undefined} className="object-cover animate-fade-in" />
+                            <AvatarFallback className="bg-secondary/10 text-secondary font-black rounded-xl text-base">
+                              {group.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0 text-left">
+                            <h4 className="font-bold text-foreground truncate group-hover:text-secondary transition-colors">{group.name}</h4>
+                            {group.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-1">{group.description}</p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            className="rounded-xl bg-secondary/15 text-secondary hover:bg-secondary hover:text-primary font-bold text-xs h-9 px-4 transition-all duration-300"
+                          >
+                            Unirse
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     );

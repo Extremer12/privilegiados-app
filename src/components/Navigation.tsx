@@ -28,6 +28,16 @@ export const Navigation = () => {
   const { activeGroup, isGroupAdmin } = useGroup();
   const { isSupported, isSubscribed, subscribe, unsubscribe, loading } = usePushNotifications();
 
+  // Hide navigation (header + bottom bar) if there is no active group selected
+  const isFullScreenPage = 
+    location.pathname === "/grupos/crear" ||
+    location.pathname.startsWith("/unirse/") ||
+    /^\/grupos\/[^/]+\/config$/.test(location.pathname);
+
+  if (isFullScreenPage || !activeGroup) {
+    return null;
+  }
+
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
