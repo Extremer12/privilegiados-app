@@ -48,8 +48,9 @@ export const LiveHeader = memo(({
   const handleShareMusician = () => {
     if (!sessionId) return;
     const url = `${window.location.origin}/en-vivo/${sessionId}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Enlace de músicos copiado", {
+    const text = `🎵 *Invitación para Músicos - Privilegiados App* 🎵\n\n¡Hola! Te invito a unirte a nuestro repertorio en vivo como músico para que puedas seguir los acordes, letra y estructura en tiempo real.\n\nÚnete desde aquí:\n🔗 ${url}`;
+    navigator.clipboard.writeText(text);
+    toast.success("Mensaje para músicos copiado", {
       description: "Compártelo con los integrantes del grupo para que se unan a tocar.",
     });
   };
@@ -57,9 +58,10 @@ export const LiveHeader = memo(({
   const handleShareSpectator = () => {
     if (!sessionId) return;
     const url = `${window.location.origin}/en-vivo/espectador/${sessionId}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Enlace de espectadores copiado", {
-      description: "Cualquiera puede entrar con este enlace para seguir las letras en tiempo real.",
+    const text = `🎤 *Sigue nuestra Alabanza en Vivo* 🎤\n\n¡Hola! Acompaña nuestro tiempo de alabanza y adoración. Puedes seguir las letras de las canciones en tiempo real desde tu teléfono en este enlace:\n\n🔗 ${url}`;
+    navigator.clipboard.writeText(text);
+    toast.success("Mensaje para espectadores copiado", {
+      description: "Compártelo con cualquier persona para que siga las letras en tiempo real.",
     });
   };
 

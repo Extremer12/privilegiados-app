@@ -118,14 +118,14 @@ const EnVivoEspectador = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary/95 to-primary/80 select-none">
+      <div className="dark min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 select-none">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
           <Loader />
-          <p className="mt-4 text-foreground/80 animate-pulse font-medium">
+          <p className="mt-4 text-slate-300 animate-pulse font-medium">
             Conectando a la transmisión en vivo...
           </p>
         </motion.div>
@@ -136,7 +136,7 @@ const EnVivoEspectador = () => {
   // Session inactive or not found
   if (!session || !session.is_active) {
     return (
-      <main className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-background px-4 py-12 select-none">
+      <main className="dark relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-slate-950 text-slate-100 px-4 py-12 select-none">
         {/* Cinematic Ambient Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-secondary/5 blur-[120px]" />
@@ -149,23 +149,23 @@ const EnVivoEspectador = () => {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="max-w-md w-full relative z-10"
         >
-          <Card className="p-10 text-center rounded-3xl bg-card/30 backdrop-blur-xl border-border/50 shadow-2xl">
+          <Card className="p-10 text-center rounded-3xl bg-slate-900/50 backdrop-blur-xl border-slate-800 shadow-2xl">
             <div className="relative mx-auto mb-8 w-20 h-20 rounded-2xl bg-secondary/5 border border-secondary/15 flex items-center justify-center overflow-hidden shadow-2xl shadow-secondary/5">
               <div className="absolute inset-0 bg-gradient-to-tr from-secondary/10 to-transparent opacity-50" />
               <Radio className="w-8 h-8 text-secondary relative z-10" />
             </div>
 
-            <h1 className="text-2xl font-black uppercase tracking-wider text-foreground mb-4">
+            <h1 className="text-2xl font-black uppercase tracking-wider text-white mb-4">
               Sin transmisión en vivo
             </h1>
             
-            <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto mb-8 font-medium">
+            <p className="text-slate-400 text-sm leading-relaxed max-w-sm mx-auto mb-8 font-medium">
               No hay ninguna sesión en vivo activa con este enlace en este momento. Pídele al líder musical que inicie el evento en vivo.
             </p>
 
             <Button
               onClick={() => navigate("/")}
-              className="w-full h-12 rounded-2xl bg-secondary text-primary font-black uppercase tracking-widest text-xs transition-all duration-300"
+              className="w-full h-12 rounded-2xl bg-secondary text-primary font-black uppercase tracking-widest text-xs transition-all duration-300 hover:scale-105"
             >
               Ir al Inicio
             </Button>
@@ -177,7 +177,7 @@ const EnVivoEspectador = () => {
 
   return (
     <div 
-      className="min-h-screen relative flex flex-col justify-between overflow-x-hidden p-6"
+      className="dark min-h-screen relative flex flex-col justify-between overflow-x-hidden p-6 bg-slate-950 text-slate-100"
       style={{
         background: "linear-gradient(135deg, hsl(222 47% 6%) 0%, hsl(222 47% 10%) 50%, hsl(222 47% 6%) 100%)",
       }}

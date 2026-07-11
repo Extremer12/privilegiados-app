@@ -127,8 +127,9 @@ const GrupoConfig = () => {
   const copyInviteLink = () => {
     if (!group) return;
     const link = `${window.location.origin}/unirse/${group.slug}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Enlace copiado", { description: link });
+    const text = `🤝 *Invitación al Grupo "${group.name}" - Privilegiados App* 🤝\n\n¡Hola! Te invito a formar parte de nuestro grupo musical en Privilegiados App. Regístrate y accede a todas nuestras canciones, repertorios y ensayos desde este enlace:\n\n🔗 ${link}`;
+    navigator.clipboard.writeText(text);
+    toast.success("Mensaje de invitación copiado", { description: "Compártelo con los nuevos integrantes." });
   };
 
   if (groupLoading) {
