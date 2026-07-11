@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { useGroup } from "@/hooks/useGroupContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   MessageCircle, Send, Paperclip, Loader2, Image as ImageIcon, 
@@ -33,6 +34,7 @@ const QUICK_REACTIONS = ["👍", "❤️", "🙏", "🎵", "🔥", "✨"];
 
 const Foro = () => {
   const { user, loading: authLoading } = useAuth();
+  const { activeGroup } = useGroup();
   const navigate = useNavigate();
   
   const [message, setMessage] = useState("");
@@ -59,7 +61,7 @@ const Foro = () => {
     editMessage,
     deleteMessage,
     sendFile
-  } = useForoMessages(user?.id);
+  } = useForoMessages(user?.id, activeGroup?.id);
 
   const {
     onlineUsers,
@@ -67,7 +69,7 @@ const Foro = () => {
     isConnected,
     handleTyping,
     trackStatus
-  } = useForoRealtime(user?.id);
+  } = useForoRealtime(user?.id, activeGroup?.id);
 
   // Profiles query
   const { data: profilesData } = useQuery({

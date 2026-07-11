@@ -6,7 +6,7 @@ import type { ChatMessageType } from "@/types";
 
 const MESSAGES_LIMIT = 50;
 
-export const useForoMessages = (userId: string | undefined) => {
+export const useForoMessages = (userId: string | undefined, groupId: string | undefined) => {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
 
@@ -17,11 +17,13 @@ export const useForoMessages = (userId: string | undefined) => {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ['chat_messages'],
+    queryKey: ['chat_messages', groupId],
     queryFn: async ({ pageParam = 0 }) => {
+      if (!groupId) return [];
       const { data, error } = await supabase
         .from("chat_messages")
         .select("*")
+        .eq("group_id", groupId)
         .order("created_at", { ascending: false })
         .range(pageParam * MESSAGES_LIMIT, (pageParam + 1) * MESSAGES_LIMIT - 1);
 
@@ -31,7 +33,7 @@ export const useForoMessages = (userId: string | undefined) => {
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.length === MESSAGES_LIMIT ? allPages.length : undefined;
     },
-    enabled: !!userId,
+    enabled: !!userId && !!groupId,
   });
 
   const messages = useMemo(() => {
@@ -41,9 +43,11 @@ export const useForoMessages = (userId: string | undefined) => {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
+      if (!groupId) throw new Error("No active group");
       const { error } = await supabase.from("chat_messages").insert({
         content: content,
-        author_id: userId!
+        author_id: userId!,
+        group_id: groupId
       });
       if (error) throw error;
       return true;
@@ -83,6 +87,7 @@ export const useForoMessages = (userId: string | undefined) => {
 
   const sendFileMutation = useMutation({
     mutationFn: async ({ file, fileName }: { file: File | Blob, fileName: string }) => {
+      if (!groupId) throw new Error("No active group");
       setUploading(true);
       const fileExt = fileName.split(".").pop() || "webm";
       const uploadName = `${userId}/${Date.now()}.${fileExt}`;
@@ -101,7 +106,8 @@ export const useForoMessages = (userId: string | undefined) => {
         content: fileName.includes("audio_") ? "Mensaje de voz" : fileName,
         file_url: publicUrl,
         file_type: fileType,
-        author_id: userId!
+        author_id: userId!,
+        group_id: groupId
       });
 
       if (error) throw error;

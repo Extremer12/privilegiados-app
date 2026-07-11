@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useGroup } from "@/hooks/useGroupContext";
 
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSongsWithProfiles } from "@/services/songService";
@@ -33,7 +34,8 @@ const Canciones = () => {
   const [createEnganchadoOpen, setCreateEnganchadoOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(40);
   const { isAdmin, isLeader, isModerator } = useUserRole();
-  const isAuthorized = isAdmin || isLeader || isModerator;
+  const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
+  const isAuthorized = isAdmin || isLeader || isModerator || isGroupAdmin || isGroupLeader;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,9 +49,18 @@ const Canciones = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const { data: songs = [], isLoading: loading, refetch: fetchSongs } = useQuery({
-    queryKey: ['songs'],
-    queryFn: () => fetchSongsWithProfiles(),
-    enabled: !!user,
+    queryKey: ['songs', activeGroup?.id],
+    queryFn: async () => {
+      if (!activeGroup) return [];
+      const { data, error } = await supabase
+        .from("songs")
+        .select("*, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)")
+        .eq("group_id", activeGroup.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Song[];
+    },
+    enabled: !!user && !!activeGroup,
   });
 
   const { data: favorites = [] } = useQuery({

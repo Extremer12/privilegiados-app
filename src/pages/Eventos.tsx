@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useGroup } from "@/hooks/useGroupContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isSameDay, parseISO, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -50,6 +51,7 @@ const EVENT_TYPE_COLORS = {
 const Eventos = () => {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
+  const { activeGroup, isGroupAdmin } = useGroup();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,17 +68,18 @@ const Eventos = () => {
   });
 
   const { data: events = [], isLoading: loading } = useQuery({
-    queryKey: ['events'],
+    queryKey: ['events', activeGroup?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
         .select("*")
+        .eq("group_id", activeGroup!.id)
         .order("event_date", { ascending: true });
 
       if (error) throw error;
       return data as Event[];
     },
-    enabled: !!user,
+    enabled: !!user && !!activeGroup,
   });
 
   useEffect(() => {
@@ -145,6 +148,7 @@ const Eventos = () => {
       event_date: finalDate.toISOString(),
       event_type: newEvent.event_type,
       created_by: user.id,
+      group_id: activeGroup?.id,
     });
   };
 

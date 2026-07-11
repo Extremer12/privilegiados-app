@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { ChatMessageType, UserPresence } from "@/types";
 
-export const useForoRealtime = (userId: string | undefined) => {
+export const useForoRealtime = (userId: string | undefined, groupId: string | undefined) => {
   const queryClient = useQueryClient();
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
@@ -14,9 +14,9 @@ export const useForoRealtime = (userId: string | undefined) => {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setupRealtimeChannel = useCallback(() => {
-    if (!userId) return;
+    if (!userId || !groupId) return;
 
-    const channel = supabase.channel("forum_room", {
+    const channel = supabase.channel(`forum_room_${groupId}`, {
       config: {
         presence: {
           key: userId,
@@ -42,9 +42,10 @@ export const useForoRealtime = (userId: string | undefined) => {
         event: "INSERT",
         schema: "public",
         table: "chat_messages",
+        filter: `group_id=eq.${groupId}`,
       }, (payload) => {
         const newMessage = payload.new as ChatMessageType;
-        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
+        queryClient.setQueryData(['chat_messages', groupId], (oldData: any) => {
           if (!oldData) return oldData;
           return {
             ...oldData,
@@ -58,9 +59,10 @@ export const useForoRealtime = (userId: string | undefined) => {
         event: "UPDATE",
         schema: "public",
         table: "chat_messages",
+        filter: `group_id=eq.${groupId}`,
       }, (payload) => {
         const updatedMessage = payload.new as ChatMessageType;
-        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
+        queryClient.setQueryData(['chat_messages', groupId], (oldData: any) => {
           if (!oldData) return oldData;
           return {
             ...oldData,
@@ -74,9 +76,10 @@ export const useForoRealtime = (userId: string | undefined) => {
         event: "DELETE",
         schema: "public",
         table: "chat_messages",
+        filter: `group_id=eq.${groupId}`,
       }, (payload) => {
         const deletedId = payload.old.id;
-        queryClient.setQueryData(['chat_messages'], (oldData: any) => {
+        queryClient.setQueryData(['chat_messages', groupId], (oldData: any) => {
           if (!oldData) return oldData;
           return {
             ...oldData,
@@ -104,7 +107,7 @@ export const useForoRealtime = (userId: string | undefined) => {
     });
 
     channelRef.current = channel;
-  }, [userId, queryClient]);
+  }, [userId, groupId, queryClient]);
 
   useEffect(() => {
     setupRealtimeChannel();

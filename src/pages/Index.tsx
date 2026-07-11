@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useGroup } from "@/hooks/useGroupContext";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Music, ChevronRight, 
@@ -39,9 +40,22 @@ interface Announcement {
 
 const Index = () => {
   const { user } = useAuth();
+  const { activeGroup, userGroups, loading: groupLoading } = useGroup();
   const navigate = useNavigate();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<{id: string, title: string} | null>(null);
+
+  // Redirect to groups page if user has no active group
+  if (!groupLoading && user && userGroups.length === 0) {
+    navigate("/grupos", { replace: true });
+    return null;
+  }
+  if (!groupLoading && user && !activeGroup) {
+    navigate("/grupos", { replace: true });
+    return null;
+  }
+
+  const groupId = activeGroup?.id;
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -93,10 +107,10 @@ const Index = () => {
     queryKey: ['stats'],
     queryFn: async () => {
       const [songsResult, membersResult, setlistsResult, eventsResult] = await Promise.all([
-        supabase.from("songs").select("id", { count: "exact" }),
-        supabase.from("profiles").select("id", { count: "exact" }),
-        supabase.from("setlists").select("id", { count: "exact" }),
-        supabase.from("events").select("id", { count: "exact" }),
+        supabase.from("songs").select("id", { count: "exact" }).eq("group_id", groupId!),
+        supabase.from("group_members").select("id", { count: "exact" }).eq("group_id", groupId!).eq("status", "approved"),
+        supabase.from("setlists").select("id", { count: "exact" }).eq("group_id", groupId!),
+        supabase.from("events").select("id", { count: "exact" }).eq("group_id", groupId!),
       ]);
       return {
         totalSongs: songsResult.count || 0,
@@ -105,30 +119,32 @@ const Index = () => {
         totalEvents: eventsResult.count || 0,
       };
     },
-    enabled: !!user
+    enabled: !!user && !!groupId
   });
 
   const { data: upcomingEvents = [], isLoading: loadingEvents } = useQuery({
-    queryKey: ['upcomingEvents'],
+    queryKey: ['upcomingEvents', groupId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
         .select("id, title, event_date, location, event_type")
+        .eq("group_id", groupId!)
         .gte("event_date", new Date().toISOString())
         .order("event_date", { ascending: true })
         .limit(3);
       if (error) throw error;
       return data as Event[];
     },
-    enabled: !!user
+    enabled: !!user && !!groupId
   });
 
   const { data: announcements = [], isLoading: loadingAnnouncements } = useQuery({
-    queryKey: ['announcements'],
+    queryKey: ['announcements', groupId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("announcements")
         .select("id, title, content, priority, created_at")
+        .eq("group_id", groupId!)
         .eq("is_active", true)
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .order("priority", { ascending: false })
@@ -137,11 +153,11 @@ const Index = () => {
       if (error) throw error;
       return data as Announcement[];
     },
-    enabled: !!user
+    enabled: !!user && !!groupId
   });
 
   const { data: recentActivities = [], isLoading: loadingActivities } = useQuery({
-    queryKey: ['recent_activities'],
+    queryKey: ['recent_activities', groupId],
     queryFn: async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")

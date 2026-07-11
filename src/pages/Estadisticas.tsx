@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useGroup } from "@/hooks/useGroupContext";
 import { useAuth } from "@/hooks/useAuth";
 import { BarChart3, Music, Users, CalendarDays, LineChart } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
@@ -21,27 +22,80 @@ const TABS = [
 
 const Estadisticas = () => {
   const { user } = useAuth();
+  const { activeGroup } = useGroup();
   const [activeTab, setActiveTab] = useState("overview");
 
   const { data: statsData, isLoading } = useQuery({
-    queryKey: ["service_stats"],
+    queryKey: ["service_stats", activeGroup?.id],
     queryFn: async () => {
+      if (!activeGroup) {
+        return {
+          reports: [],
+          songsPlayed: [],
+          participants: [],
+          allSongs: [],
+          feedback: [],
+        };
+      }
+
+      // Fetch setlists of active group
+      const { data: setlists } = await supabase
+        .from("setlists")
+        .select("id")
+        .eq("group_id", activeGroup.id);
+
+      const setlistIds = (setlists || []).map(s => s.id);
+      if (setlistIds.length === 0) {
+        const { data: allSongs } = await supabase
+          .from("songs")
+          .select("id, title, category, created_at, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)")
+          .eq("group_id", activeGroup.id);
+
+        return {
+          reports: [],
+          songsPlayed: [],
+          participants: [],
+          allSongs: allSongs || [],
+          feedback: [],
+        };
+      }
+
       const { data: reports } = await supabase
         .from("service_reports")
         .select(`*, service_ratings (rating)`)
+        .in("setlist_id", setlistIds)
         .order("service_date", { ascending: false });
 
-      const { data: songsPlayed } = await supabase
-        .from("service_songs")
-        .select(`*, songs (id, title, category), service_reports (service_date)`);
+      const reportIds = (reports || []).map(r => r.id);
 
-      const { data: participants } = await supabase
-        .from("service_participants")
-        .select(`*, service_reports (service_date, setlist_id), profiles (full_name, avatar_url, role)`);
+      let songsPlayed = [];
+      let participants = [];
+      let feedback = [];
+
+      if (reportIds.length > 0) {
+        const { data: sp } = await supabase
+          .from("service_songs")
+          .select(`*, songs (id, title, category), service_reports (service_date)`)
+          .in("service_report_id", reportIds);
+        if (sp) songsPlayed = sp;
+
+        const { data: part } = await supabase
+          .from("service_participants")
+          .select(`*, service_reports (service_date, setlist_id), profiles (full_name, avatar_url, role)`)
+          .in("service_report_id", reportIds);
+        if (part) participants = part;
+
+        const { data: fb } = await supabase
+          .from("service_feedback")
+          .select(`*, profiles (full_name, avatar_url)`)
+          .in("service_id", setlistIds);
+        if (fb) feedback = fb;
+      }
 
       const { data: setlistParticipants } = await supabase
         .from("setlist_participants")
-        .select(`*, setlists (service_date, id), profiles (full_name, avatar_url, role)`);
+        .select(`*, setlists (service_date, id), profiles (full_name, avatar_url, role)`)
+        .in("setlist_id", setlistIds);
 
       const combinedParticipants = [...(participants || [])];
       if (setlistParticipants) {
@@ -72,13 +126,10 @@ const Estadisticas = () => {
         });
       }
 
-      const { data: feedback } = await supabase
-        .from("service_feedback")
-        .select(`*, profiles (full_name, avatar_url)`);
-
       const { data: allSongs } = await supabase
         .from("songs")
-        .select("id, title, category, created_at, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)");
+        .select("id, title, category, created_at, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)")
+        .eq("group_id", activeGroup.id);
 
       return {
         reports: reports || [],
@@ -88,7 +139,7 @@ const Estadisticas = () => {
         feedback: feedback || [],
       };
     },
-    enabled: !!user,
+    enabled: !!user && !!activeGroup,
   });
 
   if (!user) {

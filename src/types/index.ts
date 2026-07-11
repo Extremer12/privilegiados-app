@@ -184,3 +184,57 @@ export interface ServiceSection {
   bible_verse: string | null;
   created_at: string | null;
 }
+
+// ──────────────────────────────────────────────
+//  Music Groups (Multi-tenant)
+// ──────────────────────────────────────────────
+
+export interface MusicGroup {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  logo_url: string | null;
+  created_by: string;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+  /** Virtual field: count of approved members (populated via queries) */
+  member_count?: number;
+}
+
+export interface GroupMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  role: string;
+  display_name: string | null;
+  instrument: string | null;
+  bio: string | null;
+  status: "pending" | "approved" | "rejected";
+  joined_at: string | null;
+  created_at: string;
+  /** Joined from profiles table */
+  profiles?: {
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface GroupJoinRequest {
+  id: string;
+  group_id: string;
+  user_id: string;
+  display_name: string;
+  instrument: string | null;
+  message: string | null;
+  status: "pending" | "approved" | "rejected";
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  /** Joined from profiles table */
+  profiles?: {
+    full_name: string;
+    avatar_url: string | null;
+  };
+}

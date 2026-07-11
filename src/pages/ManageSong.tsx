@@ -13,12 +13,14 @@ import { toast } from "sonner";
 import { Loader2, Upload, ArrowLeft, AlertCircle, Music, CheckCircle2 } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useGroup } from "@/hooks/useGroupContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ManageSong = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
   const { isAdmin, isLeader, isModerator } = useUserRole();
   const queryClient = useQueryClient();
   
@@ -46,11 +48,12 @@ const ManageSong = () => {
       const { data, error } = await supabase
         .from("songs")
         .select("id, title, author")
-        .eq('status', 'approved');
+        .eq('status', 'approved')
+        .eq('group_id', activeGroup?.id);
       if (error) throw error;
       return data;
     },
-    enabled: !editMode,
+    enabled: !editMode && !!activeGroup,
   });
 
   // Normalization function for smart comparison
@@ -205,7 +208,7 @@ const ManageSong = () => {
         queryClient.invalidateQueries({ queryKey: ['song', id] });
         navigate(`/canciones/${id}`);
       } else {
-        const isAuthorized = isAdmin || isLeader || isModerator;
+        const isAuthorized = isAdmin || isLeader || isModerator || isGroupAdmin || isGroupLeader;
         const initialStatus = isAuthorized ? 'approved' : 'pending';
 
         const { data: newSong, error } = await supabase.from("songs").insert({
@@ -218,6 +221,7 @@ const ManageSong = () => {
           audio_url: audioUrl,
           created_by: user.id,
           status: initialStatus,
+          group_id: activeGroup?.id,
         }).select('id').single();
 
         if (error) throw error;

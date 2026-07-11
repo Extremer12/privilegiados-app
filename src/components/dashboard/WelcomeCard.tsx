@@ -2,12 +2,14 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
+import { useGroup } from "@/hooks/useGroupContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const WelcomeCard = () => {
   const { user } = useAuth();
+  const { activeGroup } = useGroup();
   const today = new Date();
 
   const { data: profile } = useQuery({
@@ -47,12 +49,12 @@ export const WelcomeCard = () => {
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           >
             <div className="absolute inset-0 bg-secondary/20 rounded-full blur-md" />
-            <img
-              src="/logo.jpg"
-              alt="Privilegiados Logo"
-              className="w-14 h-14 object-cover relative z-10 rounded-full border border-secondary/20"
-              loading="lazy"
-            />
+              <img
+                src={activeGroup?.logo_url || "/logo.jpg"}
+                alt={activeGroup?.name || "Logo"}
+                className="w-14 h-14 object-cover relative z-10 rounded-full border border-secondary/20"
+                loading="lazy"
+              />
           </motion.div>
 
           <div className="min-w-0">
@@ -60,7 +62,7 @@ export const WelcomeCard = () => {
               ¡Hola, {getFirstName(profile?.full_name)}! 👋
             </h1>
             <p className="mt-1 text-[11px] md:text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-              Privilegiados &bull; Grupo de Alabanza
+              {activeGroup?.name || "Grupo Musical"}
             </p>
           </div>
         </div>

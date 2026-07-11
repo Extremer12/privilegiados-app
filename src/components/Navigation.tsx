@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { useGroup } from "@/hooks/useGroupContext";
 import { NotificationBell } from "./NotificationBell";
 import { GlobalSearch } from "./GlobalSearch";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -24,6 +25,7 @@ export const Navigation = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { activeGroup, isGroupAdmin } = useGroup();
   const { isSupported, isSubscribed, subscribe, unsubscribe, loading } = usePushNotifications();
 
   const { data: profile } = useQuery({
@@ -62,6 +64,8 @@ export const Navigation = () => {
     { name: "Eventos", path: "/eventos", icon: CalendarDays },
     { name: "Miembros", path: "/miembros", icon: Users },
     { name: "Estadísticas", path: "/estadisticas", icon: BarChart3 },
+    { name: "Mis Grupos", path: "/grupos", icon: Music },
+    ...(isGroupAdmin && activeGroup ? [{ name: "Config Grupo", path: `/grupos/${activeGroup.id}/config`, icon: Users }] : []),
     { name: "Mi Perfil", path: "/perfil", icon: User },
   ];
 

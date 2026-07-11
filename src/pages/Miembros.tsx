@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useGroup } from "@/hooks/useGroupContext";
+import { fetchGroupMembers, updateMemberRole, removeMember } from "@/services/groupService";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Search, Users, Music, Mic, Shield, ShieldOff, Edit2, Check, UserCircle, Star, Crown, MessageSquare } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
@@ -66,96 +68,66 @@ const AVAILABLE_ROLES = [
 
 const Miembros = () => {
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, isModerator, syncRoles, deleteUserCompletely } = useUserRole();
+  const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  
-  const { data: membersRaw, isLoading: loadingMembers } = useQuery({
-    queryKey: ['profilesList'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data || []) as Member[];
-    },
-    enabled: !!user,
-  });
 
-  const members = Array.isArray(membersRaw) ? membersRaw : [];
-
-  const { data: userRolesRaw, isLoading: loadingRoles } = useQuery({
-    queryKey: ['user_roles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-      if (error) throw error;
-      return data as UserRole[];
-    },
-    enabled: !!user,
-  });
-
-  const userRolesList = Array.isArray(userRolesRaw) ? userRolesRaw : [];
-
-  const loading = loadingMembers || loadingRoles;
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [editingMember, setEditingMember] = useState<Member | null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
-
+  // Redirect to groups page if user has no active group
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
+    } else if (!authLoading && user && !activeGroup) {
+      navigate("/grupos");
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, activeGroup, navigate]);
+  
+  const { data: members = [], isLoading: loading } = useQuery({
+    queryKey: ['groupMembersList', activeGroup?.id],
+    queryFn: async () => {
+      if (!activeGroup) return [];
+      return fetchGroupMembers(activeGroup.id);
+    },
+    enabled: !!user && !!activeGroup,
+  });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>("miembro");
+  const [memberToDelete, setMemberToDelete] = useState<any | null>(null);
 
   const isUserAdmin = (userId: string) => {
-    return userRolesList.some(role => role.user_id === userId && role.role === 'admin');
+    return members.some(m => m.user_id === userId && m.role === 'admin');
   };
 
-  const getMemberRoles = (userId: string) => {
-    return userRolesList.filter(role => role.user_id === userId).map(r => r.role);
-  };
-
-  const updateRolesMutation = useMutation({
-    mutationFn: async ({ userId, roles }: { userId: string, roles: string[] }) => {
-      // 1. Sync internal roles for permissions
-      // (The DB trigger tr_sync_profile_role will automatically update profiles.role)
-      const roleResult = await syncRoles(userId, roles);
-      if (roleResult.error) throw new Error(roleResult.error);
-
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ memberId, role }: { memberId: string, role: string }) => {
+      await updateMemberRole(memberId, role);
       return { success: true };
     },
     onSuccess: () => {
-      toast.success("Roles actualizados", {
-        description: "Los roles del miembro han sido actualizados correctamente",
+      toast.success("Rol actualizado", {
+        description: "El rol del miembro ha sido actualizado correctamente",
       });
-      queryClient.invalidateQueries({ queryKey: ['user_roles'] });
-      queryClient.invalidateQueries({ queryKey: ['profilesList'] });
+      queryClient.invalidateQueries({ queryKey: ['groupMembersList', activeGroup?.id] });
       setEditingMember(null);
     },
     onError: (error: any) => {
       toast.error("Error", {
-        description: error.message || "No se pudo actualizar los roles",
+        description: error.message || "No se pudo actualizar el rol",
       });
     }
   });
 
   const deleteMemberMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const result = await deleteUserCompletely(userId);
-      if (result.error) throw new Error(result.error);
+    mutationFn: async (memberId: string) => {
+      await removeMember(memberId);
       return { success: true };
     },
     onSuccess: () => {
-      toast.success("Usuario eliminado", {
-        description: "El usuario ha sido eliminado completamente del sistema.",
+      toast.success("Miembro eliminado", {
+        description: "El integrante ha sido retirado del grupo.",
       });
-      queryClient.invalidateQueries({ queryKey: ['profilesList'] });
-      queryClient.invalidateQueries({ queryKey: ['user_roles'] });
+      queryClient.invalidateQueries({ queryKey: ['groupMembersList', activeGroup?.id] });
       setMemberToDelete(null);
     },
     onError: (error: any) => {
@@ -166,31 +138,23 @@ const Miembros = () => {
     }
   });
 
-  const toggleRole = (roleValue: string) => {
-    setSelectedRoles(prev => 
-      prev.includes(roleValue) 
-        ? prev.filter(r => r !== roleValue) 
-        : [...prev, roleValue]
-    );
-  };
-
-  const handleUpdateRoles = () => {
+  const handleUpdateRole = () => {
     if (!editingMember) return;
-    updateRolesMutation.mutate({ 
-      userId: editingMember.id, 
-      roles: selectedRoles
+    updateRoleMutation.mutate({ 
+      memberId: editingMember.id, 
+      role: selectedRole
     });
   };
 
   const filteredMembers = members.filter((member) => {
     const searchLower = searchQuery.toLowerCase();
-    const nameMatch = member.full_name?.toLowerCase().includes(searchLower) ?? false;
-    const roleMatch = member.role?.toLowerCase().includes(searchLower) ?? false;
-    const instrumentMatch = (member as any).instrument?.toLowerCase().includes(searchLower) ?? false;
-    return nameMatch || roleMatch || instrumentMatch;
+    const name = (member.display_name || member.profiles?.full_name || "").toLowerCase();
+    const role = (member.role || "").toLowerCase();
+    const instrument = (member.instrument || "").toLowerCase();
+    return name.includes(searchLower) || role.includes(searchLower) || instrument.includes(searchLower);
   });
 
-  if (authLoading || !user) {
+  if (authLoading || !user || !activeGroup) {
     return null;
   }
 
@@ -206,7 +170,7 @@ const Miembros = () => {
                 {members.length} integrantes en el equipo
               </p>
             </div>
-            {(isAdmin || isModerator) && (
+            {isGroupLeader && (
               <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-secondary/10 border border-secondary/20">
                 <Shield className="w-3.5 h-3.5 text-secondary" />
                 <span className="text-[10px] text-secondary font-black uppercase tracking-wider">Gestión</span>
@@ -255,25 +219,25 @@ const Miembros = () => {
           ) : (
             <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {filteredMembers.map((member, index) => {
-                const memberRoles = getMemberRoles(member.id);
-                const primaryRole = memberRoles[0] || 'default';
+                const primaryRole = member.role || 'default';
+                const displayName = member.display_name || member.profiles?.full_name || "Integrante";
                 
                 return (
                   <div
                     key={member.id}
                     className="group relative p-4 bg-card border border-border cursor-pointer transition-all duration-300 hover:bg-muted/50 hover:border-border rounded-2xl flex flex-col items-center text-center h-full"
-                    onClick={() => navigate(`/perfil/${member.id}`)}
+                    onClick={() => navigate(`/perfil/${member.user_id}`)}
                   >
                     {/* Avatar - Compact */}
                     <div className="relative mb-3">
                       <Avatar className="w-16 h-16 sm:w-20 sm:h-20 border border-border group-hover:border-secondary/40 transition-all">
                         <AvatarImage 
-                          src={member.avatar_url || undefined} 
-                          alt={member.full_name}
+                          src={member.profiles?.avatar_url || undefined} 
+                          alt={displayName}
                           className="object-cover"
                         />
                         <AvatarFallback className="bg-muted text-muted-foreground text-xl font-bold">
-                          {member.full_name.charAt(0).toUpperCase()}
+                          {displayName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       
@@ -285,30 +249,28 @@ const Miembros = () => {
                     {/* Info - Minimal */}
                     <div className="space-y-1 mb-4 flex-1">
                       <h3 className="font-bold text-sm text-foreground group-hover:text-secondary transition-colors line-clamp-1">
-                        {member.full_name}
+                        {displayName}
                       </h3>
                       <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight line-clamp-1">
-                        {member.role || "Miembro"}
+                        {member.instrument || member.role || "Miembro"}
                       </p>
                     </div>
 
                     {/* Minimal Controls */}
-                    {(isAdmin || isModerator) && member.id !== user.id && (
+                    {isGroupAdmin && member.user_id !== user.id && (
                       <div className="w-full flex gap-1 mt-auto pt-3 border-t border-border">
-                        {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingMember(member);
-                              setSelectedRoles(getMemberRoles(member.id));
-                            }}
-                            className="flex-1 h-8 bg-muted hover:bg-secondary hover:text-primary rounded-lg transition-all"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingMember(member);
+                            setSelectedRole(member.role);
+                          }}
+                          className="flex-1 h-8 bg-muted hover:bg-secondary hover:text-primary rounded-lg transition-all"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -343,20 +305,20 @@ const Miembros = () => {
               Gestionar Rango
             </DialogTitle>
             <DialogDescription className="text-center text-muted-foreground font-medium">
-              Selecciona todos los roles que desempeña <span className="text-foreground font-bold">{editingMember?.full_name}</span>. 
+              Selecciona el rol principal de <span className="text-foreground font-bold">{editingMember?.display_name || editingMember?.profiles?.full_name}</span>. 
             </DialogDescription>
           </DialogHeader>
 
           <div className="relative z-10 py-6 space-y-4">
-            <label className="text-xs font-black uppercase tracking-[0.2em] text-secondary ml-1">Seleccionar Roles</label>
+            <label className="text-xs font-black uppercase tracking-[0.2em] text-secondary ml-1">Seleccionar Rol</label>
             <div className="grid grid-cols-2 gap-2">
               {AVAILABLE_ROLES.map((role) => {
-                const isSelected = selectedRoles.includes(role.value);
+                const isSelected = selectedRole === role.value;
                 return (
                   <Button
                     key={role.value}
                     variant={isSelected ? "secondary" : "outline"}
-                    onClick={() => toggleRole(role.value)}
+                    onClick={() => setSelectedRole(role.value)}
                     className={`h-12 justify-start gap-2 rounded-xl transition-all ${isSelected ? 'shadow-lg shadow-secondary/20' : 'border-border/50 hover:border-secondary/30'}`}
                   >
                     <role.icon className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-secondary/50'}`} />
@@ -371,24 +333,24 @@ const Miembros = () => {
           <DialogFooter className="relative z-10 gap-3 sm:gap-0 sticky bottom-0 bg-background/80 backdrop-blur-md py-2">
             <Button variant="ghost" onClick={() => setEditingMember(null)} className="h-12 rounded-2xl font-bold flex-1">Cancelar</Button>
             <Button 
-              onClick={handleUpdateRoles} 
-              disabled={updateRolesMutation.isPending} 
+              onClick={handleUpdateRole} 
+              disabled={updateRoleMutation.isPending} 
               className="h-12 rounded-2xl bg-secondary text-white font-black uppercase tracking-widest px-8 shadow-xl shadow-secondary/20 flex-1"
             >
-              {updateRolesMutation.isPending ? "Guardando..." : "Confirmar"}
+              {updateRoleMutation.isPending ? "Guardando..." : "Confirmar"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete User Confirmation Dialog */}
+      {/* Delete Member Confirmation Dialog */}
       <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
         <AlertDialogContent className="card-gradient border-red-500/20 rounded-[2rem]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black text-red-500">¿Eliminar usuario?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-black text-red-500">¿Remover integrante?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground text-base">
-              Esta acción eliminará completamente a <strong className="text-foreground">{memberToDelete?.full_name}</strong> de la base de datos. 
-              Sus mensajes, participaciones y perfil desaparecerán permanentemente. Esta acción no se puede deshacer.
+              Esta acción retirará a <strong className="text-foreground">{memberToDelete?.display_name || memberToDelete?.profiles?.full_name}</strong> de este grupo. 
+              Sus participaciones y privilegios dentro del grupo serán revocados, pero su cuenta de usuario y otros grupos no serán afectados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-3 mt-6">
@@ -397,7 +359,7 @@ const Miembros = () => {
               onClick={() => memberToDelete && deleteMemberMutation.mutate(memberToDelete.id)}
               className="h-12 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest hover:bg-red-600 shadow-xl shadow-red-500/20"
             >
-              {deleteMemberMutation.isPending ? "Eliminando..." : "Sí, Eliminar Todo"}
+              {deleteMemberMutation.isPending ? "Removiendo..." : "Sí, remover"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

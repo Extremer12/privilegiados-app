@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useGroup } from '@/hooks/useGroupContext';
 
 interface Profile {
   id: string;
@@ -58,6 +59,7 @@ export function CreateSetlistDialog({
   onCreated, 
   userId 
 }: CreateSetlistDialogProps) {
+  const { activeGroup } = useGroup();
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -136,6 +138,7 @@ export function CreateSetlistDialog({
           event_id: formData.event_id || null,
           created_by: userId,
           status: 'draft',
+          group_id: activeGroup?.id,
         })
         .select('id')
         .single();

@@ -27,6 +27,10 @@ const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ManageSong = lazy(() => import("./pages/ManageSong"));
 const Estadisticas = lazy(() => import("./pages/Estadisticas"));
+const Grupos = lazy(() => import("./pages/Grupos"));
+const CrearGrupo = lazy(() => import("./pages/CrearGrupo"));
+const UnirseGrupo = lazy(() => import("./pages/UnirseGrupo"));
+const GrupoConfig = lazy(() => import("./pages/GrupoConfig"));
 
 // Optimized QueryClient
 const queryClient = new QueryClient({
@@ -88,10 +92,14 @@ const App = () => {
                   <Routes>
                     {/* Public routes */}
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/unirse/:slug" element={<UnirseGrupo />} />
                     {/* Layout wrapper for protected and catch-all routes */}
                     <Route element={<Layout />}>
                       {/* Protected routes */}
                       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                      <Route path="/grupos" element={<ProtectedRoute><Grupos /></ProtectedRoute>} />
+                      <Route path="/grupos/crear" element={<ProtectedRoute><CrearGrupo /></ProtectedRoute>} />
+                      <Route path="/grupos/:id/config" element={<ProtectedRoute><GrupoConfig /></ProtectedRoute>} />
                       <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
                       <Route path="/canciones/nueva" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
                       <Route path="/canciones/:id/editar" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />

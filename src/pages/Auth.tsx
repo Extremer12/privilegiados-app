@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -58,12 +58,14 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
 
   useEffect(() => {
     if (user) {
-      navigate("/");
+      navigate(redirect);
     }
-  }, [user, navigate]);
+  }, [user, navigate, redirect]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);

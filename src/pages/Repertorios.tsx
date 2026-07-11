@@ -36,6 +36,7 @@ import { CreateSetlistDialog } from '@/components/repertorios/CreateSetlistDialo
 import { Setlist } from '@/components/repertorios/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useGroup } from '@/hooks/useGroupContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { notificationService } from '@/services/notificationService';
@@ -55,6 +56,7 @@ const Repertorios = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isLeader } = useUserRole();
+  const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
@@ -64,7 +66,7 @@ const Repertorios = () => {
   const ITEMS_PER_PAGE = 12;
 
   const { data: setlists = [], isLoading: loading } = useQuery({
-    queryKey: ['setlists', activeTab, page],
+    queryKey: ['setlists', activeTab, page, activeGroup?.id],
     queryFn: async () => {
       let query = supabase
         .from('setlists')
@@ -73,6 +75,7 @@ const Repertorios = () => {
           setlist_songs (count),
           service_feedback (rating)
         `)
+        .eq('group_id', activeGroup!.id)
         .order('service_date', { ascending: false })
         .limit(page * ITEMS_PER_PAGE);
 
