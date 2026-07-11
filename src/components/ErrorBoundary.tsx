@@ -31,32 +31,32 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary/95 to-primary/80 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 p-4">
           <div className="max-w-md w-full text-center space-y-6">
-            <div className="w-20 h-20 mx-auto rounded-full bg-red-500/20 flex items-center justify-center">
+            <div className="w-20 h-20 mx-auto rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/25">
               <AlertTriangle className="w-10 h-10 text-red-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-black text-white mb-2 tracking-tight">
                 Algo salió mal
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-slate-400 text-sm">
                 Ocurrió un error inesperado. Intenta recargar la página.
               </p>
             </div>
             <button
               onClick={this.handleReload}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gold-gradient text-primary font-semibold hover:shadow-[0_0_30px_hsl(48_100%_50%/0.4)] transition-all duration-300 hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold uppercase tracking-wider text-xs shadow-lg shadow-amber-500/20 transition-all duration-300 hover:scale-105"
             >
               <RefreshCw className="w-4 h-4" />
               Recargar Página
             </button>
             {this.state.error && (
               <details className="text-left">
-                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+                <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-300 transition-colors">
                   Detalles técnicos
                 </summary>
-                <pre className="mt-2 p-3 rounded-lg bg-card/50 text-xs text-red-400 overflow-auto max-h-32 border border-border/50">
+                <pre className="mt-2 p-3 rounded-xl bg-slate-900 text-xs text-red-400 overflow-auto max-h-32 border border-slate-800 font-mono">
                   {this.state.error.message}
                 </pre>
               </details>

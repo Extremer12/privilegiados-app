@@ -45,16 +45,6 @@ const Index = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<{id: string, title: string} | null>(null);
 
-  // Redirect to groups page if user has no active group
-  if (!groupLoading && user && userGroups.length === 0) {
-    navigate("/grupos", { replace: true });
-    return null;
-  }
-  if (!groupLoading && user && !activeGroup) {
-    navigate("/grupos", { replace: true });
-    return null;
-  }
-
   const groupId = activeGroup?.id;
 
   const { data: profile } = useQuery({
@@ -295,6 +285,18 @@ const Index = () => {
       default: return 'bg-muted/20 text-muted-foreground';
     }
   };
+
+  const shouldRedirect = !groupLoading && user && (userGroups.length === 0 || !activeGroup);
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      navigate("/grupos", { replace: true });
+    }
+  }, [shouldRedirect, navigate]);
+
+  if (shouldRedirect) {
+    return null;
+  }
 
   if (!user) {
     return (
