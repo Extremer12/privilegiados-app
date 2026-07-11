@@ -56,6 +56,7 @@ const EnVivo = () => {
     handleDeleteSong,
     handleEndSession,
     addComment,
+    spectatorCount,
   } = useLiveSession(id);
 
   // 2. Presentation Mode Hook
@@ -180,6 +181,8 @@ const EnVivo = () => {
             sessionStartedAt={session?.started_at}
             currentPosition={session?.current_position || 0}
             totalSongs={songs.length}
+            spectatorCount={spectatorCount}
+            sessionId={id}
           />
         </div>
 

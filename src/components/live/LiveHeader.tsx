@@ -1,14 +1,17 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Music, Radio } from "lucide-react";
+import { ArrowLeft, Clock, Music, Eye, Share2, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, memo } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface LiveHeaderProps {
   setlistTitle?: string;
   sessionStartedAt?: string;
   currentPosition?: number;
   totalSongs?: number;
+  spectatorCount?: number;
+  sessionId?: string;
 }
 
 export const LiveHeader = memo(({
@@ -16,6 +19,8 @@ export const LiveHeader = memo(({
   sessionStartedAt,
   currentPosition = 0,
   totalSongs = 0,
+  spectatorCount = 0,
+  sessionId,
 }: LiveHeaderProps) => {
   const navigate = useNavigate();
   const [elapsed, setElapsed] = useState("00:00");
@@ -40,6 +45,24 @@ export const LiveHeader = memo(({
     return () => clearInterval(interval);
   }, [sessionStartedAt]);
 
+  const handleShareMusician = () => {
+    if (!sessionId) return;
+    const url = `${window.location.origin}/en-vivo/${sessionId}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Enlace de músicos copiado", {
+      description: "Compártelo con los integrantes del grupo para que se unan a tocar.",
+    });
+  };
+
+  const handleShareSpectator = () => {
+    if (!sessionId) return;
+    const url = `${window.location.origin}/en-vivo/espectador/${sessionId}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Enlace de espectadores copiado", {
+      description: "Cualquiera puede entrar con este enlace para seguir las letras en tiempo real.",
+    });
+  };
+
   return (
     <motion.div
       initial={{ y: -20, opacity: 0 }}
@@ -59,7 +82,7 @@ export const LiveHeader = memo(({
         </Button>
 
         <div className="min-w-0">
-          <h2 className="text-base sm:text-lg font-bold text-foreground truncate max-w-[200px] lg:max-w-xs">
+          <h2 className="text-base sm:text-lg font-bold text-foreground truncate max-w-[150px] lg:max-w-xs">
             {setlistTitle || "Sesión en vivo"}
           </h2>
           {totalSongs > 0 && (
@@ -71,30 +94,67 @@ export const LiveHeader = memo(({
         </div>
       </div>
 
-      {/* Center — Live badge */}
-      <div className="flex items-center gap-2 shrink-0 mx-2">
-        <span className="relative flex h-2.5 w-2.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
-        </span>
-        <span className="text-xs font-bold tracking-wider text-red-400 uppercase hidden sm:inline">
-          En Vivo
-        </span>
+      {/* Center — Live badge & Spectators Count */}
+      <div className="flex items-center gap-2.5 shrink-0 mx-2">
+        <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-full">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+          </span>
+          <span className="text-[10px] font-black tracking-wider text-red-400 uppercase">
+            En Vivo
+          </span>
+        </div>
+
+        {spectatorCount > 0 && (
+          <div 
+            className="flex items-center gap-1 bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded-full text-[10px] font-black text-blue-400 uppercase tracking-wider shadow-lg shadow-blue-500/5 animate-pulse"
+            title={`${spectatorCount} espectador(es) siguiendo en vivo`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>{spectatorCount}</span>
+          </div>
+        )}
       </div>
 
-      {/* Right — Timer */}
-      <div
-        className="flex items-center gap-2 px-3 py-1.5 rounded-full shrink-0"
-        style={{
-          background:
-            "linear-gradient(135deg, hsl(217 33% 14%) 0%, hsl(222 47% 8%) 100%)",
-          border: "1px solid hsl(217 33% 25% / 0.5)",
-        }}
-      >
-        <Clock className="w-3.5 h-3.5 text-secondary" />
-        <span className="text-sm font-mono font-bold text-foreground">
-          {elapsed}
-        </span>
+      {/* Right — Timer & Share Buttons */}
+      <div className="flex items-center gap-2 shrink-0">
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+          style={{
+            background:
+              "linear-gradient(135deg, hsl(217 33% 14%) 0%, hsl(222 47% 8%) 100%)",
+            border: "1px solid hsl(217 33% 25% / 0.5)",
+          }}
+        >
+          <Clock className="w-3.5 h-3.5 text-secondary" />
+          <span className="text-sm font-mono font-bold text-foreground">
+            {elapsed}
+          </span>
+        </div>
+
+        {sessionId && (
+          <div className="flex gap-1.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleShareMusician}
+              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-secondary/15 text-neutral-400 hover:text-secondary border border-white/5 transition-all"
+              title="Copiar enlace para integrantes (Músicos)"
+            >
+              <Link className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleShareSpectator}
+              className="w-9 h-9 rounded-xl bg-white/5 hover:bg-blue-500/15 text-neutral-400 hover:text-blue-400 border border-white/5 transition-all"
+              title="Copiar enlace para espectadores públicos"
+            >
+              <Share2 className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </motion.div>
   );

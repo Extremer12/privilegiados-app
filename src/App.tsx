@@ -31,6 +31,7 @@ const Grupos = lazy(() => import("./pages/Grupos"));
 const CrearGrupo = lazy(() => import("./pages/CrearGrupo"));
 const UnirseGrupo = lazy(() => import("./pages/UnirseGrupo"));
 const GrupoConfig = lazy(() => import("./pages/GrupoConfig"));
+const EnVivoEspectador = lazy(() => import("./pages/EnVivoEspectador"));
 
 // Optimized QueryClient
 const queryClient = new QueryClient({
@@ -93,6 +94,7 @@ const App = () => {
                     {/* Public routes */}
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/unirse/:slug" element={<UnirseGrupo />} />
+                    <Route path="/en-vivo/espectador/:id" element={<EnVivoEspectador />} />
                     {/* Layout wrapper for protected and catch-all routes */}
                     <Route element={<Layout />}>
                       {/* Protected routes */}

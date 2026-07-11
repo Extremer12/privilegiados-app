@@ -35,6 +35,7 @@ export function useLiveSession(sessionId: string | undefined) {
   const [initialParticipants, setInitialParticipants] = useState<
     { name: string; role: string }[]
   >([]);
+  const [spectatorCount, setSpectatorCount] = useState(0);
 
   // Ref to track setlist_id for realtime subscriptions (avoids stale closures)
   const setlistIdRef = useRef<string | null>(null);
@@ -191,6 +192,37 @@ export function useLiveSession(sessionId: string | undefined) {
       )
       .subscribe();
 
+    // Presence subscription to track online members and spectators
+    const presenceChannel = supabase.channel(`live_presence_${sessionId}`, {
+      config: {
+        presence: {
+          key: user?.id || `anon-${Math.random().toString(36).substring(2, 9)}`,
+        },
+      },
+    });
+
+    presenceChannel
+      .on("presence", { event: "sync" }, () => {
+        const state = presenceChannel.presenceState();
+        let specs = 0;
+        Object.values(state).forEach((presences: any) => {
+          presences.forEach((presence: any) => {
+            if (presence.type === "spectator") {
+              specs++;
+            }
+          });
+        });
+        setSpectatorCount(specs);
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await presenceChannel.track({
+            type: "participant",
+            name: user?.user_metadata?.full_name || "Músico",
+          });
+        }
+      });
+
     // Wake Lock
     const requestWakeLock = async () => {
       try {
@@ -209,6 +241,7 @@ export function useLiveSession(sessionId: string | undefined) {
       supabase.removeChannel(sessionChannel);
       supabase.removeChannel(commentsChannel);
       supabase.removeChannel(songsChannel);
+      supabase.removeChannel(presenceChannel);
       if (wakeLockRef.current) {
         wakeLockRef.current.release();
       }
@@ -348,5 +381,6 @@ export function useLiveSession(sessionId: string | undefined) {
     handleDeleteSong,
     handleEndSession,
     addComment,
+    spectatorCount,
   };
 }
