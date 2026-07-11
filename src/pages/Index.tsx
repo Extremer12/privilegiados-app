@@ -19,7 +19,7 @@ import { ProfileCard } from "@/components/dashboard/ProfileCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ServiceFeedbackDialog } from "@/components/repertorios/ServiceFeedbackDialog";
 
 interface Event {
