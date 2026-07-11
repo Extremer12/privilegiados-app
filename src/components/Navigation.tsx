@@ -34,9 +34,7 @@ export const Navigation = () => {
     location.pathname.startsWith("/unirse/") ||
     /^\/grupos\/[^/]+\/config$/.test(location.pathname);
 
-  if (isFullScreenPage || !activeGroup) {
-    return null;
-  }
+
 
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -111,6 +109,10 @@ export const Navigation = () => {
       document.body.style.overflow = "";
     };
   }, [isMoreOpen]);
+
+  if (isFullScreenPage || !activeGroup) {
+    return null;
+  }
 
   return (
     <>
