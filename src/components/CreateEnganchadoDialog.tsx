@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { DialogClose } from '@radix-ui/react-dialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useGroup } from '@/hooks/useGroupContext';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Song } from '@/types';
 
@@ -29,6 +31,8 @@ export function CreateEnganchadoDialog({
   onCreated,
 }: CreateEnganchadoDialogProps) {
   const { user } = useAuth();
+  const { activeGroup } = useGroup();
+  const queryClient = useQueryClient();
   const [songs, setSongs] = useState<Song[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,12 +46,15 @@ export function CreateEnganchadoDialog({
       setSelectedSongs([]);
       setTitle('');
     }
-  }, [open]);
+  }, [open, activeGroup?.id]);
 
   const fetchSongs = async () => {
+    if (!activeGroup?.id) return;
     const { data } = await supabase
       .from('songs')
       .select('id, title, category, lyrics, chords, youtube_url, audio_url')
+      .eq('group_id', activeGroup.id)
+      .eq('status', 'approved')
       .neq('category', 'enganchado') // Evitar enganchados dentro de enganchados
       .order('title');
     
@@ -113,6 +120,7 @@ export function CreateEnganchadoDialog({
           lyrics: mergedLyrics,
           chords: mergedChords,
           created_by: user?.id,
+          group_id: activeGroup?.id,
           status: 'approved' // Auto-approve as it's generated from existing
         })
         .select()
@@ -121,6 +129,7 @@ export function CreateEnganchadoDialog({
       if (error) throw error;
       
       toast.success('¡Enganchado creado con éxito!');
+      queryClient.invalidateQueries({ queryKey: ['songs'] });
       if (onCreated) onCreated(data.id);
       onOpenChange(false);
     } catch (error: any) {

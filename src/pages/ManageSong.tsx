@@ -10,11 +10,12 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Loader2, Upload, ArrowLeft, AlertCircle, Music, CheckCircle2 } from "lucide-react";
+import { Loader2, Upload, ArrowLeft, AlertCircle, Music, CheckCircle2, ListMusic } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useGroup } from "@/hooks/useGroupContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { CreateEnganchadoDialog } from "@/components/CreateEnganchadoDialog";
 
 const ManageSong = () => {
   const { id } = useParams();
@@ -29,6 +30,7 @@ const ManageSong = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [createEnganchadoOpen, setCreateEnganchadoOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -366,6 +368,27 @@ const ManageSong = () => {
                   <SelectItem value="otro" className="focus:bg-secondary focus:text-primary py-2 cursor-pointer text-sm">Otro</SelectItem>
                 </SelectContent>
               </Select>
+              {formData.category === 'enganchado' && !editMode && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3 text-xs text-emerald-300"
+                >
+                  <div className="flex items-center gap-2">
+                    <ListMusic className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>¿Quieres unir canciones existentes de tu biblioteca?</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 font-bold shrink-0 rounded-lg"
+                    onClick={() => setCreateEnganchadoOpen(true)}
+                  >
+                    Armar Enganchado
+                  </Button>
+                </motion.div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -458,6 +481,14 @@ const ManageSong = () => {
           </form>
         </Card>
       </div>
+
+      <CreateEnganchadoDialog 
+        open={createEnganchadoOpen} 
+        onOpenChange={setCreateEnganchadoOpen} 
+        onCreated={(songId) => {
+          navigate(`/canciones/${songId}`);
+        }}
+      />
     </main>
   );
 };

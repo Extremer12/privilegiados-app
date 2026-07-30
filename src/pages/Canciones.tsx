@@ -24,6 +24,13 @@ import { vibrateLight } from "@/utils/haptics";
 
 import type { Song } from "@/types";
 import { CreateEnganchadoDialog } from "@/components/CreateEnganchadoDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const Canciones = () => {
   const navigate = useNavigate();
@@ -32,6 +39,7 @@ const Canciones = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [createEnganchadoOpen, setCreateEnganchadoOpen] = useState(false);
+  const [addChoiceOpen, setAddChoiceOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(40);
   const { isAdmin, isLeader, isModerator } = useUserRole();
   const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
@@ -198,21 +206,12 @@ const Canciones = () => {
             
             <div className="hidden sm:flex items-center gap-3">
               <Button 
-                variant="outline" 
-                size="sm"
-                className="h-10 px-5 rounded-xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-bold text-sm"
-                onClick={() => setCreateEnganchadoOpen(true)}
-              >
-                <ListMusic className="w-4 h-4 mr-2" />
-                Crear Enganchado
-              </Button>
-              <Button 
                 variant="hero" 
                 size="sm"
                 className="h-10 px-5 rounded-xl shadow-md font-bold text-sm"
                 onClick={() => {
                   vibrateLight();
-                  navigate('/canciones/nueva');
+                  setAddChoiceOpen(true);
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -426,8 +425,81 @@ const Canciones = () => {
       <FloatingActionButton 
         icon={<Plus className="w-6 h-6" />}
         label="Nueva Canción"
-        onClick={() => navigate('/canciones/nueva')}
+        onClick={() => {
+          vibrateLight();
+          setAddChoiceOpen(true);
+        }}
       />
+
+      {/* Choice Modal: Single Song vs Enganchado */}
+      <Dialog open={addChoiceOpen} onOpenChange={setAddChoiceOpen}>
+        <DialogContent className="max-w-md rounded-3xl border border-white/10 bg-background/95 backdrop-blur-2xl p-6 shadow-2xl">
+          <DialogHeader className="text-center pb-2">
+            <DialogTitle className="text-2xl font-black tracking-tight text-foreground">
+              ¿Qué deseas agregar?
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm">
+              Selecciona el tipo de contenido musical que deseas añadir.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 gap-3.5 pt-2">
+            {/* Option 1: Single Song */}
+            <button
+              onClick={() => {
+                vibrateLight();
+                setAddChoiceOpen(false);
+                navigate('/canciones/nueva');
+              }}
+              className="group flex items-start gap-4 p-4 rounded-2xl bg-muted/40 hover:bg-secondary/15 border border-border/50 hover:border-secondary/40 transition-all text-left"
+            >
+              <div className="p-3.5 rounded-xl bg-secondary/20 text-secondary group-hover:scale-105 transition-transform shrink-0">
+                <Music className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-bold text-base text-foreground group-hover:text-secondary transition-colors">
+                    Canción Individual
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] uppercase font-extrabold border-secondary/30 text-secondary">
+                    Estándar
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Ingresa una canción desde cero con letra, acordes, audio o enlace de YouTube.
+                </p>
+              </div>
+            </button>
+
+            {/* Option 2: Enganchado */}
+            <button
+              onClick={() => {
+                vibrateLight();
+                setAddChoiceOpen(false);
+                setCreateEnganchadoOpen(true);
+              }}
+              className="group flex items-start gap-4 p-4 rounded-2xl bg-emerald-500/5 hover:bg-emerald-500/15 border border-emerald-500/20 hover:border-emerald-500/40 transition-all text-left"
+            >
+              <div className="p-3.5 rounded-xl bg-emerald-500/20 text-emerald-400 group-hover:scale-105 transition-transform shrink-0">
+                <ListMusic className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-bold text-base text-foreground group-hover:text-emerald-400 transition-colors">
+                    Crear Enganchado
+                  </h3>
+                  <Badge variant="outline" className="text-[10px] uppercase font-extrabold border-emerald-500/30 text-emerald-400">
+                    Combinación
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Une 2 o más canciones existentes de la biblioteca en una sola secuencia continua.
+                </p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <CreateEnganchadoDialog 
         open={createEnganchadoOpen} 

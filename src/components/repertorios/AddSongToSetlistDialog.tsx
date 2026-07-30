@@ -17,8 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SECTION_TYPES, Song, SectionType } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { HelpTooltip } from './HelpTooltip';
-import { CreateEnganchadoDialog } from '@/components/CreateEnganchadoDialog';
-import { ListMusic } from 'lucide-react';
 
 interface AddSongToSetlistDialogProps {
   open: boolean;
@@ -44,7 +42,6 @@ export function AddSongToSetlistDialog({
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [assignedTo, setAssignedTo] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
-  const [createEnganchadoOpen, setCreateEnganchadoOpen] = useState(false);
 
   const sectionInfo = SECTION_TYPES.find(s => s.id === section);
 
@@ -146,7 +143,7 @@ export function AddSongToSetlistDialog({
         <div className="flex-1 overflow-hidden flex flex-col bg-gradient-to-b from-black/20 to-transparent">
           {!selectedSong ? (
             <div className="flex-1 flex flex-col max-w-5xl w-full mx-auto p-4 md:p-8 gap-6 h-full overflow-hidden">
-              {/* Top Bar: Search, Filter & Create Enganchado */}
+              {/* Top Bar: Search & Filter */}
               <div className="flex flex-col md:flex-row gap-4 shrink-0 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -160,7 +157,7 @@ export function AddSongToSetlistDialog({
                 </div>
                 <div className="flex gap-3">
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="h-14 w-full md:w-[180px] bg-black/20 border-white/10 rounded-xl text-base">
+                    <SelectTrigger className="h-14 w-full md:w-[200px] bg-black/20 border-white/10 rounded-xl text-base">
                       <SelectValue placeholder="Categoría" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-white/10">
@@ -172,27 +169,8 @@ export function AddSongToSetlistDialog({
                       <SelectItem value="otro">Otro</SelectItem>
                     </SelectContent>
                   </Select>
-                  
-                  <Button
-                    variant="outline"
-                    className="h-14 px-6 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-bold rounded-xl hidden md:flex items-center gap-2"
-                    onClick={() => setCreateEnganchadoOpen(true)}
-                  >
-                    <ListMusic className="w-5 h-5" />
-                    Crear Enganchado
-                  </Button>
                 </div>
               </div>
-
-              {/* Mobile Create Enganchado Button */}
-              <Button
-                variant="outline"
-                className="h-14 w-full border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-bold rounded-xl flex md:hidden items-center justify-center gap-2 shrink-0"
-                onClick={() => setCreateEnganchadoOpen(true)}
-              >
-                <ListMusic className="w-5 h-5" />
-                Crear Enganchado
-              </Button>
 
               {/* Song List */}
               <ScrollArea className="flex-1 rounded-2xl border border-white/5 bg-black/20 p-2 md:p-4">
@@ -233,7 +211,7 @@ export function AddSongToSetlistDialog({
                     <div className="col-span-1 md:col-span-2 py-20 flex flex-col items-center justify-center text-center">
                       <Music2 className="h-16 w-16 text-muted-foreground/20 mb-4" />
                       <p className="text-xl font-bold text-foreground mb-2">No se encontraron canciones</p>
-                      <p className="text-muted-foreground">Intenta con otro término de búsqueda o crea un enganchado.</p>
+                      <p className="text-muted-foreground">Intenta con otro término de búsqueda o selecciona otra categoría.</p>
                     </div>
                   )}
                 </div>
@@ -317,15 +295,6 @@ export function AddSongToSetlistDialog({
           )}
         </div>
       </DialogContent>
-      
-      <CreateEnganchadoDialog 
-        open={createEnganchadoOpen}
-        onOpenChange={setCreateEnganchadoOpen}
-        onCreated={() => {
-          fetchSongs();
-          setCategoryFilter('enganchado');
-        }}
-      />
     </Dialog>
   );
 }
