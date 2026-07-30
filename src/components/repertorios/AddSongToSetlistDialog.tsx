@@ -133,11 +133,6 @@ export function AddSongToSetlistDialog({
               Busca y configura canciones para añadir al repertorio.
             </DialogDescription>
           </div>
-          <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white">
-              <Plus className="h-6 w-6 rotate-45" />
-            </Button>
-          </DialogClose>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col bg-gradient-to-b from-black/20 to-transparent">

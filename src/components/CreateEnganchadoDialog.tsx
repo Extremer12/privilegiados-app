@@ -103,13 +103,27 @@ export function CreateEnganchadoDialog({
     try {
       const finalTitle = title.trim() || `Enganchado: ${selectedSongs.map(s => s.title).join(' + ')}`;
       
-      const mergedLyrics = selectedSongs.map((s, i) => 
-        `[== CANCIÓN ${i + 1}: ${s.title.toUpperCase()} ==]\n\n${s.lyrics || '(Sin letra)'}`
-      ).join('\n\n\n');
+      // Merge lyrics in exact user order
+      const lyricsArray = selectedSongs.map((s, i) => {
+        const header = `[== CANCIÓN ${i + 1}: ${s.title.toUpperCase()} ==]`;
+        const authorStr = s.author ? `Autor: ${s.author}\n` : '';
+        const body = s.lyrics && s.lyrics.trim() ? s.lyrics.trim() : '(Sin letra disponible)';
+        return `${header}\n${authorStr}\n${body}`;
+      });
+      const mergedLyrics = lyricsArray.join('\n\n\n──────────────────────────────\n\n\n');
 
-      const mergedChords = selectedSongs.map((s, i) => 
-        `[== CANCIÓN ${i + 1}: ${s.title.toUpperCase()} ==]\n\n${s.chords || '(Sin acordes)'}`
-      ).join('\n\n\n');
+      // Merge chords only if at least one song has chords
+      const hasAnyChords = selectedSongs.some(s => s.chords && s.chords.trim().length > 0);
+      let mergedChords: string | null = null;
+
+      if (hasAnyChords) {
+        const chordsArray = selectedSongs.map((s, i) => {
+          const header = `[== CANCIÓN ${i + 1}: ${s.title.toUpperCase()} ==]`;
+          const body = s.chords && s.chords.trim() ? s.chords.trim() : (s.lyrics && s.lyrics.trim() ? s.lyrics.trim() : '(Sin acordes)');
+          return `${header}\n\n${body}`;
+        });
+        mergedChords = chordsArray.join('\n\n\n──────────────────────────────\n\n\n');
+      }
 
       const { data, error } = await supabase
         .from('songs')
@@ -150,16 +164,11 @@ export function CreateEnganchadoDialog({
             </div>
             Crear Enganchado
           </DialogTitle>
-          <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-white/10 text-muted-foreground hover:text-white">
-              <Plus className="h-6 w-6 rotate-45" />
-            </Button>
-          </DialogClose>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col md:flex-row bg-gradient-to-b from-black/20 to-transparent">
+        <div className="flex-1 overflow-y-auto md:overflow-hidden flex flex-col md:flex-row bg-gradient-to-b from-black/20 to-transparent">
           {/* Left side: Search and select */}
-          <div className="flex-1 flex flex-col max-w-2xl w-full border-r border-white/5 p-4 md:p-8 gap-6 h-full overflow-hidden bg-black/10">
+          <div className="flex-1 flex flex-col max-w-2xl w-full border-r border-white/5 p-4 md:p-8 gap-4 md:gap-6 h-auto md:h-full min-h-[300px] md:min-h-0 bg-black/10 shrink-0 md:shrink">
             <div>
               <h3 className="text-lg font-bold mb-1">Buscar canciones</h3>
               <p className="text-sm text-muted-foreground mb-4">Selecciona las canciones que quieras unir</p>
@@ -169,13 +178,13 @@ export function CreateEnganchadoDialog({
                   placeholder="Ej: Bueno es Dios, Cuan Grande..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-12 h-14 text-lg bg-black/20 border-white/10 rounded-xl focus-visible:ring-emerald-500/50"
+                  className="pl-12 h-12 md:h-14 text-base md:text-lg bg-black/20 border-white/10 rounded-xl focus-visible:ring-emerald-500/50"
                   autoFocus
                 />
               </div>
             </div>
             
-            <ScrollArea className="flex-1 rounded-2xl border border-white/5 bg-black/20 p-2 md:p-4">
+            <ScrollArea className="flex-1 min-h-[180px] md:min-h-0 rounded-2xl border border-white/5 bg-black/20 p-2 md:p-4">
               <div className="space-y-2 pr-4">
                 {filteredSongs.map(song => (
                   <button
@@ -211,36 +220,36 @@ export function CreateEnganchadoDialog({
           </div>
 
           {/* Right side: Selected songs and title */}
-          <div className="flex-1 flex flex-col w-full p-4 md:p-8 gap-6 h-full overflow-hidden bg-emerald-950/5">
-            <div>
+          <div className="flex-1 flex flex-col w-full p-4 md:p-8 gap-4 md:gap-6 h-auto md:h-full bg-emerald-950/5 shrink-0 md:shrink">
+            <div className="shrink-0">
               <h3 className="text-lg font-bold mb-1">Configurar Enganchado</h3>
               <p className="text-sm text-muted-foreground mb-4">Ordena las canciones y dale un nombre</p>
               
-              <div className="space-y-2 mb-8">
+              <div className="space-y-2 mb-4 md:mb-6">
                 <Label className="text-base">Título (Opcional)</Label>
                 <Input
                   placeholder="Ej: Enganchado de Adoración"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="h-14 text-lg bg-black/20 border-white/10 rounded-xl focus-visible:ring-emerald-500/50"
+                  className="h-12 md:h-14 text-base md:text-lg bg-black/20 border-white/10 rounded-xl focus-visible:ring-emerald-500/50"
                 />
               </div>
 
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-base">Orden de canciones ({selectedSongs.length})</Label>
                 <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-                  Arrastra o usa las flechas
+                  Usa las flechas
                 </Badge>
               </div>
             </div>
 
-            <ScrollArea className="flex-1 rounded-2xl border border-white/5 bg-black/20 p-2 md:p-4">
+            <ScrollArea className="flex-1 min-h-[160px] md:min-h-0 rounded-2xl border border-white/5 bg-black/20 p-2 md:p-4">
               <div className="space-y-3 pr-2">
                 {selectedSongs.length === 0 ? (
-                  <div className="py-20 flex flex-col items-center justify-center text-center border-2 border-dashed border-white/5 rounded-xl m-2">
-                    <ListMusic className="h-16 w-16 text-muted-foreground/20 mb-4" />
-                    <p className="text-xl font-bold text-foreground mb-2">Tu enganchado está vacío</p>
-                    <p className="text-muted-foreground max-w-sm">Busca y selecciona canciones en el panel de la izquierda para agregarlas aquí.</p>
+                  <div className="py-12 md:py-20 flex flex-col items-center justify-center text-center border-2 border-dashed border-white/5 rounded-xl m-2">
+                    <ListMusic className="h-12 md:h-16 w-12 md:w-16 text-muted-foreground/20 mb-4" />
+                    <p className="text-lg md:text-xl font-bold text-foreground mb-2">Tu enganchado está vacío</p>
+                    <p className="text-sm text-muted-foreground max-w-sm">Busca y selecciona canciones en el panel de la izquierda para agregarlas aquí.</p>
                   </div>
                 ) : (
                   selectedSongs.map((song, index) => (
@@ -287,11 +296,11 @@ export function CreateEnganchadoDialog({
               </div>
             </ScrollArea>
 
-            <div className="pt-6 mt-2">
+            <div className="pt-4 mt-auto shrink-0 bg-background/80 backdrop-blur-md p-2 md:p-0 rounded-xl sticky bottom-0 z-10">
               <Button 
                 onClick={handleCreate} 
                 disabled={loading || selectedSongs.length < 2}
-                className="w-full h-14 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg shadow-xl shadow-emerald-900/20 disabled:opacity-50"
+                className="w-full h-12 md:h-14 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-base md:text-lg shadow-xl shadow-emerald-900/20 disabled:opacity-50"
               >
                 {loading ? 'Creando...' : 'Guardar Enganchado'}
               </Button>
