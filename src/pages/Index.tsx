@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Music, ChevronRight, 
   CalendarDays, Bell, Clock,
-  MapPin, AlertCircle, Info, AlertTriangle, Zap, Star, MessageSquare, ListMusic
+  MapPin, AlertCircle, Info, AlertTriangle, Zap, Star, MessageSquare, ListMusic, GraduationCap, Sparkles
 } from "lucide-react";
 import { format, formatDistanceToNow, isAfter, isBefore, addDays, subDays, subHours } from "date-fns";
 import { es } from "date-fns/locale";
@@ -345,6 +345,40 @@ const Index = () => {
           
           {/* Welcome Banner */}
           <WelcomeCard />
+
+          {/* Academia Banner Rectangular Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            onClick={() => navigate("/teoria")}
+            className="cursor-pointer group relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-purple-950/80 via-slate-900/90 to-indigo-950/80 border border-purple-500/30 shadow-2xl hover:shadow-purple-600/20 transition-all hover:scale-[1.01]"
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-15 group-hover:opacity-25 transition-opacity pointer-events-none">
+              <GraduationCap className="w-32 h-32 text-purple-400 -rotate-12" />
+            </div>
+            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-500/40 text-purple-300 shadow-lg shadow-purple-500/10 shrink-0">
+                  <GraduationCap className="w-8 h-8" />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider mb-1">
+                    <Sparkles className="w-3 h-3" /> Nuevo Módulo
+                  </div>
+                  <h3 className="text-xl font-black text-white group-hover:text-purple-300 transition-colors">
+                    MI ACADEMIA DE MÚSICA
+                  </h3>
+                  <p className="text-slate-300 text-xs sm:text-sm">
+                    Aprende canto, técnica de instrumentos y teoría musical con PDFs y videos.
+                  </p>
+                </div>
+              </div>
+              <Button className="h-11 px-5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-purple-600/20 shrink-0 group-hover:translate-x-1 transition-transform w-full sm:w-auto">
+                Ingresar a la Academia <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </motion.div>
 
           {/* Pending Feedback Section */}
           <AnimatePresence>
