@@ -59,7 +59,7 @@ export function TheoryResourceViewerModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-950/95 border-white/10 text-slate-100 backdrop-blur-2xl rounded-3xl p-6 sm:p-8">
+      <DialogContent className="max-w-full w-[96vw] sm:max-w-3xl max-h-[92dvh] overflow-y-auto bg-slate-950/98 border-white/10 text-slate-100 backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
         <DialogHeader className="mb-4">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <Badge className={`${levelColors[resource.target_level] || levelColors.todos} capitalize font-bold text-[11px]`}>

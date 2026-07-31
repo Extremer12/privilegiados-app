@@ -156,7 +156,7 @@ export function ManageTheoryResourceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-950/95 border-white/10 text-slate-100 backdrop-blur-2xl rounded-3xl p-6 sm:p-8">
+      <DialogContent className="max-w-full w-[96vw] sm:max-w-2xl max-h-[92dvh] overflow-y-auto bg-slate-950/98 border-white/10 text-slate-100 backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-2xl font-bold flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
