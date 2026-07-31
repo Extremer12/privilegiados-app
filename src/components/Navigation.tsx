@@ -32,6 +32,7 @@ export const Navigation = () => {
   const isFullScreenPage = 
     location.pathname === "/grupos/crear" ||
     location.pathname.startsWith("/unirse/") ||
+    location.pathname === "/teoria" ||
     /^\/grupos\/[^/]+\/config$/.test(location.pathname);
 
 

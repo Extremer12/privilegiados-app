@@ -18,13 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import {
   createTheoryResource,
   updateTheoryResource,
   uploadTheoryFile,
-  fetchCategories,
 } from "@/services/theoryService";
 import type { TheoryResource, ContentType, TargetLevel, TargetInstrument } from "@/types/theory";
 import { toast } from "sonner";
@@ -36,6 +34,9 @@ import {
   Music,
   Loader2,
   Sparkles,
+  ArrowLeft,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 
 interface ManageTheoryResourceDialogProps {
@@ -114,6 +115,7 @@ export function ManageTheoryResourceDialog({
       let fileName = resourceToEdit?.file_name || null;
 
       if (file) {
+        toast.info("Subiendo archivo...", { description: file.name });
         fileUrl = await uploadTheoryFile(file);
         fileName = file.name;
       }
@@ -147,7 +149,7 @@ export function ManageTheoryResourceDialog({
     } catch (err: any) {
       console.error("Error saving resource:", err);
       toast.error("Error al guardar el recurso", {
-        description: err.message || "Ocurrió un problema inesperado.",
+        description: err.message || "Ocurrió un problema inesperado al subir el archivo.",
       });
     } finally {
       setLoading(false);
@@ -156,239 +158,259 @@ export function ManageTheoryResourceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full w-[96vw] sm:max-w-2xl max-h-[92dvh] overflow-y-auto bg-slate-950/98 border-white/10 text-slate-100 backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            {resourceToEdit ? "Editar Recurso de Teoría" : "Publicar Nuevo Recurso Educativo"}
-          </DialogTitle>
-          <DialogDescription className="text-slate-400 text-sm">
-            Agrega contenido multimedia para los músicos y cantantes (videos, PDFs, guías de instrumentos).
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Título del Recurso *
-              </Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ej. Técnica de Respiración y Apoyo Vocal"
-                className="bg-slate-900/80 border-white/10 rounded-xl focus:border-purple-500"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category" className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Categoría *
-              </Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger className="bg-slate-900/80 border-white/10 rounded-xl text-slate-200">
-                  <SelectValue placeholder="Seleccionar categoría" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-white/10 text-slate-200 rounded-xl">
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Content Type Selector */}
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Tipo de Formato
-            </Label>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {[
-                { id: "video", label: "Video YouTube", icon: Youtube },
-                { id: "pdf", label: "Documento PDF", icon: FileText },
-                { id: "article", label: "Lección Escrita", icon: Sparkles },
-                { id: "image", label: "Imagen / Diagrama", icon: ImageIcon },
-                { id: "audio", label: "Audio", icon: Music },
-              ].map((type) => {
-                const Icon = type.icon;
-                const active = contentType === type.id;
-                return (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() => setContentType(type.id as ContentType)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-semibold transition-all ${
-                      active
-                        ? "bg-purple-500/20 border-purple-500 text-purple-300 shadow-lg shadow-purple-500/10"
-                        : "bg-slate-900/50 border-white/5 text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 mb-1.5" />
-                    <span className="text-[11px] text-center">{type.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Format-specific Inputs */}
-          {contentType === "video" && (
-            <div className="space-y-2 p-4 rounded-2xl bg-purple-500/5 border border-purple-500/20">
-              <Label htmlFor="youtubeUrl" className="text-xs font-bold text-purple-300 flex items-center gap-2">
-                <Youtube className="w-4 h-4 text-red-500" /> Enlace de YouTube
-              </Label>
-              <Input
-                id="youtubeUrl"
-                value={youtubeUrl}
-                onChange={(e) => setYoutubeUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="bg-slate-900 border-white/10 rounded-xl"
-              />
-            </div>
-          )}
-
-          {(contentType === "pdf" || contentType === "image" || contentType === "audio") && (
-            <div className="space-y-2 p-4 rounded-2xl bg-purple-500/5 border border-purple-500/20">
-              <Label className="text-xs font-bold text-purple-300 flex items-center gap-2">
-                <Upload className="w-4 h-4 text-purple-400" /> Archivo ({contentType.toUpperCase()})
-              </Label>
-              <Input
-                type="file"
-                accept={
-                  contentType === "pdf"
-                    ? ".pdf"
-                    : contentType === "image"
-                    ? "image/*"
-                    : "audio/*"
-                }
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="bg-slate-900 border-white/10 rounded-xl text-slate-300 file:bg-purple-600 file:text-white file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs file:font-bold hover:file:bg-purple-500"
-              />
-              {resourceToEdit?.file_name && !file && (
-                <p className="text-xs text-slate-400 mt-1">Archivo actual: {resourceToEdit.file_name}</p>
-              )}
-            </div>
-          )}
-
-          {contentType === "article" && (
-            <div className="space-y-2 p-4 rounded-2xl bg-purple-500/5 border border-purple-500/20">
-              <Label htmlFor="articleBody" className="text-xs font-bold text-purple-300">
-                Cuerpo de la Lección (Soporta Markdown, Cifras y Acordes)
-              </Label>
-              <Textarea
-                id="articleBody"
-                value={articleBody}
-                onChange={(e) => setArticleBody(e.target.value)}
-                placeholder="Escribe la explicación detallada de la lección..."
-                className="bg-slate-900 border-white/10 rounded-xl min-h-[140px] font-mono text-xs"
-              />
-            </div>
-          )}
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Resumen / Explicación Breve
-            </Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Breve descripción para orientar al alumno..."
-              className="bg-slate-900/80 border-white/10 rounded-xl min-h-[80px]"
-            />
-          </div>
-
-          {/* Instrument, Level & Duration */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Instrumento
-              </Label>
-              <Select value={instrument} onValueChange={(v) => setInstrument(v as TargetInstrument)}>
-                <SelectTrigger className="bg-slate-900/80 border-white/10 rounded-xl text-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-white/10 text-slate-200 rounded-xl">
-                  <SelectItem value="general">Todos / General</SelectItem>
-                  <SelectItem value="vocal">Canto / Voces</SelectItem>
-                  <SelectItem value="guitarra">Guitarra</SelectItem>
-                  <SelectItem value="bajo">Bajo</SelectItem>
-                  <SelectItem value="teclado">Teclado / Piano</SelectItem>
-                  <SelectItem value="bateria">Batería</SelectItem>
-                  <SelectItem value="sonido">Sonido / Audio</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Nivel Dificultad
-              </Label>
-              <Select value={targetLevel} onValueChange={(v) => setTargetLevel(v as TargetLevel)}>
-                <SelectTrigger className="bg-slate-900/80 border-white/10 rounded-xl text-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-white/10 text-slate-200 rounded-xl">
-                  <SelectItem value="todos">Todos los niveles</SelectItem>
-                  <SelectItem value="principiante">Principiante</SelectItem>
-                  <SelectItem value="intermedio">Intermedio</SelectItem>
-                  <SelectItem value="avanzado">Avanzado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="duration" className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                Duración (Minutos)
-              </Label>
-              <Input
-                id="duration"
-                type="number"
-                min="1"
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(e.target.value)}
-                placeholder="Ej. 15"
-                className="bg-slate-900/80 border-white/10 rounded-xl"
-              />
-            </div>
-          </div>
-
-          {/* Submit Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+      <DialogContent className="max-w-[100vw] w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 flex flex-col bg-[#0a0e17] text-slate-100 overflow-hidden shadow-none gap-0">
+        {/* Fullscreen Header Bar */}
+        <DialogHeader className="p-4 sm:p-6 border-b border-white/10 bg-black/60 shrink-0 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="ghost"
+              size="icon"
               onClick={() => onOpenChange(false)}
-              className="rounded-xl text-slate-400 hover:text-white"
+              className="h-10 w-10 rounded-full hover:bg-white/10 text-slate-300"
             >
-              Cancelar
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 shadow-lg shadow-purple-600/30"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Guardando...
-                </>
-              ) : resourceToEdit ? (
-                "Guardar Cambios"
-              ) : (
-                "Publicar Recurso"
-              )}
-            </Button>
+            <div>
+              <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+                {resourceToEdit ? "Editar Recurso" : "Publicar Nuevo Recurso"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-400">
+                Añade guías PDF, videos de YouTube o ejercicios prácticos.
+              </DialogDescription>
+            </div>
           </div>
-        </form>
+        </DialogHeader>
+
+        {/* Scrollable Form Body */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 max-w-3xl w-full mx-auto space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Title & Category */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Título del Recurso *
+                </Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ej. Técnica Vocal y Afinación"
+                  className="bg-slate-900/90 border-white/10 rounded-xl h-12 text-sm focus:border-purple-500"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Categoría *
+                </Label>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger className="bg-slate-900/90 border-white/10 rounded-xl h-12 text-sm text-slate-200">
+                    <SelectValue placeholder="Seleccionar categoría" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-slate-200 rounded-xl">
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Content Type Selector */}
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Tipo de Formato
+              </Label>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                {[
+                  { id: "video", label: "YouTube", icon: Youtube },
+                  { id: "pdf", label: "PDF Guía", icon: FileText },
+                  { id: "article", label: "Lección", icon: Sparkles },
+                  { id: "image", label: "Imagen", icon: ImageIcon },
+                  { id: "audio", label: "Audio", icon: Music },
+                ].map((type) => {
+                  const Icon = type.icon;
+                  const active = contentType === type.id;
+                  return (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => setContentType(type.id as ContentType)}
+                      className={`flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-semibold transition-all ${
+                        active
+                          ? "bg-purple-600/30 border-purple-500 text-purple-300 shadow-lg shadow-purple-500/10"
+                          : "bg-slate-900/50 border-white/5 text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 mb-1" />
+                      <span className="text-[11px] text-center">{type.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Format inputs */}
+            {contentType === "video" && (
+              <div className="space-y-2 p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20">
+                <Label htmlFor="youtubeUrl" className="text-xs font-bold text-purple-300 flex items-center gap-2">
+                  <Youtube className="w-4 h-4 text-red-500" /> Enlace de Video en YouTube
+                </Label>
+                <Input
+                  id="youtubeUrl"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="bg-slate-900 border-white/10 rounded-xl h-12 text-sm"
+                />
+              </div>
+            )}
+
+            {(contentType === "pdf" || contentType === "image" || contentType === "audio") && (
+              <div className="space-y-3 p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20">
+                <Label className="text-xs font-bold text-purple-300 flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-purple-400" /> Adjuntar Archivo ({contentType.toUpperCase()})
+                </Label>
+                <Input
+                  type="file"
+                  accept={
+                    contentType === "pdf"
+                      ? ".pdf"
+                      : contentType === "image"
+                      ? "image/*"
+                      : "audio/*"
+                  }
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="bg-slate-900 border-white/10 rounded-xl text-slate-300 file:bg-purple-600 file:text-white file:border-0 file:rounded-lg file:px-3 file:py-1 file:mr-3 file:text-xs file:font-bold"
+                />
+                {file && (
+                  <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold pt-1">
+                    <CheckCircle2 className="w-4 h-4" /> Seleccionado: {file.name} ({Math.round(file.size / 1024)} KB)
+                  </div>
+                )}
+                {resourceToEdit?.file_name && !file && (
+                  <p className="text-xs text-slate-400">Archivo actual: {resourceToEdit.file_name}</p>
+                )}
+              </div>
+            )}
+
+            {contentType === "article" && (
+              <div className="space-y-2 p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20">
+                <Label htmlFor="articleBody" className="text-xs font-bold text-purple-300">
+                  Lección Redactada (Soporta Markdown, acordes y letras)
+                </Label>
+                <Textarea
+                  id="articleBody"
+                  value={articleBody}
+                  onChange={(e) => setArticleBody(e.target.value)}
+                  placeholder="Redacta la lección..."
+                  className="bg-slate-900 border-white/10 rounded-xl min-h-[160px] text-xs font-mono"
+                />
+              </div>
+            )}
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Resumen / Descripción Corta
+              </Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Breve explicación para los alumnos..."
+                className="bg-slate-900/90 border-white/10 rounded-xl min-h-[80px] text-sm"
+              />
+            </div>
+
+            {/* Instrument, Level & Duration */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Instrumento
+                </Label>
+                <Select value={instrument} onValueChange={(v) => setInstrument(v as TargetInstrument)}>
+                  <SelectTrigger className="bg-slate-900/90 border-white/10 rounded-xl h-12 text-sm text-slate-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-slate-200 rounded-xl">
+                    <SelectItem value="general">Todos / General</SelectItem>
+                    <SelectItem value="vocal">Canto / Voces</SelectItem>
+                    <SelectItem value="guitarra">Guitarra</SelectItem>
+                    <SelectItem value="bajo">Bajo</SelectItem>
+                    <SelectItem value="teclado">Teclado / Piano</SelectItem>
+                    <SelectItem value="bateria">Batería</SelectItem>
+                    <SelectItem value="sonido">Sonido / Audio</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Nivel Dificultad
+                </Label>
+                <Select value={targetLevel} onValueChange={(v) => setTargetLevel(v as TargetLevel)}>
+                  <SelectTrigger className="bg-slate-900/90 border-white/10 rounded-xl h-12 text-sm text-slate-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-slate-200 rounded-xl">
+                    <SelectItem value="todos">Todos los niveles</SelectItem>
+                    <SelectItem value="principiante">Principiante</SelectItem>
+                    <SelectItem value="intermedio">Intermedio</SelectItem>
+                    <SelectItem value="avanzado">Avanzado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="duration" className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Duración (Minutos)
+                </Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min="1"
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(e.target.value)}
+                  placeholder="Ej. 15"
+                  className="bg-slate-900/90 border-white/10 rounded-xl h-12 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-white/10 pb-8">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="h-12 flex-1 rounded-xl text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-12 flex-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-base shadow-xl shadow-purple-600/30"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Guardando...
+                  </>
+                ) : resourceToEdit ? (
+                  "Guardar Cambios"
+                ) : (
+                  "Publicar Recurso"
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
