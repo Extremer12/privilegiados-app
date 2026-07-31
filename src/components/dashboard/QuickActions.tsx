@@ -1,11 +1,17 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Plus, ListPlus, CalendarPlus, MessageSquarePlus, Radio } from "lucide-react";
+import { Plus, ListPlus, CalendarPlus, MessageSquarePlus, Radio, GraduationCap } from "lucide-react";
 
 export const QuickActions = () => {
   const navigate = useNavigate();
 
   const actions = [
+    {
+      label: "Mi Academia",
+      icon: "/teoria",
+      customAction: () => navigate("/teoria"),
+      iconComponent: GraduationCap,
+    },
     {
       label: "Nueva canción",
       icon: Plus,
@@ -18,7 +24,7 @@ export const QuickActions = () => {
     },
     {
       label: "Nuevo evento",
-      icon: "/eventos", // Handled by onClick custom navigation
+      icon: "/eventos",
       customAction: () => navigate("/eventos"),
       iconComponent: CalendarPlus,
     },
