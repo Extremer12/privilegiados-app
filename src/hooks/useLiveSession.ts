@@ -262,6 +262,8 @@ export function useLiveSession(sessionId: string | undefined) {
 
       if (newPos < 0 || newPos >= songs.length) return;
 
+      vibrateLight();
+
       try {
         await liveService.updateSessionPosition(
           sessionId,
@@ -281,6 +283,8 @@ export function useLiveSession(sessionId: string | undefined) {
     async (position: number) => {
       if (!session || !sessionId || position < 0 || position >= songs.length)
         return;
+
+      vibrateLight();
 
       try {
         await liveService.updateSessionPosition(

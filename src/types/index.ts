@@ -130,6 +130,14 @@ export interface Song {
 
 export type SetlistStatus = "draft" | "ready" | "completed";
 
+export interface ServiceSectionConfig {
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
+  description?: string;
+}
+
 export interface Setlist {
   id: string;
   title: string;
@@ -142,7 +150,7 @@ export interface Setlist {
   service_director: string | null;
   preacher: string | null;
   status: SetlistStatus;
-  sections_config?: any;
+  sections_config?: ServiceSectionConfig[] | null;
 }
 
 /** Compact setlist shape used inside EnVivo (only the fields we query). */
@@ -150,7 +158,7 @@ export interface SetlistCompact {
   id: string;
   title: string;
   theme_verse: string | null;
-  sections_config?: any;
+  sections_config?: ServiceSectionConfig[] | null;
 }
 
 export interface SetlistSong {

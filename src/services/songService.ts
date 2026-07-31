@@ -7,23 +7,31 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Song } from "@/types";
 
-export async function fetchSongs(options?: { orderBy?: string; ascending?: boolean }) {
-  const { orderBy = "title", ascending = true } = options || {};
-  const { data, error } = await supabase
-    .from("songs")
-    .select("*")
-    .order(orderBy, { ascending });
+export async function fetchSongs(options?: { groupId?: string; orderBy?: string; ascending?: boolean }) {
+  const { groupId, orderBy = "title", ascending = true } = options || {};
+  let query = supabase.from("songs").select("*");
+  
+  if (groupId) {
+    query = query.eq("group_id", groupId);
+  }
+
+  const { data, error } = await query.order(orderBy, { ascending });
 
   if (error) throw error;
   return data as Song[];
 }
 
-export async function fetchSongsWithProfiles(options?: { orderBy?: string; ascending?: boolean }) {
-  const { orderBy = "created_at", ascending = false } = options || {};
-  const { data, error } = await supabase
+export async function fetchSongsWithProfiles(options?: { groupId?: string; orderBy?: string; ascending?: boolean }) {
+  const { groupId, orderBy = "created_at", ascending = false } = options || {};
+  let query = supabase
     .from("songs")
-    .select("*, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)")
-    .order(orderBy, { ascending });
+    .select("*, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)");
+
+  if (groupId) {
+    query = query.eq("group_id", groupId);
+  }
+
+  const { data, error } = await query.order(orderBy, { ascending });
 
   if (error) throw error;
   return data as Song[];

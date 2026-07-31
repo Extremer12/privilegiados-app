@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SECTION_TYPES, Song, SectionType } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { HelpTooltip } from './HelpTooltip';
+import { useGroup } from '@/hooks/useGroupContext';
 
 interface AddSongToSetlistDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function AddSongToSetlistDialog({
   currentPosition,
   onSongAdded,
 }: AddSongToSetlistDialogProps) {
+  const { activeGroup } = useGroup();
   const [songs, setSongs] = useState<Song[]>([]);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -49,13 +51,18 @@ export function AddSongToSetlistDialog({
     if (open) {
       fetchSongs();
     }
-  }, [open]);
+  }, [open, activeGroup?.id]);
 
   const fetchSongs = async () => {
-    const { data } = await supabase
+    let query = supabase
       .from('songs')
-      .select('id, title, category, lyrics, chords, youtube_url, audio_url')
-      .order('title');
+      .select('id, title, category, lyrics, chords, youtube_url, audio_url');
+
+    if (activeGroup?.id) {
+      query = query.eq('group_id', activeGroup.id);
+    }
+
+    const { data } = await query.order('title');
     
     if (data) setSongs(data);
   };

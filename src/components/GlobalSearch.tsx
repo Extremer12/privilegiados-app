@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Music, ListMusic, Users, X, Command, Loader2, ChevronRight } from "lucide-react";
 import { Input } from "./ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { useGroup } from "@/hooks/useGroupContext";
 
 export const GlobalSearch = () => {
+  const { activeGroup } = useGroup();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -38,13 +40,21 @@ export const GlobalSearch = () => {
   }, [isOpen]);
 
   const { data: results, isLoading } = useQuery({
-    queryKey: ["global-search", query],
+    queryKey: ["global-search", query, activeGroup?.id],
     queryFn: async () => {
       if (query.length < 2) return null;
 
+      let songsQ = supabase.from("songs").select("id, title").ilike("title", `%${query}%`).limit(5);
+      let setlistsQ = supabase.from("setlists").select("id, title").ilike("title", `%${query}%`).limit(5);
+
+      if (activeGroup?.id) {
+        songsQ = songsQ.eq("group_id", activeGroup.id);
+        setlistsQ = setlistsQ.eq("group_id", activeGroup.id);
+      }
+
       const [songs, setlists, profiles] = await Promise.all([
-        supabase.from("songs").select("id, title").ilike("title", `%${query}%`).limit(5),
-        supabase.from("setlists").select("id, title").ilike("title", `%${query}%`).limit(5),
+        songsQ,
+        setlistsQ,
         supabase.from("profiles").select("id, full_name").ilike("full_name", `%${query}%`).limit(5),
       ]);
 
