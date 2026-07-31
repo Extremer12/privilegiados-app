@@ -32,6 +32,7 @@ const CrearGrupo = lazy(() => import("./pages/CrearGrupo"));
 const UnirseGrupo = lazy(() => import("./pages/UnirseGrupo"));
 const GrupoConfig = lazy(() => import("./pages/GrupoConfig"));
 const EnVivoEspectador = lazy(() => import("./pages/EnVivoEspectador"));
+const TeoriaMusical = lazy(() => import("./pages/TeoriaMusical"));
 
 // Optimized QueryClient
 const queryClient = new QueryClient({
@@ -112,6 +113,7 @@ const App = () => {
                       <Route path="/estadisticas" element={<ProtectedRoute><Estadisticas /></ProtectedRoute>} />
                       <Route path="/repertorios" element={<ProtectedRoute><Repertorios /></ProtectedRoute>} />
                       <Route path="/repertorios/:id" element={<ProtectedRoute><RepertorioDetalle /></ProtectedRoute>} />
+                      <Route path="/teoria" element={<ProtectedRoute><TeoriaMusical /></ProtectedRoute>} />
                       <Route path="/en-vivo/:id" element={<ProtectedRoute><EnVivo /></ProtectedRoute>} />
                       <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                       <Route path="/perfil/:id" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
