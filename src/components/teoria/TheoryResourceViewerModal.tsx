@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   ArrowLeft,
   Share2,
+  X,
 } from "lucide-react";
 
 interface TheoryResourceViewerModalProps {
@@ -83,7 +84,7 @@ export function TheoryResourceViewerModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[100vw] w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 bg-[#0a0e17] text-slate-100 flex flex-col overflow-hidden shadow-none gap-0 z-[150]">
+      <DialogContent className="max-w-[100vw] w-screen h-[100dvh] max-h-[100dvh] m-0 p-0 rounded-none border-0 bg-[#0a0e17] text-slate-100 flex flex-col overflow-hidden shadow-none gap-0 z-[150] [&>button]:hidden">
         {/* Native Fullscreen Top Header Bar */}
         <header className="p-3.5 sm:p-4 border-b border-white/10 bg-[#0a0e17]/95 backdrop-blur-xl shrink-0 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -129,6 +130,17 @@ export function TheoryResourceViewerModal({
                 <span className="sm:hidden">{isCompleted ? "✓" : "Vista"}</span>
               </Button>
             )}
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="h-9 w-9 rounded-full hover:bg-white/10 text-slate-400 hover:text-white"
+              title="Cerrar lección"
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
         </header>
 
