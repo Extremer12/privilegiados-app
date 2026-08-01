@@ -352,27 +352,27 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             onClick={() => navigate("/teoria")}
-            className="cursor-pointer group relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-purple-900 via-slate-900 to-indigo-950 border-2 border-purple-500/50 shadow-2xl shadow-purple-900/30 hover:shadow-purple-600/40 transition-all hover:scale-[1.01]"
+            className="cursor-pointer group relative overflow-hidden rounded-3xl p-5 sm:p-6 bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/40 shadow-xl hover:shadow-purple-600/30 transition-all hover:scale-[1.01]"
           >
-            <div className="absolute top-0 right-0 p-6 opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none">
-              <GraduationCap className="w-36 h-36 text-purple-400 -rotate-12" />
+            <div className="absolute top-0 right-0 p-4 opacity-15 group-hover:opacity-25 transition-opacity pointer-events-none">
+              <GraduationCap className="w-28 h-28 text-purple-400 -rotate-12" />
             </div>
-            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-purple-500/30 flex items-center justify-center border-2 border-purple-400 text-purple-200 shadow-xl shadow-purple-500/20 shrink-0">
-                  <GraduationCap className="w-8 h-8" />
+            <div className="relative z-10 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 text-purple-300 shadow-md shrink-0">
+                  <GraduationCap className="w-7 h-7" />
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-purple-300 transition-colors">
-                    MI ACADEMIA DE MÚSICA
+                  <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-purple-300 transition-colors tracking-tight">
+                    MI ACADEMIA
                   </h3>
-                  <p className="text-slate-200 text-xs sm:text-sm font-medium mt-1">
-                    Aprende canto, técnica de instrumentos y teoría musical con PDFs y videos.
+                  <p className="text-slate-400 text-xs font-medium">
+                    Escuela y lecciones de música
                   </p>
                 </div>
               </div>
-              <Button className="h-12 px-6 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider shadow-xl shadow-purple-600/30 shrink-0 group-hover:translate-x-1 transition-transform w-full sm:w-auto">
-                Ingresar a la Academia <ChevronRight className="w-4 h-4 ml-1" />
+              <Button className="h-10 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/20 shrink-0 group-hover:translate-x-1 transition-transform">
+                Ingresar <ChevronRight className="w-4 h-4 ml-0.5" />
               </Button>
             </div>
           </motion.div>

@@ -19,7 +19,7 @@ import {
   toggleTheoryCompletion,
   deleteTheoryResource,
 } from "@/services/theoryService";
-import type { TheoryResource, TargetInstrument, TargetLevel } from "@/types/theory";
+import type { TheoryResource } from "@/types/theory";
 import { ManageTheoryResourceDialog } from "@/components/teoria/ManageTheoryResourceDialog";
 import { TheoryResourceViewerModal } from "@/components/teoria/TheoryResourceViewerModal";
 import { TheoryOnboardingModal } from "@/components/teoria/TheoryOnboardingModal";
@@ -47,7 +47,6 @@ import {
   HelpCircle,
   LayoutGrid,
   CheckCircle2,
-  SlidersHorizontal,
   RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -74,9 +73,9 @@ const INSTRUMENT_FILTERS = [
 
 const LEVEL_FILTERS = [
   { id: "all", label: "Todos los niveles" },
-  { id: "principiante", label: "🌱 Principiante" },
-  { id: "intermedio", label: "⚡ Intermedio" },
-  { id: "avanzado", label: "🔥 Avanzado" },
+  { id: "principiante", label: "Principiante" },
+  { id: "intermedio", label: "Intermedio" },
+  { id: "avanzado", label: "Avanzado" },
 ];
 
 export default function TeoriaMusical() {
@@ -218,9 +217,9 @@ export default function TeoriaMusical() {
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const contentTypeBadges: Record<string, { label: string; icon: any; color: string }> = {
-    video: { label: "Video YouTube", icon: Youtube, color: "bg-red-500/20 text-red-300 border-red-500/30" },
-    pdf: { label: "Documento PDF", icon: FileText, color: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
-    article: { label: "Lección Escrita", icon: Sparkles, color: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
+    video: { label: "YouTube", icon: Youtube, color: "bg-red-500/20 text-red-300 border-red-500/30" },
+    pdf: { label: "PDF", icon: FileText, color: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
+    article: { label: "Lección", icon: Sparkles, color: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
     image: { label: "Imagen", icon: BookOpen, color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
     audio: { label: "Audio", icon: Music, color: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
   };
@@ -250,7 +249,7 @@ export default function TeoriaMusical() {
             <h1 className="text-lg font-black text-white flex items-center gap-2 tracking-tight">
               <GraduationCap className="w-5 h-5 text-purple-400" /> Mi Academia
             </h1>
-            <p className="text-[11px] text-slate-400">Escuela y Lecciones de Música</p>
+            <p className="text-[11px] text-slate-400">Escuela de Música</p>
           </div>
         </div>
 
@@ -259,7 +258,7 @@ export default function TeoriaMusical() {
             onClick={() => setShowOnboarding(true)}
             className="h-9 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 transition-all"
           >
-            <HelpCircle className="w-4 h-4" /> Preference/Tutorial
+            <HelpCircle className="w-4 h-4" /> Tutorial
           </button>
 
           {canManageTheory && (
@@ -277,34 +276,34 @@ export default function TeoriaMusical() {
       </header>
 
       {/* Main Body Section */}
-      <main className="flex-1 p-3.5 sm:p-6 space-y-5 max-w-5xl w-full mx-auto">
+      <main className="flex-1 p-3.5 sm:p-6 space-y-5 max-w-4xl w-full mx-auto">
         {/* Progress Bar Card */}
         {user && totalCount > 0 && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 via-slate-900/90 to-emerald-950/60 border border-white/10 space-y-2">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/80 border border-white/10 space-y-2">
             <div className="flex items-center justify-between text-xs font-bold">
-              <span className="text-purple-300 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Tu Progreso de Aprendizaje
+              <span className="text-slate-300 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Tu Progreso
               </span>
-              <span className="text-slate-300">{completedCount} de {totalCount} lecciones ({progressPercent}%)</span>
+              <span className="text-slate-400">{completedCount} de {totalCount} ({progressPercent}%)</span>
             </div>
-            <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-purple-500 to-emerald-400 rounded-full"
+                className="h-full bg-emerald-400 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: 0.6 }}
               />
             </div>
           </div>
         )}
 
         {/* 1. Main Navigation Segmented Tabs (Explorar, Favoritos, Completadas) */}
-        <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-white/10">
+        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-900/90 border border-white/10">
           <button
             onClick={() => setActiveTab("explore")}
-            className={`h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            className={`h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeTab === "explore"
-                ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
+                ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -313,9 +312,9 @@ export default function TeoriaMusical() {
 
           <button
             onClick={() => setActiveTab("favorites")}
-            className={`h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            className={`h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeTab === "favorites"
-                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-lg shadow-amber-500/10"
+                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -324,9 +323,9 @@ export default function TeoriaMusical() {
 
           <button
             onClick={() => setActiveTab("completed")}
-            className={`h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            className={`h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeTab === "completed"
-                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-500/10"
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -338,10 +337,10 @@ export default function TeoriaMusical() {
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
-            placeholder="Buscar por tema, canción o técnica..."
+            placeholder="Buscar lección o tema..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-11 pr-10 h-12 bg-slate-900/90 border-white/10 rounded-2xl text-sm placeholder:text-slate-500 focus:border-purple-500"
+            className="pl-11 pr-10 h-11 bg-slate-900/90 border-white/10 rounded-2xl text-sm placeholder:text-slate-500 focus:border-purple-500"
           />
           {search && (
             <button
@@ -353,18 +352,18 @@ export default function TeoriaMusical() {
           )}
         </div>
 
-        {/* 3. Dificultad / Level Filter Pills */}
+        {/* 3. Level & Instrument Filter Bar */}
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Nivel de Dificultad
+              Nivel
             </h2>
             {hasPreferences && (
               <button
                 onClick={resetFilters}
                 className="text-[11px] font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
               >
-                <RotateCcw className="w-3 h-3" /> Restablecer Filtros
+                <RotateCcw className="w-3 h-3" /> Ver Todos los Filtros
               </button>
             )}
           </div>
@@ -376,7 +375,7 @@ export default function TeoriaMusical() {
                 <button
                   key={lvl.id}
                   onClick={() => setSelectedLevel(lvl.id)}
-                  className={`h-10 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
+                  className={`h-9 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
                     active
                       ? "bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/30"
                       : "bg-slate-900/80 border-white/10 text-slate-400 hover:text-slate-200"
@@ -389,10 +388,10 @@ export default function TeoriaMusical() {
           </div>
         </div>
 
-        {/* 4. Instrument Horizontal Selector Pills */}
+        {/* 4. Instrument Pills Horizontal Selector */}
         <div className="space-y-2">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-            Instrumento / Área
+            Instrumento
           </h2>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
@@ -403,7 +402,7 @@ export default function TeoriaMusical() {
                 <button
                   key={inst.id}
                   onClick={() => setSelectedInstrument(inst.id)}
-                  className={`h-11 px-4 rounded-2xl border text-xs font-bold flex items-center gap-2 shrink-0 transition-all ${
+                  className={`h-10 px-3.5 rounded-xl border text-xs font-bold flex items-center gap-2 shrink-0 transition-all ${
                     active
                       ? "bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/30"
                       : "bg-slate-900/90 border-white/10 text-slate-300 hover:bg-slate-800"
@@ -417,11 +416,11 @@ export default function TeoriaMusical() {
           </div>
         </div>
 
-        {/* 5. Resource Content Cards (Clean Native Android Feed) */}
+        {/* 5. Minimalist, Professional Lesson Cards */}
         {resourcesLoading ? (
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-36 rounded-2xl bg-slate-900/80 border border-white/5" />
+              <Skeleton key={i} className="h-24 rounded-2xl bg-slate-900/80 border border-white/5" />
             ))}
           </div>
         ) : filteredResources.length === 0 ? (
@@ -429,21 +428,15 @@ export default function TeoriaMusical() {
             icon={GraduationCap}
             title={
               activeTab === "favorites"
-                ? "No tienes favoritos guardados"
+                ? "No tienes favoritos"
                 : activeTab === "completed"
                 ? "No has marcado lecciones como vistas"
                 : "No se encontraron lecciones"
             }
-            description={
-              activeTab === "favorites"
-                ? "Haz clic en la estrella ⭐ de cualquier lección para guardarla aquí."
-                : activeTab === "completed"
-                ? "Haz clic en 'Marcar como vista' cuando estudies un tema."
-                : "Prueba seleccionando otro nivel o instrumento."
-            }
+            description="Intenta seleccionar otro nivel o instrumento."
           />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <AnimatePresence mode="popLayout">
               {filteredResources.map((resource) => {
                 const formatConfig = contentTypeBadges[resource.content_type] || contentTypeBadges.article;
@@ -455,98 +448,70 @@ export default function TeoriaMusical() {
                   <motion.div
                     key={resource.id}
                     layout
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
+                    exit={{ opacity: 0, y: 8 }}
                   >
                     <Card
                       onClick={() => setSelectedResource(resource)}
-                      className={`group relative rounded-2xl border transition-all p-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer shadow-lg overflow-hidden ${
+                      className={`group relative rounded-2xl border transition-all p-3.5 sm:p-4 flex items-center justify-between gap-3.5 cursor-pointer shadow-md overflow-hidden ${
                         isComp
                           ? "bg-slate-900/60 border-emerald-500/30 hover:border-emerald-500/50"
-                          : "bg-slate-900/90 hover:bg-slate-900 border-white/10 hover:border-purple-500/40 hover:shadow-purple-950/30"
+                          : "bg-slate-900/90 hover:bg-slate-900 border-white/10 hover:border-purple-500/40"
                       }`}
                     >
-                      <div className="flex items-start gap-4 flex-1 min-w-0">
-                        {/* Thumbnail Format Icon */}
-                        <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 ${
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        {/* Clean Format Thumbnail Box */}
+                        <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 ${
                           isComp
                             ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
                             : "bg-purple-500/20 border-purple-500/30 text-purple-300"
                         }`}>
-                          {isComp ? <CheckCircle2 className="w-6 h-6 text-emerald-400" /> : <FormatIcon className="w-6 h-6" />}
+                          {isComp ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <FormatIcon className="w-5 h-5" />}
                         </div>
 
-                        {/* Title & Details */}
-                        <div className="space-y-1 min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge className={`${formatConfig.color} text-[10px] uppercase font-bold px-2 py-0.5`}>
+                        {/* Title & Concise Badges */}
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge className={`${formatConfig.color} text-[9px] uppercase font-bold px-1.5 py-0.2`}>
                               {formatConfig.label}
                             </Badge>
-                            <Badge className={`${levelBadges[resource.target_level] || levelBadges.todos} text-[10px] capitalize font-bold px-2 py-0.5`}>
+                            <Badge className={`${levelBadges[resource.target_level] || levelBadges.todos} text-[9px] capitalize font-bold px-1.5 py-0.2`}>
                               {resource.target_level}
                             </Badge>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 truncate">
                               {resource.instrument}
                             </span>
                             {resource.duration_minutes && (
-                              <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                              <span className="text-[10px] text-slate-400 flex items-center gap-1">
                                 <Clock className="w-3 h-3" /> {resource.duration_minutes}m
                               </span>
                             )}
-                            {isComp && (
-                              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px] font-bold px-2 py-0.5">
-                                ✓ Vista
-                              </Badge>
-                            )}
                           </div>
 
-                          <h3 className="text-base font-bold text-white group-hover:text-purple-300 transition-colors truncate">
+                          <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-purple-300 transition-colors truncate">
                             {resource.title}
                           </h3>
-
-                          {resource.description && (
-                            <p className="text-xs text-slate-400 line-clamp-1 leading-relaxed">
-                              {resource.description}
-                            </p>
-                          )}
                         </div>
                       </div>
 
-                      {/* Action buttons right */}
-                      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end pt-3 sm:pt-0 border-t sm:border-0 border-white/5 shrink-0">
+                      {/* Right Action Icons & Button */}
+                      <div className="flex items-center gap-2 shrink-0">
                         {user && (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                completionMutation.mutate(resource.id);
-                              }}
-                              className={`p-2 rounded-xl border transition-colors ${
-                                isComp
-                                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                                  : "bg-white/5 border-white/5 text-slate-400 hover:text-emerald-400"
-                              }`}
-                              title={isComp ? "Desmarcar vista" : "Marcar como vista"}
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                            </button>
-
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                favoriteMutation.mutate(resource.id);
-                              }}
-                              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-amber-400 transition-colors"
-                              title={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                            >
-                              <Star className={`w-4 h-4 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
-                            </button>
-                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              favoriteMutation.mutate(resource.id);
+                            }}
+                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-amber-400 transition-colors"
+                            title={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                          >
+                            <Star className={`w-4 h-4 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
+                          </button>
                         )}
 
                         {canManageTheory && (
-                          <div className="flex items-center gap-1">
+                          <div className="hidden sm:flex items-center gap-1">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -571,8 +536,8 @@ export default function TeoriaMusical() {
                           </div>
                         )}
 
-                        <Button size="sm" className="h-9 px-4 rounded-xl bg-purple-600 text-white hover:bg-purple-500 font-bold text-xs shadow-md shadow-purple-600/20">
-                          Ver Lección <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                        <Button size="sm" className="h-9 px-3 sm:px-4 rounded-xl bg-purple-600 text-white hover:bg-purple-500 font-bold text-xs shadow-md shadow-purple-600/20">
+                          Ver <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                         </Button>
                       </div>
                     </Card>
@@ -591,7 +556,7 @@ export default function TeoriaMusical() {
         onSavePreferences={handlePreferencesSaved}
       />
 
-      {/* Resource Viewer Modal */}
+      {/* Fullscreen Resource Viewer Modal */}
       <TheoryResourceViewerModal
         open={!!selectedResource}
         onOpenChange={(open) => !open && setSelectedResource(null)}
