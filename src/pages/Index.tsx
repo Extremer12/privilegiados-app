@@ -363,13 +363,10 @@ const Index = () => {
                   <GraduationCap className="w-8 h-8" />
                 </div>
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 text-xs font-bold uppercase tracking-wider mb-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> Nuevo Módulo Educativo
-                  </div>
                   <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-purple-300 transition-colors">
                     MI ACADEMIA DE MÚSICA
                   </h3>
-                  <p className="text-slate-200 text-xs sm:text-sm font-medium">
+                  <p className="text-slate-200 text-xs sm:text-sm font-medium mt-1">
                     Aprende canto, técnica de instrumentos y teoría musical con PDFs y videos.
                   </p>
                 </div>
