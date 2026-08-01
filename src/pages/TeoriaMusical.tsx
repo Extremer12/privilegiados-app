@@ -14,10 +14,12 @@ import {
   fetchCategories,
   fetchResources,
   fetchUserFavorites,
+  fetchUserCompletions,
   toggleTheoryFavorite,
+  toggleTheoryCompletion,
   deleteTheoryResource,
 } from "@/services/theoryService";
-import type { TheoryResource, TargetInstrument } from "@/types/theory";
+import type { TheoryResource, TargetInstrument, TargetLevel } from "@/types/theory";
 import { ManageTheoryResourceDialog } from "@/components/teoria/ManageTheoryResourceDialog";
 import { TheoryResourceViewerModal } from "@/components/teoria/TheoryResourceViewerModal";
 import { TheoryOnboardingModal } from "@/components/teoria/TheoryOnboardingModal";
@@ -43,8 +45,10 @@ import {
   X,
   ArrowLeft,
   HelpCircle,
-  PlayCircle,
   LayoutGrid,
+  CheckCircle2,
+  SlidersHorizontal,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -68,6 +72,13 @@ const INSTRUMENT_FILTERS = [
   { id: "sonido", label: "Sonido / Audio", icon: Volume2 },
 ];
 
+const LEVEL_FILTERS = [
+  { id: "all", label: "Todos los niveles" },
+  { id: "principiante", label: "🌱 Principiante" },
+  { id: "intermedio", label: "⚡ Intermedio" },
+  { id: "avanzado", label: "🔥 Avanzado" },
+];
+
 export default function TeoriaMusical() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -77,7 +88,9 @@ export default function TeoriaMusical() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedInstrument, setSelectedInstrument] = useState("all");
-  const [activeTab, setActiveTab] = useState<"explore" | "favorites">("explore");
+  const [selectedLevel, setSelectedLevel] = useState("all");
+  const [activeTab, setActiveTab] = useState<"explore" | "favorites" | "completed">("explore");
+  const [hasPreferences, setHasPreferences] = useState(false);
 
   const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const [resourceToEdit, setResourceToEdit] = useState<TheoryResource | null>(null);
@@ -85,13 +98,49 @@ export default function TeoriaMusical() {
   const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // Auto-show onboarding for first time users
+  // Read preferences on mount
   useEffect(() => {
+    const rawPrefs = localStorage.getItem("theory_user_preferences");
+    if (rawPrefs) {
+      try {
+        const prefs = JSON.parse(rawPrefs);
+        if (prefs.instruments && prefs.instruments.length > 0) {
+          setSelectedInstrument(prefs.instruments[0]);
+          setHasPreferences(true);
+        }
+        if (prefs.level && prefs.level !== "todos") {
+          setSelectedLevel(prefs.level);
+          setHasPreferences(true);
+        }
+      } catch (e) {
+        console.error("Error parsing preferences:", e);
+      }
+    }
+
     const hasSeen = localStorage.getItem("has_seen_theory_onboarding");
     if (!hasSeen) {
       setShowOnboarding(true);
     }
   }, []);
+
+  const handlePreferencesSaved = (prefs: { instruments: string[]; level: string }) => {
+    if (prefs.instruments && prefs.instruments.length > 0) {
+      setSelectedInstrument(prefs.instruments[0]);
+      setHasPreferences(true);
+    }
+    if (prefs.level && prefs.level !== "todos") {
+      setSelectedLevel(prefs.level);
+      setHasPreferences(true);
+    }
+  };
+
+  const resetFilters = () => {
+    setSelectedInstrument("all");
+    setSelectedLevel("all");
+    setSelectedCategory("all");
+    setSearch("");
+    setHasPreferences(false);
+  };
 
   // Queries
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
@@ -100,11 +149,12 @@ export default function TeoriaMusical() {
   });
 
   const { data: resources = [], isLoading: resourcesLoading } = useQuery({
-    queryKey: ["theory-resources", selectedCategory, selectedInstrument, search],
+    queryKey: ["theory-resources", selectedCategory, selectedInstrument, selectedLevel, search],
     queryFn: () =>
       fetchResources({
         categoryId: selectedCategory,
         instrument: selectedInstrument,
+        level: selectedLevel,
         search,
       }),
   });
@@ -112,6 +162,12 @@ export default function TeoriaMusical() {
   const { data: favorites = [] } = useQuery({
     queryKey: ["theory-favorites", user?.id],
     queryFn: () => fetchUserFavorites(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: completions = [] } = useQuery({
+    queryKey: ["theory-completions", user?.id],
+    queryFn: () => fetchUserCompletions(user!.id),
     enabled: !!user,
   });
 
@@ -123,6 +179,17 @@ export default function TeoriaMusical() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["theory-favorites"] });
+    },
+  });
+
+  // Completion toggle mutation
+  const completionMutation = useMutation({
+    mutationFn: async (resourceId: string) => {
+      const isComp = completions.includes(resourceId);
+      await toggleTheoryCompletion(resourceId, user!.id, isComp);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["theory-completions"] });
     },
   });
 
@@ -140,8 +207,15 @@ export default function TeoriaMusical() {
     if (activeTab === "favorites") {
       return resources.filter((r) => favorites.includes(r.id));
     }
+    if (activeTab === "completed") {
+      return resources.filter((r) => completions.includes(r.id));
+    }
     return resources;
-  }, [resources, favorites, activeTab]);
+  }, [resources, favorites, completions, activeTab]);
+
+  const completedCount = completions.length;
+  const totalCount = resources.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const contentTypeBadges: Record<string, { label: string; icon: any; color: string }> = {
     video: { label: "Video YouTube", icon: Youtube, color: "bg-red-500/20 text-red-300 border-red-500/30" },
@@ -149,6 +223,13 @@ export default function TeoriaMusical() {
     article: { label: "Lección Escrita", icon: Sparkles, color: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
     image: { label: "Imagen", icon: BookOpen, color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
     audio: { label: "Audio", icon: Music, color: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+  };
+
+  const levelBadges: Record<string, string> = {
+    principiante: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+    intermedio: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    avanzado: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    todos: "bg-slate-500/20 text-slate-300 border-slate-500/30",
   };
 
   return (
@@ -178,7 +259,7 @@ export default function TeoriaMusical() {
             onClick={() => setShowOnboarding(true)}
             className="h-9 px-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 transition-all"
           >
-            <HelpCircle className="w-4 h-4" /> Tutorial
+            <HelpCircle className="w-4 h-4" /> Preference/Tutorial
           </button>
 
           {canManageTheory && (
@@ -197,27 +278,59 @@ export default function TeoriaMusical() {
 
       {/* Main Body Section */}
       <main className="flex-1 p-3.5 sm:p-6 space-y-5 max-w-5xl w-full mx-auto">
-        {/* 1. Main Navigation Segmented Tabs (Explorar vs Favoritos) */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-900/90 border border-white/10">
+        {/* Progress Bar Card */}
+        {user && totalCount > 0 && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/60 via-slate-900/90 to-emerald-950/60 border border-white/10 space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="text-purple-300 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Tu Progreso de Aprendizaje
+              </span>
+              <span className="text-slate-300">{completedCount} de {totalCount} lecciones ({progressPercent}%)</span>
+            </div>
+            <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-purple-500 to-emerald-400 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.8 }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 1. Main Navigation Segmented Tabs (Explorar, Favoritos, Completadas) */}
+        <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-slate-900/90 border border-white/10">
           <button
             onClick={() => setActiveTab("explore")}
-            className={`h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            className={`h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeTab === "explore"
                 ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <LayoutGrid className="w-4 h-4" /> Explorar Lecciones
+            <LayoutGrid className="w-4 h-4" /> Explorar
           </button>
+
           <button
             onClick={() => setActiveTab("favorites")}
-            className={`h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            className={`h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeTab === "favorites"
                 ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-lg shadow-amber-500/10"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <Star className={`w-4 h-4 ${activeTab === "favorites" ? "fill-amber-400 text-amber-400" : ""}`} /> Mis Favoritos ({favorites.length})
+            <Star className={`w-4 h-4 ${activeTab === "favorites" ? "fill-amber-400 text-amber-400" : ""}`} /> Favoritos ({favorites.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab("completed")}
+            className={`h-11 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+              activeTab === "completed"
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-500/10"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Vistas ({completedCount})
           </button>
         </div>
 
@@ -240,10 +353,46 @@ export default function TeoriaMusical() {
           )}
         </div>
 
-        {/* 3. Instrument Horizontal Selector Pills */}
+        {/* 3. Dificultad / Level Filter Pills */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Nivel de Dificultad
+            </h2>
+            {hasPreferences && (
+              <button
+                onClick={resetFilters}
+                className="text-[11px] font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" /> Restablecer Filtros
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {LEVEL_FILTERS.map((lvl) => {
+              const active = selectedLevel === lvl.id;
+              return (
+                <button
+                  key={lvl.id}
+                  onClick={() => setSelectedLevel(lvl.id)}
+                  className={`h-10 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
+                    active
+                      ? "bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-600/30"
+                      : "bg-slate-900/80 border-white/10 text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {lvl.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 4. Instrument Horizontal Selector Pills */}
         <div className="space-y-2">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-            Filtrar por Instrumento
+            Instrumento / Área
           </h2>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
@@ -268,38 +417,6 @@ export default function TeoriaMusical() {
           </div>
         </div>
 
-        {/* 4. Category Filters (Optional Pill Row) */}
-        {!categoriesLoading && categories.length > 0 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full scrollbar-none">
-            <button
-              onClick={() => setSelectedCategory("all")}
-              className={`h-9 px-3 rounded-xl border text-[11px] font-bold shrink-0 transition-all ${
-                selectedCategory === "all"
-                  ? "bg-purple-500/20 text-purple-300 border-purple-500/50"
-                  : "bg-slate-900/60 border-white/5 text-slate-400 hover:text-white"
-              }`}
-            >
-              Todas las Áreas
-            </button>
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(isSelected ? "all" : cat.id)}
-                  className={`h-9 px-3 rounded-xl border text-[11px] font-bold shrink-0 transition-all ${
-                    isSelected
-                      ? "bg-purple-500/20 text-purple-300 border-purple-500/50"
-                      : "bg-slate-900/60 border-white/5 text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {/* 5. Resource Content Cards (Clean Native Android Feed) */}
         {resourcesLoading ? (
           <div className="space-y-3">
@@ -310,11 +427,19 @@ export default function TeoriaMusical() {
         ) : filteredResources.length === 0 ? (
           <EmptyState
             icon={GraduationCap}
-            title={activeTab === "favorites" ? "No tienes favoritos guardados" : "No se encontraron recursos"}
+            title={
+              activeTab === "favorites"
+                ? "No tienes favoritos guardados"
+                : activeTab === "completed"
+                ? "No has marcado lecciones como vistas"
+                : "No se encontraron lecciones"
+            }
             description={
               activeTab === "favorites"
                 ? "Haz clic en la estrella ⭐ de cualquier lección para guardarla aquí."
-                : "Intenta buscar con otros términos o cambia el instrumento seleccionado."
+                : activeTab === "completed"
+                ? "Haz clic en 'Marcar como vista' cuando estudies un tema."
+                : "Prueba seleccionando otro nivel o instrumento."
             }
           />
         ) : (
@@ -324,6 +449,7 @@ export default function TeoriaMusical() {
                 const formatConfig = contentTypeBadges[resource.content_type] || contentTypeBadges.article;
                 const FormatIcon = formatConfig.icon;
                 const isFav = favorites.includes(resource.id);
+                const isComp = completions.includes(resource.id);
 
                 return (
                   <motion.div
@@ -335,12 +461,20 @@ export default function TeoriaMusical() {
                   >
                     <Card
                       onClick={() => setSelectedResource(resource)}
-                      className="group relative rounded-2xl bg-slate-900/90 hover:bg-slate-900 border border-white/10 hover:border-purple-500/40 transition-all p-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer shadow-lg hover:shadow-purple-950/30 overflow-hidden"
+                      className={`group relative rounded-2xl border transition-all p-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer shadow-lg overflow-hidden ${
+                        isComp
+                          ? "bg-slate-900/60 border-emerald-500/30 hover:border-emerald-500/50"
+                          : "bg-slate-900/90 hover:bg-slate-900 border-white/10 hover:border-purple-500/40 hover:shadow-purple-950/30"
+                      }`}
                     >
                       <div className="flex items-start gap-4 flex-1 min-w-0">
                         {/* Thumbnail Format Icon */}
-                        <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/30 text-purple-300 flex items-center justify-center shrink-0">
-                          <FormatIcon className="w-6 h-6" />
+                        <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 ${
+                          isComp
+                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                            : "bg-purple-500/20 border-purple-500/30 text-purple-300"
+                        }`}>
+                          {isComp ? <CheckCircle2 className="w-6 h-6 text-emerald-400" /> : <FormatIcon className="w-6 h-6" />}
                         </div>
 
                         {/* Title & Details */}
@@ -349,6 +483,9 @@ export default function TeoriaMusical() {
                             <Badge className={`${formatConfig.color} text-[10px] uppercase font-bold px-2 py-0.5`}>
                               {formatConfig.label}
                             </Badge>
+                            <Badge className={`${levelBadges[resource.target_level] || levelBadges.todos} text-[10px] capitalize font-bold px-2 py-0.5`}>
+                              {resource.target_level}
+                            </Badge>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400">
                               {resource.instrument}
                             </span>
@@ -356,6 +493,11 @@ export default function TeoriaMusical() {
                               <span className="text-[11px] text-slate-400 flex items-center gap-1">
                                 <Clock className="w-3 h-3" /> {resource.duration_minutes}m
                               </span>
+                            )}
+                            {isComp && (
+                              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px] font-bold px-2 py-0.5">
+                                ✓ Vista
+                              </Badge>
                             )}
                           </div>
 
@@ -374,16 +516,33 @@ export default function TeoriaMusical() {
                       {/* Action buttons right */}
                       <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end pt-3 sm:pt-0 border-t sm:border-0 border-white/5 shrink-0">
                         {user && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              favoriteMutation.mutate(resource.id);
-                            }}
-                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-amber-400 transition-colors"
-                            title={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
-                          >
-                            <Star className={`w-4 h-4 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                completionMutation.mutate(resource.id);
+                              }}
+                              className={`p-2 rounded-xl border transition-colors ${
+                                isComp
+                                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                                  : "bg-white/5 border-white/5 text-slate-400 hover:text-emerald-400"
+                              }`}
+                              title={isComp ? "Desmarcar vista" : "Marcar como vista"}
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                favoriteMutation.mutate(resource.id);
+                              }}
+                              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-amber-400 transition-colors"
+                              title={isFav ? "Quitar de favoritos" : "Guardar en favoritos"}
+                            >
+                              <Star className={`w-4 h-4 ${isFav ? "fill-amber-400 text-amber-400" : ""}`} />
+                            </button>
+                          </div>
                         )}
 
                         {canManageTheory && (
@@ -425,10 +584,11 @@ export default function TeoriaMusical() {
         )}
       </main>
 
-      {/* Onboarding Tutorial Modal */}
+      {/* Onboarding Tutorial Modal with Preferences Questionnaire */}
       <TheoryOnboardingModal
         open={showOnboarding}
         onClose={() => setShowOnboarding(false)}
+        onSavePreferences={handlePreferencesSaved}
       />
 
       {/* Resource Viewer Modal */}

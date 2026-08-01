@@ -8,6 +8,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { TheoryResource } from "@/types/theory";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchUserCompletions, toggleTheoryCompletion } from "@/services/theoryService";
+import { toast } from "sonner";
 import {
   Youtube,
   FileText,
@@ -19,6 +23,8 @@ import {
   BookOpen,
   Image as ImageIcon,
   Music,
+  CheckCircle2,
+  Check,
 } from "lucide-react";
 
 interface TheoryResourceViewerModalProps {
@@ -32,6 +38,28 @@ export function TheoryResourceViewerModal({
   onOpenChange,
   resource,
 }: TheoryResourceViewerModalProps) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: completions = [] } = useQuery({
+    queryKey: ["theory-completions", user?.id],
+    queryFn: () => fetchUserCompletions(user!.id),
+    enabled: !!user,
+  });
+
+  const isCompleted = resource ? completions.includes(resource.id) : false;
+
+  const completionMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !resource) return;
+      await toggleTheoryCompletion(resource.id, user.id, isCompleted);
+    },
+    onSuccess: () => {
+      toast.success(isCompleted ? "Lección desmarcada" : "¡Lección marcada como vista!");
+      queryClient.invalidateQueries({ queryKey: ["theory-completions"] });
+    },
+  });
+
   if (!resource) return null;
 
   // Extract YouTube embed ID
@@ -61,17 +89,35 @@ export function TheoryResourceViewerModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-full w-[96vw] sm:max-w-3xl max-h-[92dvh] overflow-y-auto bg-slate-950/98 border-white/10 text-slate-100 backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
         <DialogHeader className="mb-4">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <Badge className={`${levelColors[resource.target_level] || levelColors.todos} capitalize font-bold text-[11px]`}>
-              {resource.target_level}
-            </Badge>
-            <Badge variant="outline" className="border-white/10 text-slate-300 uppercase tracking-wider text-[10px]">
-              {resource.instrument}
-            </Badge>
-            {resource.duration_minutes && (
-              <span className="flex items-center gap-1 text-xs text-slate-400">
-                <Clock className="w-3.5 h-3.5" /> {resource.duration_minutes} min
-              </span>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={`${levelColors[resource.target_level] || levelColors.todos} capitalize font-bold text-[11px]`}>
+                {resource.target_level}
+              </Badge>
+              <Badge variant="outline" className="border-white/10 text-slate-300 uppercase tracking-wider text-[10px]">
+                {resource.instrument}
+              </Badge>
+              {resource.duration_minutes && (
+                <span className="flex items-center gap-1 text-xs text-slate-400">
+                  <Clock className="w-3.5 h-3.5" /> {resource.duration_minutes} min
+                </span>
+              )}
+            </div>
+
+            {/* Mark as completed toggle button */}
+            {user && (
+              <Button
+                onClick={() => completionMutation.mutate()}
+                size="sm"
+                className={`h-9 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
+                  isCompleted
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30"
+                    : "bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white border border-white/10"
+                }`}
+              >
+                <CheckCircle2 className={`w-4 h-4 ${isCompleted ? "text-emerald-400" : ""}`} />
+                {isCompleted ? "Vista ✓" : "Marcar como vista"}
+              </Button>
             )}
           </div>
 
@@ -206,18 +252,34 @@ export function TheoryResourceViewerModal({
         </div>
 
         {/* Footer info */}
-        <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+        <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-slate-500" />
             <span>Por {resource.creator_profile?.full_name || "Equipo Privilegiados"}</span>
           </div>
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="rounded-xl text-slate-300 hover:text-white"
-          >
-            Cerrar
-          </Button>
+
+          <div className="flex items-center gap-2">
+            {user && (
+              <Button
+                onClick={() => completionMutation.mutate()}
+                className={`h-10 px-4 rounded-xl font-bold text-xs ${
+                  isCompleted
+                    ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20"
+                }`}
+              >
+                {isCompleted ? "✓ Lección Completada" : "✓ Marcar como Vista"}
+              </Button>
+            )}
+
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="rounded-xl text-slate-300 hover:text-white"
+            >
+              Cerrar
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

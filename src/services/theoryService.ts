@@ -137,3 +137,36 @@ export async function deleteTheoryResource(id: string) {
 
   if (error) throw error;
 }
+
+export async function fetchUserCompletions(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("theory_completions")
+    .select("resource_id")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.warn("theory_completions table query fallback:", error);
+    return [];
+  }
+  return (data || []).map((c) => c.resource_id);
+}
+
+export async function toggleTheoryCompletion(
+  resourceId: string,
+  userId: string,
+  isCompleted: boolean,
+) {
+  if (isCompleted) {
+    const { error } = await supabase
+      .from("theory_completions")
+      .delete()
+      .eq("resource_id", resourceId)
+      .eq("user_id", userId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("theory_completions")
+      .insert({ resource_id: resourceId, user_id: userId });
+    if (error) throw error;
+  }
+}
