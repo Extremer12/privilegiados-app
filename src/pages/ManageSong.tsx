@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,15 +10,17 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Loader2, Upload, ArrowLeft, AlertCircle, Music, CheckCircle2, ListMusic } from "lucide-react";
+import { Loader2, Upload, ArrowLeft, AlertCircle, Music, CheckCircle2, ListMusic, Sparkles } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useGroup } from "@/hooks/useGroupContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreateEnganchadoDialog } from "@/components/CreateEnganchadoDialog";
+import { AIAssistantDialog } from "@/components/canciones/AIAssistantDialog";
 
 const ManageSong = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
@@ -31,6 +33,13 @@ const ManageSong = () => {
   const [uploading, setUploading] = useState(false);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [createEnganchadoOpen, setCreateEnganchadoOpen] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("ai") === "true") {
+      setAiDialogOpen(true);
+    }
+  }, [searchParams]);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -126,6 +135,25 @@ const ManageSong = () => {
       });
     }
   }, [existingSong]);
+
+  const handleApplyAISong = (songData: {
+    title: string;
+    author: string;
+    category: string;
+    lyrics: string;
+    chords: string;
+    youtube_url?: string;
+  }) => {
+    setFormData((prev) => ({
+      ...prev,
+      title: songData.title || prev.title,
+      author: songData.author || prev.author,
+      category: songData.category || prev.category,
+      lyrics: songData.lyrics || prev.lyrics,
+      chords: songData.chords || prev.chords,
+      youtube_url: songData.youtube_url || prev.youtube_url,
+    }));
+  };
 
   const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -319,6 +347,32 @@ const ManageSong = () => {
           )}
         </AnimatePresence>
 
+        {/* Banner Asistente IA */}
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 text-white shadow-md shadow-indigo-500/25 shrink-0">
+              <Sparkles className="h-5 w-5 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                Asistente IA Gemini
+                <span className="text-[10px] bg-indigo-500/20 text-indigo-400 font-bold px-1.5 py-0.5 rounded uppercase">Nuevo</span>
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Busca acordes oficiales, estructura estrofas o formatea letras al instante.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            onClick={() => setAiDialogOpen(true)}
+            className="w-full sm:w-auto h-9 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs shadow-md shadow-indigo-500/20 transition-all gap-1.5 shrink-0"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Abrir Asistente IA
+          </Button>
+        </div>
+
         <Card className="p-6 md:p-8 bg-card border-border rounded-2xl relative overflow-hidden">
           <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -488,6 +542,12 @@ const ManageSong = () => {
         onCreated={(songId) => {
           navigate(`/canciones/${songId}`);
         }}
+      />
+
+      <AIAssistantDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        onApplySong={handleApplyAISong}
       />
     </main>
   );
