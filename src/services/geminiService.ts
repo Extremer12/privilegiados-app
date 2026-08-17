@@ -18,9 +18,11 @@ const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 // Available models in order of priority
 const MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
+  'gemini-3.6-flash',
+  'gemini-3.7-flash',
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-flash-latest',
 ];
 
 const SYSTEM_INSTRUCTION = `Eres un experto maestro de música y director de alabanza cristiana, especializado en cancioneros, armonía, acordes y letras de alabanza y adoración.
