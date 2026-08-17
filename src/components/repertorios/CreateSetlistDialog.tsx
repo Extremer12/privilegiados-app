@@ -86,25 +86,45 @@ export function CreateSetlistDialog({
       fetchProfiles();
       setStep(1);
     }
-  }, [open]);
+  }, [open, activeGroup?.id]);
 
   const fetchEvents = async () => {
-    const { data } = await supabase
+    let query = supabase
       .from('events')
       .select('id, title, event_date')
       .gte('event_date', new Date().toISOString())
       .order('event_date', { ascending: true })
       .limit(20);
+
+    if (activeGroup?.id) {
+      query = query.eq('group_id', activeGroup.id);
+    }
     
+    const { data } = await query;
     if (data) setEvents(data);
   };
 
   const fetchProfiles = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url')
-      .order('full_name');
-    if (data) setProfiles(data);
+    if (activeGroup?.id) {
+      const { data: membersData } = await supabase
+        .from('group_members')
+        .select('user_id, display_name, role, profiles(id, full_name, avatar_url)')
+        .eq('group_id', activeGroup.id)
+        .eq('status', 'approved');
+
+      const profilesList: Profile[] = (membersData || []).map((m: any) => ({
+        id: m.user_id,
+        full_name: m.display_name || m.profiles?.full_name || 'Integrante',
+        avatar_url: m.profiles?.avatar_url || null,
+      }));
+      setProfiles(profilesList);
+    } else {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .order('full_name');
+      if (data) setProfiles(data);
+    }
   };
 
   const handleToggleParticipant = (profileId: string) => {
@@ -187,14 +207,14 @@ export function CreateSetlistDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full h-full max-w-none m-0 p-0 rounded-none bg-[#0d1117] border-none flex flex-col overflow-hidden">
+      <DialogContent className="w-full h-full max-w-none m-0 p-0 rounded-none bg-background border-none flex flex-col overflow-hidden text-foreground">
         {/* Full Screen Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0d1117]/80 backdrop-blur-xl sticky top-0 z-50">
-          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="rounded-full hover:bg-white/5">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 z-50">
+          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="rounded-full hover:bg-muted">
             <X className="h-6 w-6" />
           </Button>
           <div className="text-center">
-            <DialogTitle className="text-lg font-black tracking-tight uppercase">Nuevo Repertorio</DialogTitle>
+            <DialogTitle className="text-lg font-black tracking-tight uppercase text-foreground">Nuevo Repertorio</DialogTitle>
             <DialogDescription className="sr-only">
               Formulario para crear un nuevo repertorio paso a paso.
             </DialogDescription>
@@ -208,7 +228,7 @@ export function CreateSetlistDialog({
             {step === 1 ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="space-y-2">
-                  <h3 className="text-3xl font-black tracking-tighter text-white">Información Básica</h3>
+                  <h3 className="text-3xl font-black tracking-tighter text-foreground">Información Básica</h3>
                   <p className="text-muted-foreground text-sm font-medium">Define los detalles principales del servicio.</p>
                 </div>
 
@@ -221,7 +241,7 @@ export function CreateSetlistDialog({
                       value={formData.title}
                       onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="Ej: Culto Dominical de Adoración"
-                      className="bg-white/5 border-white/10 h-14 rounded-2xl text-lg font-bold focus:border-secondary/40 px-5"
+                      className="bg-muted/50 border-border h-14 rounded-2xl text-lg font-bold focus:border-secondary/40 px-5 text-foreground"
                       required
                     />
                   </div>
@@ -234,7 +254,7 @@ export function CreateSetlistDialog({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full h-14 justify-start text-left font-bold rounded-2xl bg-white/5 border-white/10 px-5",
+                            "w-full h-14 justify-start text-left font-bold rounded-2xl bg-muted/50 border-border px-5 text-foreground",
                             !date && "text-muted-foreground"
                           )}
                         >
@@ -242,7 +262,7 @@ export function CreateSetlistDialog({
                           {date ? format(date, "PPPP", { locale: es }) : "Selecciona una fecha"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 rounded-3xl border-white/10 bg-[#1a1f2c] shadow-2xl" align="start">
+                      <PopoverContent className="w-auto p-0 rounded-3xl border-border bg-popover text-popover-foreground shadow-2xl" align="start">
                         <Calendar
                           mode="single"
                           selected={date}
@@ -265,7 +285,7 @@ export function CreateSetlistDialog({
                         value={formData.service_director}
                         onChange={(e) => setFormData(prev => ({ ...prev, service_director: e.target.value }))}
                         placeholder="Ej: Karina Andrada"
-                        className="bg-white/5 border-white/10 h-12 rounded-xl focus:border-secondary/40"
+                        className="bg-muted/50 border-border h-12 rounded-xl focus:border-secondary/40 text-foreground"
                       />
                     </div>
 
@@ -279,7 +299,7 @@ export function CreateSetlistDialog({
                         value={formData.preacher}
                         onChange={(e) => setFormData(prev => ({ ...prev, preacher: e.target.value }))}
                         placeholder="Ej: Pastor Juan Benegas"
-                        className="bg-white/5 border-white/10 h-12 rounded-xl focus:border-secondary/40"
+                        className="bg-muted/50 border-border h-12 rounded-xl focus:border-secondary/40 text-foreground"
                       />
                     </div>
                   </div>
@@ -294,7 +314,7 @@ export function CreateSetlistDialog({
                       value={formData.theme_verse}
                       onChange={(e) => setFormData(prev => ({ ...prev, theme_verse: e.target.value }))}
                       placeholder="Ej: Salmos 100:2 - Cantad con júbilo a Jehová..."
-                      className="bg-white/5 border-white/10 rounded-2xl focus:border-secondary/40 min-h-[100px] p-5 text-base italic"
+                      className="bg-muted/50 border-border rounded-2xl focus:border-secondary/40 min-h-[100px] p-5 text-base italic text-foreground"
                     />
                   </div>
                 </div>
@@ -302,7 +322,7 @@ export function CreateSetlistDialog({
             ) : (
               <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
-                  <h3 className="text-3xl font-black tracking-tighter text-white">Equipo de Servicio</h3>
+                  <h3 className="text-3xl font-black tracking-tighter text-foreground">Equipo de Servicio</h3>
                   <p className="text-muted-foreground text-sm font-medium">Selecciona quiénes servirán en este repertorio.</p>
                 </div>
 
@@ -314,7 +334,7 @@ export function CreateSetlistDialog({
                       placeholder="Buscar miembros..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-11 bg-white/5 border-white/10 h-12 rounded-xl focus:border-secondary/40"
+                      className="pl-11 bg-muted/50 border-border h-12 rounded-xl focus:border-secondary/40 text-foreground"
                     />
                   </div>
 
@@ -329,19 +349,19 @@ export function CreateSetlistDialog({
                           key={profile.id}
                           className={cn(
                             "flex flex-col gap-3 p-4 rounded-[2rem] border transition-all duration-300",
-                            isSelected ? "bg-secondary/10 border-secondary/30" : "bg-white/5 border-white/5"
+                            isSelected ? "bg-secondary/10 border-secondary/30" : "bg-muted/40 border-border/60 hover:border-border"
                           )}
                         >
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10 border border-white/10">
+                              <Avatar className="h-10 w-10 border border-border">
                                 <AvatarImage src={profile.avatar_url || undefined} />
                                 <AvatarFallback className="bg-secondary/20 text-secondary font-bold">
                                   {profile.full_name.charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-bold text-white">{profile.full_name}</p>
+                                <p className="font-bold text-foreground">{profile.full_name}</p>
                                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Miembro</p>
                               </div>
                             </div>
@@ -351,7 +371,7 @@ export function CreateSetlistDialog({
                               onClick={() => handleToggleParticipant(profile.id)}
                               className={cn(
                                 "rounded-2xl transition-all",
-                                isSelected ? "bg-secondary text-primary-foreground" : "bg-white/5 text-white/40"
+                                isSelected ? "bg-secondary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                               )}
                             >
                               {isSelected ? <Check className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
@@ -370,7 +390,7 @@ export function CreateSetlistDialog({
                                       "cursor-pointer rounded-lg px-2 py-0.5 text-[9px] font-bold uppercase transition-all",
                                       currentParticipant?.role === role 
                                         ? "bg-secondary text-primary-foreground" 
-                                        : "bg-white/5 text-muted-foreground hover:bg-white/10"
+                                        : "bg-muted text-muted-foreground hover:bg-muted/80"
                                     )}
                                   >
                                     {role}
@@ -390,12 +410,12 @@ export function CreateSetlistDialog({
         </ScrollArea>
 
         {/* Bottom Actions */}
-        <div className="px-6 py-6 border-t border-white/5 bg-[#0d1117]/80 backdrop-blur-xl flex items-center gap-4">
+        <div className="px-6 py-6 border-t border-border bg-background/80 backdrop-blur-xl flex items-center gap-4">
           {step === 2 && (
             <Button 
               variant="outline" 
               onClick={() => setStep(1)} 
-              className="h-14 w-14 rounded-2xl bg-white/5 border-white/10 flex-shrink-0"
+              className="h-14 w-14 rounded-2xl bg-muted/50 border-border flex-shrink-0"
             >
               <ChevronLeft className="h-6 w-6" />
             </Button>

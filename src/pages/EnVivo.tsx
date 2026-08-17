@@ -49,6 +49,7 @@ const EnVivo = () => {
     currentSong,
     nextSong,
     isCreator,
+    canControlSession,
     canEndSession,
     isLeader,
     handleNavigateSong,
@@ -115,14 +116,14 @@ const EnVivo = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary/95 to-primary/80">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
           <Loader />
-          <p className="mt-4 text-foreground/80 animate-pulse">
+          <p className="mt-4 text-muted-foreground animate-pulse text-sm">
             Cargando sesión en vivo...
           </p>
         </motion.div>
@@ -136,6 +137,7 @@ const EnVivo = () => {
       <PresentationView
         currentSong={currentSong}
         isCreator={isCreator}
+        canControl={canControlSession}
         theme={presentationTheme}
         fontSize={presentationFontSize}
         onThemeToggle={toggleTheme}
@@ -198,6 +200,7 @@ const EnVivo = () => {
                 currentPosition={session?.current_position || 0}
                 totalSongs={songs.length}
                 isCreator={isCreator}
+                canControl={canControlSession}
                 onPrevious={() => handleNavigateSong("prev")}
                 onNext={() => handleNavigateSong("next")}
                 onPresentationMode={openPresentationMode}
@@ -233,8 +236,9 @@ const EnVivo = () => {
                     <SongListPanel
                       songs={songs}
                       currentPosition={session?.current_position || 0}
-                      onSongSelect={isCreator ? handleJumpToSong : undefined}
+                      onSongSelect={canControlSession ? handleJumpToSong : undefined}
                       isCreator={isCreator}
+                      canControl={canControlSession}
                       onDeleteSong={(id) => setSongToDelete(id)}
                       onAddSong={(section) => {
                         setSelectedSection(section as SectionType);
@@ -287,10 +291,11 @@ const EnVivo = () => {
                       songs={songs}
                       currentPosition={session?.current_position || 0}
                       onSongSelect={(pos) => {
-                        if (isCreator) handleJumpToSong(pos);
+                        if (canControlSession) handleJumpToSong(pos);
                         setActivePanel(null);
                       }}
                       isCreator={isCreator}
+                      canControl={canControlSession}
                       onDeleteSong={(id) => setSongToDelete(id)}
                       onAddSong={(section) => {
                         setSelectedSection(section as SectionType);

@@ -18,7 +18,8 @@ export function useHotkeys(keyMap: HotkeyMap, dependencies: any[] = []) {
       if (
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
+        target.isContentEditable ||
+        Boolean(target.closest('input, textarea, [contenteditable="true"]'))
       ) {
         return;
       }

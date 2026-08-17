@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useGroup } from '@/hooks/useGroupContext';
 
 interface Profile {
   id: string;
@@ -40,6 +41,7 @@ export function ManageParticipantsDialog({
   targetId,
   onSaved
 }: ManageParticipantsDialogProps) {
+  const { activeGroup } = useGroup();
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,18 +51,32 @@ export function ManageParticipantsDialog({
     if (open) {
       fetchData();
     }
-  }, [open, targetId, type]);
+  }, [open, targetId, type, activeGroup?.id]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch all profiles
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .order('full_name');
-      
-      if (profilesData) setProfiles(profilesData);
+      // Fetch approved members of the active group
+      if (activeGroup?.id) {
+        const { data: membersData } = await supabase
+          .from('group_members')
+          .select('user_id, display_name, role, profiles(id, full_name, avatar_url)')
+          .eq('group_id', activeGroup.id)
+          .eq('status', 'approved');
+
+        const profilesList: Profile[] = (membersData || []).map((m: any) => ({
+          id: m.user_id,
+          full_name: m.display_name || m.profiles?.full_name || 'Integrante',
+          avatar_url: m.profiles?.avatar_url || null,
+        }));
+        setProfiles(profilesList);
+      } else {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .order('full_name');
+        if (profilesData) setProfiles(profilesData);
+      }
 
       // Fetch existing participants
       if (type === 'setlist') {
@@ -119,9 +135,6 @@ export function ManageParticipantsDialog({
           );
         }
       } else {
-        // live_session_participants
-        // To preserve status ('confirmed', etc.), we shouldn't delete all.
-        // But for simplicity, we can fetch existing, keep status if they exist, or delete removed ones.
         const { data: existingParts } = await supabase
           .from('live_session_participants')
           .select('user_id, status')
@@ -160,14 +173,14 @@ export function ManageParticipantsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-2xl rounded-3xl bg-[#0d1117] border border-white/10 p-0 overflow-hidden flex flex-col max-h-[85vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0d1117]/80 backdrop-blur-xl shrink-0">
+      <DialogContent className="w-full max-w-2xl rounded-3xl bg-card border border-border p-0 overflow-hidden flex flex-col max-h-[85vh] text-foreground">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/90 backdrop-blur-xl shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-secondary/20 rounded-xl">
               <Users className="w-5 h-5 text-secondary" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-black tracking-tight text-white">Gestionar Equipo</DialogTitle>
+              <DialogTitle className="text-lg font-black tracking-tight text-foreground">Gestionar Equipo</DialogTitle>
               <DialogDescription className="sr-only">
                 Gestionar los integrantes y roles asignados a este servicio.
               </DialogDescription>
@@ -176,7 +189,7 @@ export function ManageParticipantsDialog({
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="rounded-full hover:bg-white/5">
+          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="rounded-full hover:bg-muted">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -188,7 +201,7 @@ export function ManageParticipantsDialog({
               placeholder="Buscar miembros..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 bg-white/5 border-white/10 h-12 rounded-xl focus:border-secondary/40"
+              className="pl-11 bg-muted/50 border-border h-12 rounded-xl focus:border-secondary/40 text-foreground"
             />
           </div>
 
@@ -203,19 +216,19 @@ export function ManageParticipantsDialog({
                     key={profile.id}
                     className={cn(
                       "flex flex-col gap-3 p-4 rounded-[1.5rem] border transition-all duration-300",
-                      isSelected ? "bg-secondary/10 border-secondary/30" : "bg-white/5 border-white/5 hover:border-white/10"
+                      isSelected ? "bg-secondary/10 border-secondary/30" : "bg-muted/40 border-border/60 hover:border-border"
                     )}
                   >
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border border-white/10">
+                        <Avatar className="h-10 w-10 border border-border">
                           <AvatarImage src={profile.avatar_url || undefined} />
                           <AvatarFallback className="bg-secondary/20 text-secondary font-bold">
                             {profile.full_name.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-bold text-white text-sm">{profile.full_name}</p>
+                          <p className="font-bold text-foreground text-sm">{profile.full_name}</p>
                           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Miembro</p>
                         </div>
                       </div>
@@ -225,7 +238,7 @@ export function ManageParticipantsDialog({
                         onClick={() => handleToggleParticipant(profile.id)}
                         className={cn(
                           "rounded-xl transition-all",
-                          isSelected ? "bg-secondary text-primary-foreground" : "bg-white/5 text-white/40 hover:text-white"
+                          isSelected ? "bg-secondary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                         )}
                       >
                         {isSelected ? <Check className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
@@ -244,7 +257,7 @@ export function ManageParticipantsDialog({
                                 "cursor-pointer rounded-md px-2 py-0.5 text-[10px] font-bold uppercase transition-all border-0",
                                 currentParticipant?.role === role 
                                   ? "bg-secondary text-primary-foreground" 
-                                  : "bg-black/40 text-muted-foreground hover:bg-white/10"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
                               )}
                             >
                               {role}
@@ -260,7 +273,7 @@ export function ManageParticipantsDialog({
           </ScrollArea>
         </div>
 
-        <div className="p-6 border-t border-white/5 bg-[#0d1117]/80 backdrop-blur-xl shrink-0">
+        <div className="p-6 border-t border-border bg-card/90 backdrop-blur-xl shrink-0">
           <Button 
             disabled={loading}
             onClick={handleSave}

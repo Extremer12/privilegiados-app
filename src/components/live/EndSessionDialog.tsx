@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { useGroup } from "@/hooks/useGroupContext";
 
 export interface ServiceParticipantInput {
   name: string;
@@ -91,12 +93,29 @@ export const EndSessionDialog = ({
     }
   };
 
+  const { activeGroup } = useGroup();
+
   const fetchProfiles = async () => {
-    const { data } = await import("@/integrations/supabase/client").then(m => m.supabase)
-      .from('profiles')
-      .select('id, full_name, avatar_url')
-      .order('full_name');
-    if (data) setProfiles(data);
+    if (activeGroup?.id) {
+      const { data: membersData } = await supabase
+        .from('group_members')
+        .select('user_id, display_name, role, profiles(id, full_name, avatar_url)')
+        .eq('group_id', activeGroup.id)
+        .eq('status', 'approved');
+
+      const profilesList = (membersData || []).map((m: any) => ({
+        id: m.user_id,
+        full_name: m.display_name || m.profiles?.full_name || 'Integrante',
+        avatar_url: m.profiles?.avatar_url || null,
+      }));
+      setProfiles(profilesList);
+    } else {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .order('full_name');
+      if (data) setProfiles(data);
+    }
   };
 
   // Reset state when closed

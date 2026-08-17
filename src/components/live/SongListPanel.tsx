@@ -12,6 +12,7 @@ interface SongListPanelProps {
   currentPosition: number;
   onSongSelect?: (position: number) => void;
   isCreator: boolean;
+  canControl?: boolean;
   onDeleteSong?: (songId: string) => void;
   onAddSong?: (section: string) => void;
 }
@@ -21,9 +22,11 @@ export const SongListPanel = memo(({
   currentPosition,
   onSongSelect,
   isCreator,
+  canControl = true,
   onDeleteSong,
   onAddSong,
 }: SongListPanelProps) => {
+  const hasControl = isCreator || canControl;
 
   // Group songs by section for ordered display
   const songsBySection = new Map<string, { songs: (SetlistSong & { globalIndex: number })[]; config: any }>();
@@ -91,7 +94,7 @@ export const SongListPanel = memo(({
                     {config.name || sectionId}
                   </span>
                 </div>
-                {isCreator && onAddSong && (
+                {hasControl && onAddSong && (
                   <button
                     onClick={() => onAddSong(sectionId)}
                     className="p-1 rounded-md text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-colors"
@@ -160,8 +163,8 @@ export const SongListPanel = memo(({
                         <span className="flex-shrink-0 w-2 h-2 rounded-full bg-secondary animate-pulse" />
                       )}
                       
-                      {/* Delete button (only visible for creator on hover) */}
-                      {isCreator && onDeleteSong && (
+                      {/* Delete button (only visible for creator/leader on hover) */}
+                      {hasControl && onDeleteSong && (
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-1">
                           <button
                             onClick={(e) => {

@@ -46,9 +46,11 @@ const queryClient = new QueryClient({
   },
 });
 
+import { GroupProvider } from "@/hooks/useGroupContext";
+
 // Route loading fallback
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary/95 to-primary/80">
+  <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
     <Loader />
   </div>
 );
@@ -90,39 +92,41 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <AuthProvider>
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/unirse/:slug" element={<UnirseGrupo />} />
-                    <Route path="/en-vivo/espectador/:id" element={<EnVivoEspectador />} />
-                    {/* Layout wrapper for protected and catch-all routes */}
-                    <Route element={<Layout />}>
-                      {/* Protected routes */}
-                      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                      <Route path="/grupos" element={<ProtectedRoute><Grupos /></ProtectedRoute>} />
-                      <Route path="/grupos/crear" element={<ProtectedRoute><CrearGrupo /></ProtectedRoute>} />
-                      <Route path="/grupos/:id/config" element={<ProtectedRoute><GrupoConfig /></ProtectedRoute>} />
-                      <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
-                      <Route path="/canciones/nueva" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
-                      <Route path="/canciones/:id/editar" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
-                      <Route path="/canciones/:id" element={<ProtectedRoute><SongDetail /></ProtectedRoute>} />
-                      <Route path="/foro" element={<ProtectedRoute><Foro /></ProtectedRoute>} />
-                      <Route path="/miembros" element={<ProtectedRoute><Miembros /></ProtectedRoute>} />
-                      <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
-                      <Route path="/estadisticas" element={<ProtectedRoute><Estadisticas /></ProtectedRoute>} />
-                      <Route path="/repertorios" element={<ProtectedRoute><Repertorios /></ProtectedRoute>} />
-                      <Route path="/repertorios/:id" element={<ProtectedRoute><RepertorioDetalle /></ProtectedRoute>} />
-                      <Route path="/teoria" element={<ProtectedRoute><TeoriaMusical /></ProtectedRoute>} />
-                      <Route path="/en-vivo/:id" element={<ProtectedRoute><EnVivo /></ProtectedRoute>} />
-                      <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                      <Route path="/perfil/:id" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
+                <GroupProvider>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      {/* Public routes */}
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/unirse/:slug" element={<UnirseGrupo />} />
+                      <Route path="/en-vivo/espectador/:id" element={<EnVivoEspectador />} />
+                      {/* Layout wrapper for protected and catch-all routes */}
+                      <Route element={<Layout />}>
+                        {/* Protected routes */}
+                        <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                        <Route path="/grupos" element={<ProtectedRoute><Grupos /></ProtectedRoute>} />
+                        <Route path="/grupos/crear" element={<ProtectedRoute><CrearGrupo /></ProtectedRoute>} />
+                        <Route path="/grupos/:id/config" element={<ProtectedRoute><GrupoConfig /></ProtectedRoute>} />
+                        <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
+                        <Route path="/canciones/nueva" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
+                        <Route path="/canciones/:id/editar" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
+                        <Route path="/canciones/:id" element={<ProtectedRoute><SongDetail /></ProtectedRoute>} />
+                        <Route path="/foro" element={<ProtectedRoute><Foro /></ProtectedRoute>} />
+                        <Route path="/miembros" element={<ProtectedRoute><Miembros /></ProtectedRoute>} />
+                        <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
+                        <Route path="/estadisticas" element={<ProtectedRoute><Estadisticas /></ProtectedRoute>} />
+                        <Route path="/repertorios" element={<ProtectedRoute><Repertorios /></ProtectedRoute>} />
+                        <Route path="/repertorios/:id" element={<ProtectedRoute><RepertorioDetalle /></ProtectedRoute>} />
+                        <Route path="/teoria" element={<ProtectedRoute><TeoriaMusical /></ProtectedRoute>} />
+                        <Route path="/en-vivo/:id" element={<ProtectedRoute><EnVivo /></ProtectedRoute>} />
+                        <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                        <Route path="/perfil/:id" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
 
-                      {/* Catch-all */}
-                      <Route path="*" element={<NotFound />} />
-                    </Route>
-                  </Routes>
-                </Suspense>
+                        {/* Catch-all */}
+                        <Route path="*" element={<NotFound />} />
+                      </Route>
+                    </Routes>
+                  </Suspense>
+                </GroupProvider>
               </AuthProvider>
             </BrowserRouter>
           </TooltipProvider>

@@ -28,6 +28,7 @@ import { Setlist, SetlistSong, SECTION_TYPES, SectionType } from '@/components/r
 import type { SectionConfig } from '@/components/repertorios/ServiceStructureView';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useGroup } from '@/hooks/useGroupContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -49,6 +50,7 @@ const RepertorioDetalle = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isAdmin, isLeader } = useUserRole();
+  const { isGroupAdmin, isGroupLeader } = useGroup();
   const queryClient = useQueryClient();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -124,7 +126,7 @@ const RepertorioDetalle = () => {
   const songs = data?.songs || [];
   const participants = data?.participants || [];
   
-  const isAuthorized = setlist ? (user?.id === setlist.created_by || isAdmin || isLeader) : false;
+  const isAuthorized = setlist ? (user?.id === setlist.created_by || isAdmin || isLeader || isGroupAdmin || isGroupLeader) : false;
 
   useEffect(() => {
     if (setlist) {

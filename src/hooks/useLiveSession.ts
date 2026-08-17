@@ -11,7 +11,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useGroup } from "@/hooks/useGroupContext";
 import { toast } from "sonner";
+import { vibrateLight } from "@/utils/haptics";
 import * as liveService from "@/services/liveSessionService";
 import type {
   LiveSession,
@@ -24,7 +26,8 @@ import type { FinalizeServiceData } from "@/components/live/EndSessionDialog";
 export function useLiveSession(sessionId: string | undefined) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isLeader } = useUserRole();
+  const { isLeader, isAdmin } = useUserRole();
+  const { isGroupLeader, isGroupAdmin } = useGroup();
 
   // ── Core state ────────────────────────────
   const [session, setSession] = useState<LiveSession | null>(null);
@@ -44,10 +47,16 @@ export function useLiveSession(sessionId: string | undefined) {
   const isEndingRef = useRef(false);
 
   // ── Derived state ─────────────────────────
-  const currentSong = songs[session?.current_position ?? 0] ?? null;
-  const nextSong = songs[(session?.current_position ?? 0) + 1] ?? null;
-  const isCreator = session?.created_by === user?.id;
-  const canEndSession = isCreator || isLeader;
+  const rawPosition = session?.current_position ?? 0;
+  const safePosition =
+    songs.length > 0 ? Math.min(Math.max(0, rawPosition), songs.length - 1) : 0;
+
+  const currentSong = songs[safePosition] ?? null;
+  const nextSong = songs[safePosition + 1] ?? null;
+  const isCreator = Boolean(session?.created_by && user?.id && session.created_by === user.id);
+  const isAuthorized = isCreator || isLeader || isAdmin || isGroupLeader || isGroupAdmin;
+  const canControlSession = isAuthorized;
+  const canEndSession = isAuthorized;
 
   // ── Data fetching ─────────────────────────
 
@@ -136,7 +145,7 @@ export function useLiveSession(sessionId: string | undefined) {
           setSession(newSession);
           // Only auto-navigate for non-creators (participants).
           // The creator already navigates via handleEndSession.
-          if (!newSession.is_active && !isEndingRef.current) {
+          if (newSession && !newSession.is_active && !isEndingRef.current) {
             toast.success("Sesión finalizada", {
               description: "La sesión en vivo ha terminado",
             });
@@ -253,47 +262,84 @@ export function useLiveSession(sessionId: string | undefined) {
 
   const handleNavigateSong = useCallback(
     async (direction: "next" | "prev") => {
-      if (!session || !sessionId) return;
+      if (!session || !sessionId || songs.length === 0) return;
 
+      const currentPos = safePosition;
       const newPos =
         direction === "next"
-          ? session.current_position + 1
-          : session.current_position - 1;
+          ? currentPos + 1
+          : currentPos - 1;
 
       if (newPos < 0 || newPos >= songs.length) return;
 
       vibrateLight();
 
+      const previousSession = session;
+      const targetSong = songs[newPos];
+      if (!targetSong?.songs?.id) return;
+
+      // Optimistic update
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              current_position: newPos,
+              current_song_id: targetSong.songs.id,
+            }
+          : null,
+      );
+
       try {
         await liveService.updateSessionPosition(
           sessionId,
           newPos,
-          songs[newPos].songs.id,
+          targetSong.songs.id,
         );
-      } catch {
+      } catch (error) {
+        console.error("Error navigating song:", error);
+        setSession(previousSession);
         toast.error("Error", {
           description: "No se pudo cambiar de canción",
         });
       }
     },
-    [session, sessionId, songs],
+    [session, sessionId, songs, safePosition],
   );
 
   const handleJumpToSong = useCallback(
     async (position: number) => {
-      if (!session || !sessionId || position < 0 || position >= songs.length)
-        return;
+      if (!session || !sessionId || songs.length === 0) return;
+      if (position < 0 || position >= songs.length) return;
 
       vibrateLight();
+
+      const previousSession = session;
+      const targetSong = songs[position];
+      if (!targetSong?.songs?.id) return;
+
+      // Optimistic update
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              current_position: position,
+              current_song_id: targetSong.songs.id,
+            }
+          : null,
+      );
 
       try {
         await liveService.updateSessionPosition(
           sessionId,
           position,
-          songs[position].songs.id,
+          targetSong.songs.id,
         );
-      } catch {
-        console.error("Error jumping to song");
+      } catch (error) {
+        console.error("Error jumping to song:", error);
+        setSession(previousSession);
+        toast.error("Error", {
+          description: "No se pudo saltar a la canción seleccionada",
+        });
       }
     },
     [session, sessionId, songs],
@@ -376,6 +422,7 @@ export function useLiveSession(sessionId: string | undefined) {
     currentSong,
     nextSong,
     isCreator,
+    canControlSession,
     canEndSession,
     isLeader,
 
@@ -388,3 +435,4 @@ export function useLiveSession(sessionId: string | undefined) {
     spectatorCount,
   };
 }
+

@@ -118,8 +118,9 @@ const Repertorios = () => {
         return;
       }
 
-      if (!isLeader) {
-        toast.error('Solo los líderes pueden iniciar un servicio en vivo.');
+      const isAuthorized = isLeader || isGroupLeader || isGroupAdmin || (setlist.created_by === user?.id);
+      if (!isAuthorized) {
+        toast.error('Solo los líderes o administradores pueden iniciar un servicio en vivo.');
         return;
       }
 

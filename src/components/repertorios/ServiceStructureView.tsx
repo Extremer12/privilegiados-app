@@ -399,7 +399,7 @@ function SortableSectionItem({
                         <Input 
                           value={editingName}
                           onChange={(e) => setEditingName(e.target.value)}
-                          className="max-w-[200px] h-9 bg-black/20 border-white/10 text-base"
+                          className="max-w-[200px] h-9 bg-muted border-border text-base text-foreground"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') saveSectionName(section.id);
@@ -453,7 +453,7 @@ function SortableSectionItem({
                   )}
 
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                    songs.length > 0 ? 'bg-secondary/15 text-secondary' : 'bg-white/5 text-muted-foreground'
+                    songs.length > 0 ? 'bg-secondary/15 text-secondary' : 'bg-muted text-muted-foreground'
                   }`}>
                     {songs.length}
                   </span>

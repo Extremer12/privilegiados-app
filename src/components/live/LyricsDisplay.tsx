@@ -16,7 +16,8 @@ interface LyricsDisplayProps {
   currentSong: SetlistSong | null;
   currentPosition: number;
   totalSongs: number;
-  isCreator: boolean;
+  isCreator?: boolean;
+  canControl?: boolean;
   onPrevious: () => void;
   onNext: () => void;
   onPresentationMode?: () => void;
@@ -30,12 +31,14 @@ export const LyricsDisplay = memo(({
   currentPosition,
   totalSongs,
   isCreator,
+  canControl = true,
   onPrevious,
   onNext,
   onPresentationMode,
   nextSong,
 }: LyricsDisplayProps) => {
   const [viewMode, setViewMode] = useState<"lyrics" | "chords">("lyrics");
+  const hasControl = canControl || isCreator;
 
   if (!currentSong) {
     return (
@@ -217,7 +220,7 @@ export const LyricsDisplay = memo(({
         </ScrollArea>
 
         {/* Navigation controls */}
-        {isCreator && (
+        {hasControl && (
           <div className="p-6 border-t border-border/30">
             <div className="flex items-center justify-center gap-4">
               <Tooltip>
@@ -274,3 +277,4 @@ export const LyricsDisplay = memo(({
     </TooltipProvider>
   );
 });
+

@@ -10,7 +10,8 @@ import type { SetlistSong } from "@/types";
 
 interface PresentationViewProps {
   currentSong: SetlistSong;
-  isCreator: boolean;
+  isCreator?: boolean;
+  canControl?: boolean;
   theme: "dark" | "light";
   fontSize: number;
   onThemeToggle: () => void;
@@ -23,6 +24,7 @@ interface PresentationViewProps {
 export function PresentationView({
   currentSong,
   isCreator,
+  canControl = true,
   theme,
   fontSize,
   onThemeToggle,
@@ -31,6 +33,8 @@ export function PresentationView({
   onClose,
   onNavigate,
 }: PresentationViewProps) {
+  const hasControl = isCreator || canControl;
+
   return (
     <div
       className={`fixed inset-0 z-[200] flex flex-col ${
@@ -127,7 +131,7 @@ export function PresentationView({
       </div>
 
       {/* Invisible navigation zones for touch/click */}
-      {isCreator && (
+      {hasControl && (
         <>
           <div
             className="fixed top-0 left-0 w-[20%] h-full cursor-pointer z-10"

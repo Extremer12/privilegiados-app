@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useGroup } from './useGroupContext';
 
 // Roles de liderazgo que tienen permisos elevados
 const LEADERSHIP_ROLES = ['admin', 'lider', 'pastor', 'moderador'];
@@ -8,6 +9,18 @@ const LEADERSHIP_ROLES = ['admin', 'lider', 'pastor', 'moderador'];
 export const useUserRole = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  let groupContext: ReturnType<typeof useGroup> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    groupContext = useGroup();
+  } catch {
+    groupContext = null;
+  }
+
+  const isGroupAdmin = groupContext?.isGroupAdmin ?? false;
+  const isGroupLeader = groupContext?.isGroupLeader ?? false;
+  const groupRole = groupContext?.activeGroup?.memberRole;
 
   const { data, isLoading: loading } = useQuery({
     queryKey: ['userRoles', user?.id],
@@ -31,9 +44,9 @@ export const useUserRole = () => {
   });
 
   const userRoles = data || [];
-  const isAdmin = userRoles.includes('admin');
-  const isModerator = userRoles.includes('moderador') || isAdmin;
-  const isLeader = userRoles.some(role => LEADERSHIP_ROLES.includes(role));
+  const isAdmin = userRoles.includes('admin') || isGroupAdmin;
+  const isModerator = userRoles.includes('moderador') || isAdmin || groupRole === 'moderador';
+  const isLeader = isGroupLeader || isAdmin || userRoles.some(role => LEADERSHIP_ROLES.includes(role));
 
   const promoteToAdmin = async (userId: string) => {
     if (!isAdmin) return { error: 'Not authorized' };
