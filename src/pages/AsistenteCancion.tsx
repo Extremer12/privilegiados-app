@@ -26,14 +26,18 @@ import {
   Link,
   Quote,
   X,
+  Crown,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useGroup } from "@/hooks/useGroupContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSubscription } from "@/hooks/useSubscription";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { searchSongWithGemini, formatRawSongWithGemini } from "@/services/geminiService";
+import { checkGroupAIQuota } from "@/services/mercadoPagoService";
 
 const MUSICAL_KEYS = [
   "Original",
@@ -46,6 +50,7 @@ export default function AsistenteCancion() {
   const { user } = useAuth();
   const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
   const { isAdmin, isLeader, isModerator } = useUserRole();
+  const subscription = useSubscription();
   const queryClient = useQueryClient();
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -91,6 +96,20 @@ export default function AsistenteCancion() {
     if (!songTitle.trim() && !youtubeInput.trim()) {
       toast.error("Ingresa el título de la canción o un enlace de YouTube");
       return;
+    }
+
+    if (activeGroup?.id) {
+      const quota = await checkGroupAIQuota(activeGroup.id);
+      if (!quota.allowed) {
+        toast.error("Límite de IA alcanzado", {
+          description: quota.message || "Has alcanzado tu límite diario de IA.",
+          action: {
+            label: "Ver Planes",
+            onClick: () => navigate("/membresia"),
+          },
+        });
+        return;
+      }
     }
 
     // Initialize AbortController
@@ -269,20 +288,38 @@ export default function AsistenteCancion() {
   return (
     <main className="flex-1 pt-20 pb-24 px-3 sm:px-6 lg:px-8 safe-top safe-bottom max-w-6xl mx-auto w-full overflow-x-hidden">
       {/* Top Bar Navigation */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border flex-wrap gap-2">
         <Button
           variant="ghost"
           onClick={() => navigate("/canciones")}
-          className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all h-10 px-4 font-semibold text-sm gap-2"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all h-10 px-3 sm:px-4 font-semibold text-xs sm:text-sm gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver a Canciones
         </Button>
 
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs font-semibold px-3 py-1 bg-muted/60 border-border text-foreground">
-            Buscador Musical
-          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/membresia")}
+            className="h-8 px-2.5 rounded-lg border-border text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
+            <span>
+              Cupo IA: <strong className="text-foreground">{subscription.aiRequestsToday}/{subscription.aiLimit}</strong>
+            </span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/membresia")}
+            className="h-8 px-2.5 rounded-lg text-primary hover:bg-primary/10 text-xs font-bold gap-1"
+          >
+            <Crown className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Membresía</span>
+          </Button>
         </div>
       </div>
 

@@ -168,7 +168,7 @@ const GrupoConfig = () => {
 
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Invite Link Banner */}
-        <Card className="p-4 mb-6 rounded-2xl border-secondary/20 bg-secondary/5">
+        <Card className="p-4 mb-3 rounded-2xl border-secondary/20 bg-secondary/5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
               <Link2 className="w-5 h-5 text-secondary" />
@@ -187,6 +187,28 @@ const GrupoConfig = () => {
               <Copy className="w-3.5 h-3.5 mr-1.5" /> Copiar
             </Button>
           </div>
+        </Card>
+
+        {/* Subscription / Membership Banner */}
+        <Card className="p-4 mb-6 rounded-2xl border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+              <Crown className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-foreground">Membresía y Planes</p>
+              <p className="text-[11px] text-muted-foreground">
+                Estado del mes de prueba, límites de IA y pagos con Mercado Pago
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => navigate(`/grupos/${group.id}/membresia`)}
+            className="rounded-xl bg-primary text-primary-foreground font-bold text-xs h-9 px-4 shrink-0 gap-1.5"
+          >
+            Administrar Membresía
+          </Button>
         </Card>
 
         {/* Tabs */}

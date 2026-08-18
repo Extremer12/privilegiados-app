@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { 
   X, User, Home, Music, ListMusic, MessageCircle, 
-  Users, CalendarDays, BarChart3, ChevronUp, Bell, BellOff, MoreHorizontal, HelpCircle, GraduationCap
+  Users, CalendarDays, BarChart3, ChevronUp, Bell, BellOff, MoreHorizontal, HelpCircle, GraduationCap, Crown
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
@@ -70,6 +70,7 @@ export const Navigation = () => {
 
   // Secondary options tucked inside "Más" bottom sheet
   const moreOptions = [
+    { name: "Membresía", path: "/membresia", icon: Crown },
     { name: "Academia", path: "/teoria", icon: GraduationCap },
     { name: "Eventos", path: "/eventos", icon: CalendarDays },
     { name: "Miembros", path: "/miembros", icon: Users },

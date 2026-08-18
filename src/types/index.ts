@@ -193,10 +193,6 @@ export interface ServiceSection {
   created_at: string | null;
 }
 
-// ──────────────────────────────────────────────
-//  Music Groups (Multi-tenant)
-// ──────────────────────────────────────────────
-
 export interface MusicGroup {
   id: string;
   name: string;
@@ -207,8 +203,30 @@ export interface MusicGroup {
   is_public: boolean;
   created_at: string;
   updated_at: string;
+  /** Subscription & AI Quota fields */
+  subscription_status?: "trialing" | "active" | "past_due" | "canceled";
+  trial_ends_at?: string;
+  subscription_plan?: "monthly" | "quarterly" | "annual" | null;
+  subscription_ends_at?: string | null;
+  ai_requests_today?: number;
+  ai_requests_reset_at?: string;
   /** Virtual field: count of approved members (populated via queries) */
   member_count?: number;
+}
+
+export interface GroupPayment {
+  id: string;
+  group_id: string;
+  user_id: string;
+  payment_id: string | null;
+  preference_id: string | null;
+  amount: number;
+  currency: string;
+  plan: "monthly" | "quarterly" | "annual";
+  status: "approved" | "pending" | "rejected" | string;
+  payment_type: string | null;
+  payer_email: string | null;
+  created_at: string;
 }
 
 export interface GroupMember {

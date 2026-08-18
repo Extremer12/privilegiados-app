@@ -34,6 +34,7 @@ const UnirseGrupo = lazy(() => import("./pages/UnirseGrupo"));
 const GrupoConfig = lazy(() => import("./pages/GrupoConfig"));
 const EnVivoEspectador = lazy(() => import("./pages/EnVivoEspectador"));
 const TeoriaMusical = lazy(() => import("./pages/TeoriaMusical"));
+const Membresia = lazy(() => import("./pages/Membresia"));
 
 // Optimized QueryClient
 const queryClient = new QueryClient({
@@ -107,6 +108,8 @@ const App = () => {
                         <Route path="/grupos" element={<ProtectedRoute><Grupos /></ProtectedRoute>} />
                         <Route path="/grupos/crear" element={<ProtectedRoute><CrearGrupo /></ProtectedRoute>} />
                         <Route path="/grupos/:id/config" element={<ProtectedRoute><GrupoConfig /></ProtectedRoute>} />
+                        <Route path="/grupos/:id/membresia" element={<ProtectedRoute><Membresia /></ProtectedRoute>} />
+                        <Route path="/membresia" element={<ProtectedRoute><Membresia /></ProtectedRoute>} />
                         <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
                         <Route path="/canciones/asistente-ia" element={<ProtectedRoute><AsistenteCancion /></ProtectedRoute>} />
                         <Route path="/canciones/nueva" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
