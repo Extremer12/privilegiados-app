@@ -82,6 +82,30 @@ export default function AsistenteCancion() {
   } | null>(null);
 
   const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
+  const [dbMatches, setDbMatches] = useState<any[]>([]);
+
+  // Search existing songs in the database for instant 100% verified chords
+  useEffect(() => {
+    if (!songTitle.trim() || songTitle.trim().length < 3) {
+      setDbMatches([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await supabase
+          .from("songs")
+          .select("id, title, author, category, lyrics, chords, youtube_url")
+          .ilike("title", `%${songTitle.trim()}%`)
+          .limit(3);
+        setDbMatches(data || []);
+      } catch (err) {
+        console.warn("Error buscando canciones en BD:", err);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [songTitle]);
 
   const handleCancel = () => {
     if (abortControllerRef.current) {
@@ -427,6 +451,54 @@ export default function AsistenteCancion() {
                     Evita confusiones si existen varias canciones con el mismo nombre.
                   </p>
                 </div>
+
+                {/* Direct verified matches from database */}
+                {dbMatches.length > 0 && (
+                  <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/25 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Check className="w-4 h-4 text-primary" />
+                        Canciones verificadas ya existentes en Privilegiados:
+                      </p>
+                      <Badge variant="outline" className="text-[10px] bg-background border-primary/30 text-primary font-bold">
+                        100% Exactas
+                      </Badge>
+                    </div>
+                    <div className="space-y-1.5">
+                      {dbMatches.map((m) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-card border border-border hover:border-primary/50 transition-all text-xs"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-foreground truncate">{m.title}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{m.author || "Autor no especificado"}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            type="button"
+                            onClick={() => {
+                              setReviewedData({
+                                title: m.title,
+                                author: m.author || "",
+                                category: m.category || "otro",
+                                originalKey: "",
+                                bpm: "",
+                                lyrics: m.lyrics || "",
+                                chords: m.chords || "",
+                                youtube_url: m.youtube_url || "",
+                              });
+                              toast.success("Cargada desde el cancionero verificado de Privilegiados");
+                            }}
+                            className="h-8 text-xs font-bold px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 gap-1"
+                          >
+                            Usar esta versión
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </TabsContent>
 
               {/* Tab: Paste and Format */}

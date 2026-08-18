@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchSongById } from "@/services/songService";
 import { 
   ArrowLeft, Edit, Trash2, Maximize2, ZoomIn, ZoomOut,
-  Printer, Youtube, Star, Music, BadgeInfo, Share2
+  Printer, Youtube, Star, Music, BadgeInfo, Share2, Sparkles
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
@@ -346,6 +346,32 @@ const SongDetail = () => {
               <Share2 className="w-4 h-4 mr-2 text-muted-foreground" /> Compartir
             </Button>
           </div>
+
+          {/* Assistant Harmonize Banner if missing chords */}
+          {(!song.chords || song.chords.trim() === "" || song.chords.trim() === song.lyrics?.trim()) && isAuthorized && (
+            <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-foreground">
+                    Esta canción aún no tiene acordes
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Puedes agregar los acordes oficiales de CifraClub y estructurar estrofas con el asistente musical.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate(`/canciones/${song.id}/editar`)}
+                className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs sm:text-sm h-10 px-4 shrink-0 gap-1.5 shadow-sm"
+              >
+                <Sparkles className="w-4 h-4" />
+                Armonizar con IA
+              </Button>
+            </div>
+          )}
 
           {/* Tabs Selector */}
           <div className="flex border-b border-border">

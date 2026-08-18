@@ -10,12 +10,13 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Loader2, Upload, ArrowLeft, AlertCircle, Music, CheckCircle2, ListMusic, Search } from "lucide-react";
+import { Loader2, Upload, ArrowLeft, AlertCircle, Music, CheckCircle2, ListMusic, Search, Sparkles, Wand2 } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useGroup } from "@/hooks/useGroupContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreateEnganchadoDialog } from "@/components/CreateEnganchadoDialog";
+import { enhanceExistingSong } from "@/services/geminiService";
 
 const ManageSong = () => {
   const { id } = useParams();
@@ -30,6 +31,7 @@ const ManageSong = () => {
   const editMode = !!id;
   
   const [loading, setLoading] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [createEnganchadoOpen, setCreateEnganchadoOpen] = useState(false);
@@ -265,6 +267,51 @@ const ManageSong = () => {
     }
   };
 
+  const handleEnhanceWithAI = async () => {
+    if (!formData.title.trim() && !formData.lyrics.trim() && !formData.chords.trim()) {
+      toast.error("Ingresa al menos el título o la letra para estructurar");
+      return;
+    }
+
+    setEnhancing(true);
+    try {
+      const contentToEnhance = formData.lyrics.trim() || formData.chords.trim() || formData.title.trim();
+      const result = await enhanceExistingSong({
+        title: formData.title.trim() || "Canción",
+        author: formData.author.trim() || undefined,
+        lyrics: contentToEnhance,
+      });
+
+      if (!result.found && !result.lyrics && !result.chords) {
+        toast.warning("No se pudieron generar los acordes automáticamente", {
+          description: result.message || "Verifica el título o el autor.",
+        });
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        title: result.title || prev.title,
+        author: result.author || prev.author,
+        category: result.category || prev.category,
+        lyrics: result.lyrics || prev.lyrics,
+        chords: result.chords || prev.chords,
+        youtube_url: result.youtubeUrl || prev.youtube_url,
+      }));
+
+      toast.success("¡Canción estructurada y armonizada con éxito!", {
+        description: "Revisa los acordes generados y guarda los cambios.",
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Error al armonizar con IA", {
+        description: err.message || "Intenta nuevamente.",
+      });
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
   if (editMode && isFetchingSong) {
     return (
       <main className="flex-1 pt-24 pb-20 px-4 w-full flex items-center justify-center">
@@ -427,6 +474,41 @@ const ManageSong = () => {
                   </Button>
                 </motion.div>
               )}
+            </div>
+
+            {/* AI Assistant Harmonization & Structure Bar */}
+            <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-foreground">
+                    ¿Letra sin acordes o sin separar estrofas?
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    El asistente organiza automáticamente [Verso 1], [Coro] y agrega los acordes reales de CifraClub.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                onClick={handleEnhanceWithAI}
+                disabled={enhancing || (!formData.title && !formData.lyrics && !formData.chords)}
+                className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs sm:text-sm h-10 px-4 shrink-0 gap-1.5 shadow-sm"
+              >
+                {enhancing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Armonizando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Armonizar con IA
+                  </>
+                )}
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
