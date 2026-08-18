@@ -353,3 +353,109 @@ export async function checkMembershipStatus(
   if (!data) return "none";
   return data.status as "approved" | "pending" | "rejected";
 }
+
+// ──────────────────────────────────────────────
+//  Account & Group Permanent Deletion
+// ──────────────────────────────────────────────
+
+/**
+ * Elimina un grupo definitivamente junto con sus registros asociados
+ */
+export async function deleteGroupPermanently(groupId: string): Promise<void> {
+  // Limpiar relaciones del grupo
+  try {
+    await supabase.from("group_join_requests").delete().eq("group_id", groupId);
+    await supabase.from("group_members").delete().eq("group_id", groupId);
+    await supabase.from("setlists").delete().eq("group_id", groupId);
+    await supabase.from("events").delete().eq("group_id", groupId);
+    await supabase.from("theory_resources").delete().eq("group_id", groupId);
+    await supabase.from("songs").delete().eq("group_id", groupId);
+  } catch (cleanErr) {
+    console.warn("Error en limpieza secundaria del grupo:", cleanErr);
+  }
+
+  const { error } = await supabase
+    .from("music_groups")
+    .delete()
+    .eq("id", groupId);
+
+  if (error) throw error;
+}
+
+/**
+ * Elimina la cuenta del usuario transfiriendo la administración de grupos
+ * o eliminando el grupo si el usuario era el único integrante.
+ */
+export async function deleteUserAccount(userId: string): Promise<void> {
+  // 1. Obtener todos los grupos donde el usuario participa
+  const { data: memberships, error: memErr } = await supabase
+    .from("group_members")
+    .select("group_id, role")
+    .eq("user_id", userId);
+
+  if (memErr) {
+    console.warn("Error consultando membresías:", memErr);
+  }
+
+  // 2. Gestionar la sucesión de cada grupo donde era admin
+  for (const mem of memberships || []) {
+    if (mem.role === "admin") {
+      // Buscar otros integrantes aprobados en el grupo
+      const { data: otherMembers, error: otherErr } = await supabase
+        .from("group_members")
+        .select("id, user_id, role, joined_at")
+        .eq("group_id", mem.group_id)
+        .neq("user_id", userId)
+        .eq("status", "approved");
+
+      if (otherErr) console.warn("Error buscando sucesor:", otherErr);
+
+      if (otherMembers && otherMembers.length > 0) {
+        // Ponderar rango más alto: lider/moderador > miembro, luego antigüedad
+        const rankWeight = (r: string) => {
+          if (r === "admin") return 3;
+          if (r === "lider" || r === "moderador") return 2;
+          return 1;
+        };
+
+        const sorted = [...otherMembers].sort((a, b) => {
+          const diff = rankWeight(b.role) - rankWeight(a.role);
+          if (diff !== 0) return diff;
+          return new Date(a.joined_at || 0).getTime() - new Date(b.joined_at || 0).getTime();
+        });
+
+        const successor = sorted[0];
+
+        // Promover al sucesor a admin
+        await supabase
+          .from("group_members")
+          .update({ role: "admin" })
+          .eq("id", successor.id);
+
+        // Actualizar created_by del grupo
+        await supabase
+          .from("music_groups")
+          .update({ created_by: successor.user_id })
+          .eq("id", mem.group_id);
+      } else {
+        // No hay más integrantes: se elimina el grupo definitivamente
+        await deleteGroupPermanently(mem.group_id);
+      }
+    }
+  }
+
+  // 3. Eliminar registros del usuario
+  try {
+    await supabase.from("group_members").delete().eq("user_id", userId);
+    await supabase.from("group_join_requests").delete().eq("user_id", userId);
+    await supabase.from("favorite_songs").delete().eq("user_id", userId);
+    await supabase.from("song_comments").delete().eq("user_id", userId);
+    await supabase.from("song_likes").delete().eq("user_id", userId);
+    await supabase.from("theory_progress").delete().eq("user_id", userId);
+    await supabase.from("user_roles").delete().eq("user_id", userId);
+    await supabase.from("profiles").delete().eq("id", userId);
+  } catch (deleteErr) {
+    console.warn("Error eliminando registros del usuario:", deleteErr);
+  }
+}
+
