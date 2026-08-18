@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ import {
   Copy,
   Link,
   Quote,
-  Sparkles,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +47,7 @@ export default function AsistenteCancion() {
   const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
   const { isAdmin, isLeader, isModerator } = useUserRole();
   const queryClient = useQueryClient();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [activeTab, setActiveTab] = useState<"search" | "paste">("search");
 
@@ -77,11 +78,27 @@ export default function AsistenteCancion() {
 
   const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
 
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+    toast.info("Búsqueda cancelada.");
+  };
+
   const handleSearch = async () => {
     if (!songTitle.trim() && !youtubeInput.trim()) {
       toast.error("Ingresa el título de la canción o un enlace de YouTube");
       return;
     }
+
+    // Initialize AbortController
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setLoading(true);
     setSearchFeedback(null);
@@ -94,6 +111,7 @@ export default function AsistenteCancion() {
         youtubeUrl: youtubeInput.trim() || undefined,
         lyricsSnippet: lyricsSnippet.trim() || undefined,
         targetKey,
+        signal: controller.signal,
       });
 
       if (!result.found) {
@@ -123,12 +141,16 @@ export default function AsistenteCancion() {
 
       toast.success("Canción encontrada y estructurada");
     } catch (err: any) {
+      if (err.name === "AbortError" || controller.signal.aborted) {
+        return; // User cancelled
+      }
       console.error(err);
       toast.error("Error al buscar la canción", {
         description: err.message || "Verifica tu conexión y configuración.",
       });
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -138,12 +160,18 @@ export default function AsistenteCancion() {
       return;
     }
 
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoading(true);
     setSearchFeedback(null);
 
     try {
       const targetKey = selectedKey !== "Original" ? selectedKey : undefined;
-      const result = await formatRawSongWithGemini(rawText, targetKey);
+      const result = await formatRawSongWithGemini(rawText, targetKey, controller.signal);
 
       if (!result.found) {
         setSearchFeedback(result.message || "El texto no parece contener una estructura musical válida.");
@@ -166,12 +194,16 @@ export default function AsistenteCancion() {
 
       toast.success("Texto formateado correctamente");
     } catch (err: any) {
+      if (err.name === "AbortError" || controller.signal.aborted) {
+        return;
+      }
       console.error(err);
       toast.error("Error al formatear", {
         description: err.message,
       });
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -410,24 +442,40 @@ export default function AsistenteCancion() {
               </div>
             )}
 
-            {/* Submit Button */}
-            <Button
-              onClick={activeTab === "search" ? handleSearch : handleFormatRaw}
-              disabled={loading}
-              className="w-full h-13 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base shadow-sm transition-all gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Buscando y verificando transcripción oficial...
-                </>
-              ) : (
-                <>
-                  <Search className="h-5 w-5" />
-                  {activeTab === "search" ? "Buscar Canción" : "Formatear y Estructurar"}
-                </>
-              )}
-            </Button>
+            {/* Submit or Loading/Cancel Block */}
+            {loading ? (
+              <div className="p-4 rounded-xl bg-muted/60 border border-border flex flex-col sm:flex-row items-center justify-between gap-3 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold text-foreground">
+                      Buscando y verificando transcripción oficial...
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Consultando bases de acordes y cancioneros
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancel}
+                  className="rounded-xl h-10 px-4 border-destructive/40 text-destructive hover:bg-destructive/10 font-bold text-xs gap-1.5 shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                  Cancelar Búsqueda
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={activeTab === "search" ? handleSearch : handleFormatRaw}
+                className="w-full h-13 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base shadow-sm transition-all gap-2"
+              >
+                <Search className="h-5 w-5" />
+                {activeTab === "search" ? "Buscar Canción" : "Formatear y Estructurar"}
+              </Button>
+            )}
           </Card>
         </div>
       ) : (

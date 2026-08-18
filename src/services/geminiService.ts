@@ -21,15 +21,16 @@ export interface SearchSongParams {
   youtubeUrl?: string;
   lyricsSnippet?: string;
   targetKey?: string;
+  signal?: AbortSignal;
 }
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-// Available models in order of priority
+// Available models in order of priority (fastest first)
 const MODELS = [
+  'gemini-flash-lite-latest',
   'gemini-3.6-flash',
   'gemini-3.7-flash',
-  'gemini-flash-lite-latest',
   'gemini-3.5-flash-lite',
   'gemini-flash-latest',
 ];
@@ -37,7 +38,7 @@ const MODELS = [
 const SYSTEM_INSTRUCTION = `Eres un transcriptor musical y director de alabanza profesional especializado en cancioneros y armonía cristiana. Conoces con total precisión las transcripciones de acordes.lacuerda.net, cifraclub.com, letras.com y cancioneros oficiales de ministerios cristianos (Marco Barrientos, Miel San Marcos, Marcos Witt, Christine D'Clario, Hillsong en Español, Bethel, Elevation Worship, etc.).
 
 REGLAS DE PRECISIÓN Y DESAMBIGUACIÓN ESTRICTA:
-1. DESAMBIGUACIÓN: Si varias canciones tienen el mismo título (por ejemplo, "Hosanna", "Cuan Grande es Dios", "Santo", "Rey de Reyes"), DEBES basarte en el autor indicado, en el enlace de video o en la frase de la letra provista por el usuario para transcribir EXACTAMENTE la canción deseada y no confundirla con otra de distinto autor.
+1. DESAMBIGUACIÓN: Si varias canciones tienen el mismo título (por ejemplo, "Hosanna", "Bautízame", "Cuan Grande es Dios", "Santo", "Rey de Reyes"), DEBES basarte en el autor indicado, en el enlace de video o en la frase de la letra provista por el usuario para transcribir EXACTAMENTE la canción deseada y no confundirla con otra de distinto autor.
 2. NO inventes letras ni acordes. Usa la transcripción real y oficial de la versión requerida.
 3. Si la canción no es conocida o no tienes la certeza de los acordes reales, debes responder "found": false y explicar en "message" el motivo.
 4. La letra debe estar COMPLETA de inicio a fin (sin puntos suspensivos "..." ni estrofas omitidas).
@@ -73,7 +74,7 @@ const JSON_SCHEMA = {
   required: ["found", "title", "author", "category", "lyrics", "chords"]
 };
 
-async function callGemini(prompt: string): Promise<GeminiSongResult> {
+async function callGemini(prompt: string, signal?: AbortSignal): Promise<GeminiSongResult> {
   if (!GEMINI_API_KEY) {
     throw new Error("No se ha configurado la clave VITE_GEMINI_API_KEY en las variables de entorno.");
   }
@@ -81,56 +82,93 @@ async function callGemini(prompt: string): Promise<GeminiSongResult> {
   let lastError: Error | null = null;
 
   for (const model of MODELS) {
+    if (signal?.aborted) {
+      throw new DOMException("Búsqueda cancelada por el usuario.", "AbortError");
+    }
+
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: SYSTEM_INSTRUCTION }],
+      // Create a timeout controller per model attempt (15s timeout)
+      const timeoutController = new AbortController();
+      const timeoutId = setTimeout(() => timeoutController.abort(), 15000);
+
+      // Combine user signal and timeout signal if possible
+      const handleUserAbort = () => timeoutController.abort();
+      if (signal) {
+        signal.addEventListener('abort', handleUserAbort, { once: true });
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: prompt }],
+          signal: timeoutController.signal,
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [{ text: SYSTEM_INSTRUCTION }],
             },
-          ],
-          generationConfig: {
-            response_mime_type: "application/json",
-            response_schema: JSON_SCHEMA,
-            temperature: 0.1,
-          },
-        }),
-      });
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: prompt }],
+              },
+            ],
+            generationConfig: {
+              response_mime_type: "application/json",
+              response_schema: JSON_SCHEMA,
+              temperature: 0.1,
+            },
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const message = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
-        console.warn(`Error en modelo ${model}:`, message);
-        lastError = new Error(message);
-        continue;
+        clearTimeout(timeoutId);
+        if (signal) {
+          signal.removeEventListener('abort', handleUserAbort);
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const message = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+          console.warn(`Error en modelo ${model}:`, message);
+          lastError = new Error(message);
+          continue;
+        }
+
+        const result = await response.json();
+        const textOutput = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!textOutput) {
+          throw new Error("Gemini no devolvió texto de respuesta.");
+        }
+
+        const parsed: GeminiSongResult = JSON.parse(textOutput);
+        return parsed;
+      } catch (fetchErr: any) {
+        clearTimeout(timeoutId);
+        if (signal) {
+          signal.removeEventListener('abort', handleUserAbort);
+        }
+
+        if (signal?.aborted) {
+          throw new DOMException("Búsqueda cancelada.", "AbortError");
+        }
+
+        console.warn(`Intento fallido en ${model}:`, fetchErr.message);
+        lastError = fetchErr;
       }
-
-      const result = await response.json();
-      const textOutput = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!textOutput) {
-        throw new Error("Gemini no devolvió texto de respuesta.");
-      }
-
-      const parsed: GeminiSongResult = JSON.parse(textOutput);
-      return parsed;
     } catch (err: any) {
+      if (err.name === "AbortError" || signal?.aborted) {
+        throw err;
+      }
       console.warn(`Fallo al consultar ${model}:`, err);
       lastError = err;
     }
   }
 
-  throw lastError || new Error("No se pudo obtener respuesta de los modelos de Gemini.");
+  throw lastError || new Error("No se pudo obtener respuesta de los servidores de Gemini. Intenta nuevamente.");
 }
 
 /**
@@ -138,13 +176,15 @@ async function callGemini(prompt: string): Promise<GeminiSongResult> {
  */
 export async function searchSongWithGemini(
   paramsOrQuery: string | SearchSongParams,
-  legacyKey?: string
+  legacyKey?: string,
+  legacySignal?: AbortSignal
 ): Promise<GeminiSongResult> {
   let title = "";
   let author = "";
   let youtubeUrl = "";
   let lyricsSnippet = "";
   let targetKey = legacyKey;
+  let signal = legacySignal;
 
   if (typeof paramsOrQuery === "string") {
     title = paramsOrQuery;
@@ -154,6 +194,7 @@ export async function searchSongWithGemini(
     youtubeUrl = paramsOrQuery.youtubeUrl || "";
     lyricsSnippet = paramsOrQuery.lyricsSnippet || "";
     targetKey = paramsOrQuery.targetKey || targetKey;
+    signal = paramsOrQuery.signal || signal;
   }
 
   const prompt = `Transcribe la siguiente canción cristiana:
@@ -168,7 +209,7 @@ INSTRUCCIONES CLAVE:
 2. Consulta las transcripciones reales de cancioneros cristianos, acordes.lacuerda.net y cifraclub.com.
 3. Asegúrate de incluir la letra completa y los acordes reales sobre cada sílaba.`;
 
-  return callGemini(prompt);
+  return callGemini(prompt, signal);
 }
 
 /**
@@ -176,7 +217,8 @@ INSTRUCCIONES CLAVE:
  */
 export async function formatRawSongWithGemini(
   rawContent: string,
-  targetKey?: string
+  targetKey?: string,
+  signal?: AbortSignal
 ): Promise<GeminiSongResult> {
   const prompt = `Analiza, formatea y organiza el siguiente texto de canción con acordes:
 
@@ -188,5 +230,5 @@ ${targetKey && targetKey !== "Original" ? `Transporta todos los acordes a la ton
 
 Estructura las secciones con etiquetas estándar [Intro], [Verso 1], [Coro], [Puente], etc. Corrige la alineación de acordes sobre las palabras y extrae título, autor y categoría apropiada. Si no es una canción válida, indica found: false.`;
 
-  return callGemini(prompt);
+  return callGemini(prompt, signal);
 }
