@@ -377,6 +377,45 @@ export default function Membresia() {
           })}
         </div>
 
+        {/* New Generation AI & Real Database Architecture Box */}
+        <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-950/40 via-card to-indigo-950/30 border border-purple-500/20 shadow-xl space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground">Asistente Musical de Nueva Generación</h4>
+              <p className="text-xs text-muted-foreground">Búsqueda en bases de datos reales + IA de alta velocidad</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="p-3.5 rounded-2xl bg-background/60 border border-border space-y-1">
+              <p className="font-bold text-foreground flex items-center gap-1.5 text-purple-400">
+                <Music className="w-4 h-4" /> Letras 100% Reales
+              </p>
+              <p className="text-muted-foreground leading-relaxed text-[11px]">
+                Conectamos con bases de datos musicales oficiales para descargar la letra exacta de cada canción cristiana.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-background/60 border border-border space-y-1">
+              <p className="font-bold text-foreground flex items-center gap-1.5 text-amber-400">
+                <Zap className="w-4 h-4" /> 85% Menos Tokens
+              </p>
+              <p className="text-muted-foreground leading-relaxed text-[11px]">
+                La IA ya no consume recursos adivinando letras. Se enfoca únicamente en estructurar estrofas y alinear acordes al instante.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-background/60 border border-border space-y-1">
+              <p className="font-bold text-foreground flex items-center gap-1.5 text-emerald-400">
+                <Crown className="w-4 h-4" /> Mismo Precio Fijo
+              </p>
+              <p className="text-muted-foreground leading-relaxed text-[11px]">
+                Las tarifas de tu grupo se mantienen idénticas, con cupos más holgados y una experiencia mucho más rápida y precisa.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Security & Payment Methods Badge */}
         <div className="p-4 rounded-2xl bg-muted/40 border border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div className="flex items-center gap-3">

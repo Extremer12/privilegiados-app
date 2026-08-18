@@ -32,7 +32,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
       "Todos los miembros del grupo incluidos",
       "Canciones, acordes y repertorios ilimitados",
       "Sesiones en vivo y modo atril sincronizado",
-      "Asistente IA para transcripción de canciones (50/día)",
+      "Asistente con Búsqueda Real + IA para Acordes y Secciones (50/día)",
       "Proyección de letras en vivo para la congregación",
       "Soporte directo",
     ],
