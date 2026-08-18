@@ -59,7 +59,21 @@ export async function createLiveSession(
     .eq("is_active", true)
     .maybeSingle();
 
-  if (existing) return existing;
+  if (existing) {
+    // Ensure creator is confirmed in existing session
+    try {
+      await supabase.from("live_session_participants").upsert(
+        {
+          session_id: existing.id,
+          user_id: userId,
+          role_in_service: "Director / Administrador",
+          status: "confirmed",
+        },
+        { onConflict: "session_id,user_id" }
+      );
+    } catch {}
+    return existing;
+  }
 
   const { data, error } = await supabase
     .from("live_sessions")
@@ -74,5 +88,39 @@ export async function createLiveSession(
     .single();
 
   if (error) throw error;
+
+  // 1. Insert session creator as confirmed participant
+  try {
+    await supabase.from("live_session_participants").insert({
+      session_id: data.id,
+      user_id: userId,
+      role_in_service: "Director / Administrador",
+      status: "confirmed",
+    });
+
+    // 2. Copy any existing setlist participants to the live session
+    const { data: setlistParts } = await supabase
+      .from("setlist_participants")
+      .select("user_id, role_in_service")
+      .eq("setlist_id", setlistId);
+
+    if (setlistParts && setlistParts.length > 0) {
+      const otherParts = setlistParts
+        .filter((sp) => sp.user_id && sp.user_id !== userId)
+        .map((sp) => ({
+          session_id: data.id,
+          user_id: sp.user_id!,
+          role_in_service: sp.role_in_service || "Músico / Cantante",
+          status: "pending",
+        }));
+
+      if (otherParts.length > 0) {
+        await supabase.from("live_session_participants").insert(otherParts);
+      }
+    }
+  } catch (initErr) {
+    console.warn("Error initializing live session participants:", initErr);
+  }
+
   return data;
 }

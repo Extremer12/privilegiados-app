@@ -129,6 +129,24 @@ export function useLiveSession(sessionId: string | undefined) {
 
     fetchAllData();
 
+    // Confirm current user in live_session_participants
+    const confirmPresence = async () => {
+      try {
+        await supabase.from("live_session_participants").upsert(
+          {
+            session_id: sessionId,
+            user_id: user.id,
+            role_in_service: "Músico / Cantante",
+            status: "confirmed",
+          },
+          { onConflict: "session_id,user_id" }
+        );
+      } catch (err) {
+        console.warn("Could not upsert live participant status:", err);
+      }
+    };
+    confirmPresence();
+
     // Session changes
     const sessionChannel = supabase
       .channel(`live_session_${sessionId}`)

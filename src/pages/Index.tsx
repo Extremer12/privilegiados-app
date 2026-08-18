@@ -61,34 +61,68 @@ const Index = () => {
     enabled: !!user
   });
 
-  // Query for recently completed services that the user hasn't rated yet
+  // Query for recently completed services where the user ACTUALLY participated and hasn't rated yet
   const { data: pendingFeedback = [], isLoading: loadingFeedback } = useQuery({
-    queryKey: ['pending_feedback', user?.id],
+    queryKey: ['pending_feedback', user?.id, groupId],
     queryFn: async () => {
-      // 1. Get completed setlists from the last 24 hours
+      if (!user) return [];
+
+      // 1. Get completed setlists from the last 24 hours (filter by group if available)
       const twentyFourHoursAgo = subHours(new Date(), 24).toISOString();
-      const { data: setlists, error: setlistsError } = await supabase
+      let query = supabase
         .from('setlists')
         .select('id, title, service_date')
         .eq('status', 'completed')
-        .gte('service_date', twentyFourHoursAgo)
-        .order('service_date', { ascending: false });
+        .gte('service_date', twentyFourHoursAgo);
 
-      if (setlistsError) throw setlistsError;
-      if (!setlists || setlists.length === 0) return [];
+      if (groupId) {
+        query = query.eq('group_id', groupId);
+      }
 
-      // 2. Get feedbacks already submitted by the user
-      const { data: feedbacks, error: feedbackError } = await supabase
-        .from('service_feedback')
-        .select('service_id')
-        .eq('user_id', user!.id);
-      
-      if (feedbackError) throw feedbackError;
+      const { data: setlists, error: setlistsError } = await query.order('service_date', { ascending: false });
 
-      const ratedIds = new Set(feedbacks?.map(f => f.service_id) || []);
-      
-      // 3. Return setlists that haven't been rated
-      return setlists.filter(s => !ratedIds.has(s.id));
+      if (setlistsError || !setlists || setlists.length === 0) return [];
+
+      const setlistIds = setlists.map(s => s.id);
+
+      // 2. Check if the user was an ACTUAL confirmed participant in these live sessions / reports
+      const [liveParticipantsRes, serviceParticipantsRes, feedbackRes] = await Promise.all([
+        supabase
+          .from('live_session_participants')
+          .select('session_id, live_sessions!inner(setlist_id)')
+          .eq('user_id', user.id)
+          .eq('status', 'confirmed')
+          .in('live_sessions.setlist_id', setlistIds),
+        supabase
+          .from('service_participants')
+          .select('service_report_id, service_reports!inner(setlist_id)')
+          .eq('user_id', user.id)
+          .in('service_reports.setlist_id', setlistIds),
+        supabase
+          .from('service_feedback')
+          .select('service_id')
+          .eq('user_id', user.id)
+          .in('service_id', setlistIds)
+      ]);
+
+      const attendedSetlistIds = new Set<string>();
+
+      (liveParticipantsRes.data || []).forEach((row: any) => {
+        if (row.live_sessions?.setlist_id) {
+          attendedSetlistIds.add(row.live_sessions.setlist_id);
+        }
+      });
+
+      (serviceParticipantsRes.data || []).forEach((row: any) => {
+        if (row.service_reports?.setlist_id) {
+          attendedSetlistIds.add(row.service_reports.setlist_id);
+        }
+      });
+
+      const ratedIds = new Set((feedbackRes.data || []).map(f => f.service_id));
+
+      // 3. Return ONLY setlists where user actually attended and has NOT rated yet
+      return setlists.filter(s => attendedSetlistIds.has(s.id) && !ratedIds.has(s.id));
     },
     enabled: !!user
   });

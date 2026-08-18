@@ -37,8 +37,27 @@ export function LiveParticipantsPanel({ sessionId }: { sessionId: string }) {
         `)
         .eq('session_id', sessionId);
       
-      if (data) {
+      if (data && data.length > 0) {
         setParticipants(data as unknown as ParticipantStatus[]);
+      } else {
+        // Fallback: fetch session creator
+        const { data: sessionData } = await supabase
+          .from('live_sessions')
+          .select('created_by, profiles:created_by(full_name, avatar_url)')
+          .eq('id', sessionId)
+          .maybeSingle();
+
+        if (sessionData?.created_by) {
+          setParticipants([
+            {
+              id: `creator-${sessionData.created_by}`,
+              user_id: sessionData.created_by,
+              role_in_service: 'Director / Administrador',
+              status: 'confirmed',
+              profiles: (sessionData.profiles as any) || undefined
+            }
+          ]);
+        }
       }
     };
     

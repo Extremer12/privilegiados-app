@@ -54,6 +54,8 @@ export const ServiceFeedbackDialog = ({
     onSuccess: () => {
       toast.success("¡Gracias por tu valoración!");
       queryClient.invalidateQueries({ queryKey: ['service_feedback_status'] });
+      queryClient.invalidateQueries({ queryKey: ['pending_feedback'] });
+      queryClient.invalidateQueries({ queryKey: ['service_stats'] });
       queryClient.invalidateQueries({ queryKey: ['setlists'] });
       onOpenChange(false);
     },

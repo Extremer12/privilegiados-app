@@ -38,39 +38,44 @@ const Estadisticas = () => {
         };
       }
 
-      // Fetch setlists of active group
+      // 1. Fetch setlists for active group or user
       const { data: setlists } = await supabase
         .from("setlists")
-        .select("id")
-        .eq("group_id", activeGroup.id);
+        .select("id, group_id, created_by")
+        .or(`group_id.eq.${activeGroup.id},and(group_id.is.null,created_by.eq.${user.id})`);
 
       const setlistIds = (setlists || []).map(s => s.id);
-      if (setlistIds.length === 0) {
-        const { data: allSongs } = await supabase
-          .from("songs")
-          .select("id, title, category, created_at, creator_profile:profiles!songs_created_by_profile_fkey(full_name, avatar_url)")
-          .eq("group_id", activeGroup.id);
 
-        return {
-          reports: [],
-          songsPlayed: [],
-          participants: [],
-          allSongs: allSongs || [],
-          feedback: [],
-        };
+      // 2. Fetch all service reports for these setlists OR finalized by the current user
+      let reports: any[] = [];
+      if (setlistIds.length > 0) {
+        const { data: repData } = await supabase
+          .from("service_reports")
+          .select(`*, service_ratings (rating)`)
+          .or(`setlist_id.in.(${setlistIds.join(",")}),finalized_by.eq.${user.id}`)
+          .order("service_date", { ascending: false });
+        reports = repData || [];
+      } else {
+        const { data: repData } = await supabase
+          .from("service_reports")
+          .select(`*, service_ratings (rating)`)
+          .eq("finalized_by", user.id)
+          .order("service_date", { ascending: false });
+        reports = repData || [];
       }
 
-      const { data: reports } = await supabase
-        .from("service_reports")
-        .select(`*, service_ratings (rating)`)
-        .in("setlist_id", setlistIds)
-        .order("service_date", { ascending: false });
+      const allSetlistIds = Array.from(
+        new Set([
+          ...setlistIds,
+          ...reports.map((r) => r.setlist_id).filter(Boolean),
+        ])
+      );
 
-      const reportIds = (reports || []).map(r => r.id);
+      const reportIds = (reports || []).map((r) => r.id);
 
-      let songsPlayed = [];
-      let participants = [];
-      let feedback = [];
+      let songsPlayed: any[] = [];
+      let participants: any[] = [];
+      let feedback: any[] = [];
 
       if (reportIds.length > 0) {
         const { data: sp } = await supabase
@@ -85,45 +90,49 @@ const Estadisticas = () => {
           .in("service_report_id", reportIds);
         if (part) participants = part;
 
-        const { data: fb } = await supabase
-          .from("service_feedback")
-          .select(`*, profiles (full_name, avatar_url)`)
-          .in("service_id", setlistIds);
-        if (fb) feedback = fb;
+        if (allSetlistIds.length > 0) {
+          const { data: fb } = await supabase
+            .from("service_feedback")
+            .select(`*, profiles (full_name, avatar_url)`)
+            .in("service_id", allSetlistIds);
+          if (fb) feedback = fb;
+        }
       }
 
-      const { data: setlistParticipants } = await supabase
-        .from("setlist_participants")
-        .select(`*, setlists (service_date, id), profiles (full_name, avatar_url, role)`)
-        .in("setlist_id", setlistIds);
+      let combinedParticipants = [...(participants || [])];
+      if (allSetlistIds.length > 0) {
+        const { data: setlistParticipants } = await supabase
+          .from("setlist_participants")
+          .select(`*, setlists (service_date, id), profiles (full_name, avatar_url, role)`)
+          .in("setlist_id", allSetlistIds);
 
-      const combinedParticipants = [...(participants || [])];
-      if (setlistParticipants) {
-        setlistParticipants.forEach((sp: any) => {
-          const userId = sp.user_id;
-          const name = sp.profiles?.full_name || sp.participant_name;
-          const setlistId = sp.setlists?.id;
-          const date = sp.setlists?.service_date;
-          const exists = combinedParticipants.some((ap: any) => {
-            const apUserId = ap.user_id;
-            const apName = ap.profiles?.full_name || ap.participant_name;
-            const apSetlistId = ap.service_reports?.setlist_id;
-            return (
-              (userId && apUserId && userId === apUserId && setlistId === apSetlistId) ||
-              (name && apName && name === apName && setlistId === apSetlistId)
-            );
-          });
-          if (!exists) {
-            combinedParticipants.push({
-              id: sp.id || `setlist-part-${sp.user_id || sp.participant_name}-${setlistId}`,
-              user_id: sp.user_id,
-              participant_name: sp.participant_name,
-              role_in_service: sp.role_in_service,
-              service_reports: { service_date: date, setlist_id: setlistId },
-              profiles: sp.profiles,
+        if (setlistParticipants) {
+          setlistParticipants.forEach((sp: any) => {
+            const userId = sp.user_id;
+            const name = sp.profiles?.full_name || sp.participant_name;
+            const setlistId = sp.setlists?.id;
+            const date = sp.setlists?.service_date;
+            const exists = combinedParticipants.some((ap: any) => {
+              const apUserId = ap.user_id;
+              const apName = ap.profiles?.full_name || ap.participant_name;
+              const apSetlistId = ap.service_reports?.setlist_id;
+              return (
+                (userId && apUserId && userId === apUserId && setlistId === apSetlistId) ||
+                (name && apName && name === apName && setlistId === apSetlistId)
+              );
             });
-          }
-        });
+            if (!exists) {
+              combinedParticipants.push({
+                id: sp.id || `setlist-part-${sp.user_id || sp.participant_name}-${setlistId}`,
+                user_id: sp.user_id,
+                participant_name: sp.participant_name,
+                role_in_service: sp.role_in_service,
+                service_reports: { service_date: date, setlist_id: setlistId },
+                profiles: sp.profiles,
+              });
+            }
+          });
+        }
       }
 
       const { data: allSongs } = await supabase
