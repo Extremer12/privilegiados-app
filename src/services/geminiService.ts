@@ -171,11 +171,13 @@ async function callGeminiGeneric<T>(
 export async function structureRealSongWithChords({
   songMatch,
   targetKey,
+  chordNotation = "anglo",
   youtubeUrlOverride,
   signal,
 }: {
   songMatch: RealSongMatch;
   targetKey?: string;
+  chordNotation?: "anglo" | "latin";
   youtubeUrlOverride?: string;
   signal?: AbortSignal;
 }): Promise<GeminiSongResult> {
@@ -192,14 +194,15 @@ ${songMatch.lyrics}
 ---
 
 ${targetKey && targetKey !== "Original" ? `- Tonalidad solicitada: Transportar todos los acordes a la tonalidad de ${targetKey}.` : '- Tonalidad: Usar la tonalidad original oficial.'}
+${chordNotation === "latin" ? '- Sistema de acordes: Escribir los acordes en NOTACIÓN EN ESPAÑOL (ej: Do, Rem, Mim, Fa#m, Sol, Lam, Si7, Sol/Si, Do/Mi).' : '- Sistema de acordes: Escribir los acordes en notación cifrada estándar (C, Dm, Em, F#m, G, Am, B7, G/B, C/E).'}
 
 REGLAS DE ORO:
 1. CONSERVA LA LETRA EXACTA: NO inventes estrofas, no sustituyas palabras ni modifiques el texto de la letra proporcionada.
 2. ESTRUCTURA: Agrega etiquetas limpias [Intro], [Verso 1], [Verso 2], [Pre-Coro], [Coro], [Puente], [Final].
-3. ACORDES: En el campo 'chords', coloca los acordes reales de cifraclub/lacuerda en la línea superior alineados exactamente sobre las sílabas donde se tocan.
+3. ACORDES: En el campo 'chords', coloca los acordes reales en la línea superior alineados exactamente sobre las sílabas donde se tocan.
 4. Identifica la tonalidad original y tempo (BPM) aproximado.`;
 
-  const SYSTEM_INSTRUCTION = `Eres un formateador y transcriptor musical experto para cancioneros de alabanza cristiana. Tu trabajo es estructurar la letra dada y agregar los acordes reales de CifraClub/LaCuerda sin alterar ninguna palabra del texto original.`;
+  const SYSTEM_INSTRUCTION = `Eres un formateador y transcriptor musical experto para cancioneros de alabanza cristiana. Tu trabajo es estructurar la letra dada y agregar los acordes reales sin alterar ninguna palabra del texto original. Puedes usar tanto cifrado inglés (C, D, Em) como cifrado en español (Do, Re, Mim, Lam) según se solicite.`;
 
   const result = await callGeminiGeneric<GeminiSongResult>(
     prompt,

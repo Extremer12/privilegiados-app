@@ -45,6 +45,7 @@ import {
   formatRawSongWithGemini,
   RealSongMatch,
 } from "@/services/geminiService";
+import { convertChordsNotation } from "@/utils/chordTransposer";
 import { checkGroupAIQuota } from "@/services/mercadoPagoService";
 
 const MUSICAL_KEYS = [
@@ -957,13 +958,45 @@ export default function AsistenteCancion() {
 
                   {/* Tab Chords */}
                   <TabsContent value="chords" className="space-y-2 pt-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Puedes ajustar los acordes o la tabulación directamente en el recuadro:
-                    </Label>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <Label className="text-xs text-muted-foreground">
+                        Ajusta los acordes o cambia la notación:
+                      </Label>
+                      <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (!reviewedData?.chords) return;
+                            const converted = convertChordsNotation(reviewedData.chords, "latin");
+                            setReviewedData({ ...reviewedData, chords: converted });
+                            toast.success("Acordes pasados a español (Do, Re, Mim, Lam...)");
+                          }}
+                          className="h-7 px-2.5 rounded-lg text-[11px] font-bold border-border bg-background hover:bg-muted text-foreground"
+                        >
+                          Pasar a Español (Do, Re, Mim)
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (!reviewedData?.chords) return;
+                            const converted = convertChordsNotation(reviewedData.chords, "anglo");
+                            setReviewedData({ ...reviewedData, chords: converted });
+                            toast.success("Acordes pasados a inglés (C, D, Em, Am...)");
+                          }}
+                          className="h-7 px-2.5 rounded-lg text-[11px] font-bold border-border bg-background hover:bg-muted text-foreground"
+                        >
+                          Pasar a Inglés (C, D, Em)
+                        </Button>
+                      </div>
+                    </div>
                     <Textarea
                       value={reviewedData.chords}
                       onChange={(e) => setReviewedData({ ...reviewedData, chords: e.target.value })}
-                      className="min-h-[500px] font-mono text-xs md:text-sm bg-muted/30 border-border rounded-xl p-4 leading-relaxed whitespace-pre"
+                      className="min-h-[500px] font-mono text-xs md:text-sm bg-muted/30 border-border rounded-xl p-4 leading-relaxed whitespace-pre overflow-x-auto"
                     />
                   </TabsContent>
 

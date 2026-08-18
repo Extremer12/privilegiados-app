@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchSongById } from "@/services/songService";
 import { 
   ArrowLeft, Edit, Trash2, Maximize2, ZoomIn, ZoomOut,
-  Printer, Youtube, Star, Music, BadgeInfo, Share2, Sparkles
+  Printer, Youtube, Star, Music, BadgeInfo, Share2, Sparkles,
+  FileText, Languages, RotateCcw, Volume2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
@@ -18,7 +19,15 @@ import { toast } from "sonner";
 import { PresentationMode } from "@/components/PresentationMode";
 import { PrintPreviewMode } from "@/components/PrintPreviewMode";
 import { SongComments } from "@/components/SongComments";
-import { transposeChords } from "@/utils/chordTransposer";
+import { 
+  transposeChords, 
+  convertChordsNotation, 
+  extractCleanLyrics, 
+  isChordLine,
+  CHORD_REGEX_ANGLO,
+  CHORD_REGEX_LATIN,
+  ChordNotation 
+} from "@/utils/chordTransposer";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { vibrateLight } from "@/utils/haptics";
 import {
@@ -45,8 +54,12 @@ const SongDetail = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  
+  // Display & Notation Controls
   const [transposeSteps, setTransposeSteps] = useState(0);
   const [fontSize, setFontSize] = useState(16);
+  const [viewMode, setViewMode] = useState<"chords" | "lyrics_only">("chords");
+  const [chordNotation, setChordNotation] = useState<ChordNotation>("anglo");
   const [activeTab, setActiveTab] = useState<"lyrics" | "details" | "comments">("lyrics");
 
   useEffect(() => {
@@ -100,28 +113,30 @@ const SongDetail = () => {
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("No autenticado");
+      
       if (isFavorite) {
         const { error } = await supabase
           .from("favorite_songs")
           .delete()
           .eq("song_id", id)
-          .eq("user_id", user?.id);
+          .eq("user_id", user.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("favorite_songs")
           .insert({
             song_id: id,
-            user_id: user?.id
+            user_id: user.id
           });
         if (error) throw error;
       }
     },
     onSuccess: () => {
+      vibrateLight();
       refetchFavorite();
-      toast.success(isFavorite ? "Quitado de favoritos" : "Añadido a favoritos", {
-        description: isFavorite ? "La canción ya no está en tus favoritos" : "La canción se ha guardado en tus favoritos",
-      });
+      queryClient.invalidateQueries({ queryKey: ['favorite_songs', user?.id] });
+      toast.success(isFavorite ? "Eliminada de favoritos" : "Guardada en favoritos");
     },
     onError: (error: any) => {
       toast.error("Error", {
@@ -130,21 +145,40 @@ const SongDetail = () => {
     }
   });
 
+  const handleShare = async () => {
+    vibrateLight();
+    const shareData = {
+      title: song?.title || "Canción",
+      text: `Mira la canción "${song?.title}" en Privilegiados App`,
+      url: window.location.href,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          navigator.clipboard.writeText(window.location.href);
+          toast.success("Enlace copiado al portapapeles");
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Enlace copiado al portapapeles");
+    }
+  };
+
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      if (!song) throw new Error("No hay canción seleccionada");
       const { error } = await supabase
         .from("songs")
         .delete()
-        .eq("id", song.id);
-
+        .eq("id", id);
       if (error) throw error;
       return true;
     },
     onSuccess: () => {
-      toast.success("Canción eliminada", {
-        description: "La canción se ha eliminado correctamente",
-      });
+      toast.success("Canción eliminada");
       queryClient.invalidateQueries({ queryKey: ['songs'] });
       navigate("/canciones");
     },
@@ -155,88 +189,52 @@ const SongDetail = () => {
     }
   });
 
-  const handleDelete = async () => {
-    deleteMutation.mutate();
-  };
+  // Calculate transposed and converted content
+  const rawContent = song?.chords || song?.lyrics || "";
+  const transposedChords = rawContent ? transposeChords(rawContent, transposeSteps) : "";
 
-  const handleShare = async () => {
-    if (!song) return;
-    
-    const shareData = {
-      title: `Canción: ${song.title}`,
-      text: `Mira la canción "${song.title}" de ${song.author || "Autor Desconocido"} en la app Privilegiados`,
-      url: window.location.href,
-    };
+  // Content Renderer with robust scaling and no clipping
+  const renderSongContent = (rawText: string | null) => {
+    if (!rawText) return "";
 
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-        toast.success("¡Compartido con éxito!");
-      } catch (error: any) {
-        if (error.name !== "AbortError") {
-          toast.error("Error al compartir", { description: error.message });
-        }
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        toast.success("Enlace copiado", {
-          description: "El enlace de la canción se copió al portapapeles",
-        });
-      } catch (err: any) {
-        toast.error("No se pudo copiar el enlace");
-      }
+    let textToRender = rawText;
+
+    if (viewMode === "lyrics_only") {
+      textToRender = extractCleanLyrics(rawText);
+    } else if (chordNotation === "latin") {
+      textToRender = convertChordsNotation(rawText, "latin");
     }
-  };
 
-  const approveMutation = useMutation({
-    mutationFn: async () => {
-      if (!song) throw new Error("No hay canción seleccionada");
-      const { error } = await supabase
-        .from("songs")
-        .update({ status: 'approved' })
-        .eq("id", song.id);
-
-      if (error) throw error;
-      return true;
-    },
-    onSuccess: () => {
-      toast.success("¡Canción aprobada!", {
-        description: "La canción ahora es visible para todos",
-      });
-      queryClient.invalidateQueries({ queryKey: ['song', id] });
-      queryClient.invalidateQueries({ queryKey: ['songs'] });
-    },
-    onError: (error: any) => {
-      toast.error("Error", {
-        description: error.message,
-      });
-    }
-  });
-
-  const transposedChords = song?.chords 
-    ? transposeChords(song.chords, transposeSteps)
-    : null;
-
-  // Chord Highlighting Parser Function
-  const renderHighlightedChords = (chordsText: string | null) => {
-    if (!chordsText) return "";
-    
-    const lines = chordsText.split("\n");
+    const lines = textToRender.split("\n");
     const parsedLines = lines.map((line) => {
       const trimmed = line.trim();
-      if (trimmed.length === 0) return `<span class="block h-4"></span>`;
-      
-      const isChordLine = /^[A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?(?:\s+[A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?)*\s*$/.test(trimmed);
-      
-      if (isChordLine) {
-        const replaced = line.replace(/\b([A-G][b#]?(?:2|4|5|6|7|9|11|13|maj|min|sus|dim|aug|add|m)?(?:\d)?(?:\/[A-G][b#]?)?)\b/g, 
-          `<span class="text-secondary font-black font-mono tracking-wider">$1</span>`
-        );
-        return `<span class="block leading-none h-[1.3rem] font-mono whitespace-pre">${replaced}</span>`;
+      if (trimmed.length === 0) return `<div class="h-3 sm:h-4"></div>`;
+
+      // Section tag like [Verso 1], [Coro], [Puente], etc.
+      if (/^\[.*\]$/.test(trimmed)) {
+        return `<div class="mt-4 mb-2"><span class="inline-block px-3 py-1 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/20 text-xs font-black uppercase tracking-wider font-sans select-none">${trimmed}</span></div>`;
       }
-      return `<span class="block text-foreground font-sans leading-relaxed py-0.5">${line}</span>`;
+
+      if (viewMode === "chords" && isChordLine(line)) {
+        // Highlight Anglo or Latin chords
+        let replaced = line;
+        if (chordNotation === "latin") {
+          replaced = line.replace(
+            CHORD_REGEX_LATIN,
+            `<span class="text-secondary font-black font-mono tracking-wider">$1</span>`
+          );
+        } else {
+          replaced = line.replace(
+            CHORD_REGEX_ANGLO,
+            `<span class="text-secondary font-black font-mono tracking-wider">$1</span>`
+          );
+        }
+        return `<div class="font-mono text-secondary font-bold leading-normal whitespace-pre select-text min-h-[1.25em]">${replaced}</div>`;
+      }
+
+      return `<div class="text-foreground font-sans leading-relaxed py-0.5 select-text break-words">${line}</div>`;
     });
+
     return parsedLines.join("");
   };
 
@@ -280,7 +278,7 @@ const SongDetail = () => {
             <ArrowLeft className="w-4 h-4 mr-2" /> Volver
           </Button>
 
-          {/* Song Header — full-width, theme-aware */}
+          {/* Song Header */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -298,6 +296,11 @@ const SongDetail = () => {
                   <Badge className="bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
                     Tono: {song.key || "—"}
                   </Badge>
+                  {song.bpm && (
+                    <Badge variant="outline" className="text-[9px] font-bold text-muted-foreground border-border rounded-full px-2.5 py-0.5">
+                      {song.bpm} BPM
+                    </Badge>
+                  )}
                 </div>
                 <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground leading-tight">
                   {song.title}
@@ -308,28 +311,44 @@ const SongDetail = () => {
               </div>
             </div>
  
-            {isAuthorized && (
-              <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
-                <Button
-                  onClick={() => navigate(`/canciones/${song.id}/editar`)}
-                  className="flex-1 md:flex-initial h-10 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-xs uppercase tracking-wider shadow-md shadow-secondary/10"
-                >
-                  <Edit className="w-3.5 h-3.5 mr-2" />
-                  Editar
-                </Button>
-                <Button
-                  onClick={() => {
-                    vibrateLight();
-                    setShowDeleteDialog(true);
-                  }}
-                  variant="ghost"
-                  className="flex-1 md:flex-initial h-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 text-red-500 border border-red-500/10 text-xs font-bold uppercase tracking-wider"
-                >
-                  <Trash2 className="w-3.5 h-3.5 mr-2" />
-                  Eliminar
-                </Button>
-              </div>
-            )}
+            <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => toggleFavoriteMutation.mutate()}
+                className={`h-10 w-10 rounded-xl border ${
+                  isFavorite 
+                    ? "bg-amber-500/15 text-amber-500 border-amber-500/30" 
+                    : "bg-muted/40 text-muted-foreground border-border hover:text-foreground"
+                }`}
+                title={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+              >
+                <Star className={`w-4 h-4 ${isFavorite ? "fill-amber-500 text-amber-500" : ""}`} />
+              </Button>
+
+              {isAuthorized && (
+                <>
+                  <Button
+                    onClick={() => navigate(`/canciones/${song.id}/editar`)}
+                    className="flex-1 md:flex-initial h-10 rounded-xl bg-secondary text-primary-foreground hover:opacity-90 font-bold text-xs uppercase tracking-wider shadow-md shadow-secondary/10"
+                  >
+                    <Edit className="w-3.5 h-3.5 mr-2" />
+                    Editar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      vibrateLight();
+                      setShowDeleteDialog(true);
+                    }}
+                    variant="ghost"
+                    className="flex-1 md:flex-initial h-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 text-red-500 border border-red-500/10 text-xs font-bold uppercase tracking-wider"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-2" />
+                    Eliminar
+                  </Button>
+                </>
+              )}
+            </div>
           </motion.div>
 
           {/* Quick Action Buttons */}
@@ -359,7 +378,7 @@ const SongDetail = () => {
                     Esta canción aún no tiene acordes
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    Puedes agregar los acordes oficiales de CifraClub y estructurar estrofas con el asistente musical.
+                    Puedes estructurar estrofas y agregar acordes alineados con el asistente musical.
                   </p>
                 </div>
               </div>
@@ -416,37 +435,143 @@ const SongDetail = () => {
                 </div>
               )}
 
-              {/* Font Size Controls */}
-              <div className="flex items-center justify-between bg-muted/60 border border-border rounded-xl px-4 py-2.5">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tamaño de letra</span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={decreaseFontSize}
-                    className="h-8 w-8 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground"
-                  >
-                    <ZoomOut className="w-4 h-4" />
-                  </Button>
-                  <span className="text-xs font-bold text-foreground min-w-[3rem] text-center">{fontSize}px</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={increaseFontSize}
-                    className="h-8 w-8 rounded-lg hover:bg-background text-muted-foreground hover:text-foreground"
-                  >
-                    <ZoomIn className="w-4 h-4" />
-                  </Button>
+              {/* Comprehensive Controls Toolbar: Mode, Notation, Transpose & Font Size */}
+              <div className="p-3 sm:p-4 bg-muted/40 border border-border rounded-2xl space-y-3">
+                {/* Line 1: View Mode & Chord Notation Toggles */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+                  {/* View Mode: Chords vs Lyrics Only */}
+                  <div className="flex items-center p-1 bg-background rounded-xl border border-border">
+                    <button
+                      onClick={() => setViewMode("chords")}
+                      className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        viewMode === "chords"
+                          ? "bg-secondary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Music className="w-3.5 h-3.5" />
+                      Letra y Acordes
+                    </button>
+                    <button
+                      onClick={() => setViewMode("lyrics_only")}
+                      className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                        viewMode === "lyrics_only"
+                          ? "bg-secondary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      Solo Letra
+                    </button>
+                  </div>
+
+                  {/* Notation Switch (Only when showing chords) */}
+                  {viewMode === "chords" && (
+                    <div className="flex items-center gap-2 justify-between sm:justify-end">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                        <Languages className="w-3.5 h-3.5 text-secondary" /> Cifrado:
+                      </span>
+                      <div className="flex items-center p-1 bg-background rounded-xl border border-border">
+                        <button
+                          onClick={() => setChordNotation("anglo")}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                            chordNotation === "anglo"
+                              ? "bg-secondary/20 text-secondary border border-secondary/30"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                          title="C, D, Em, G, Am..."
+                        >
+                          Inglés (C, D, Em)
+                        </button>
+                        <button
+                          onClick={() => setChordNotation("latin")}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                            chordNotation === "latin"
+                              ? "bg-secondary/20 text-secondary border border-secondary/30"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                          title="Do, Re, Mim, Sol, Lam..."
+                        >
+                          Español (Do, Re, Mim)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Line 2: Transposition & Font Size Zoom */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+                  {/* Transposition */}
+                  {viewMode === "chords" && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Transportar:</span>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTransposeSteps(prev => prev - 1)}
+                          className="h-8 w-8 rounded-lg p-0 font-bold border-border bg-background hover:bg-muted"
+                        >
+                          -1
+                        </Button>
+                        <span className="text-xs font-bold px-2 py-1 rounded-lg bg-background border border-border min-w-[2.5rem] text-center text-foreground">
+                          {transposeSteps > 0 ? `+${transposeSteps}` : transposeSteps}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTransposeSteps(prev => prev + 1)}
+                          className="h-8 w-8 rounded-lg p-0 font-bold border-border bg-background hover:bg-muted"
+                        >
+                          +1
+                        </Button>
+                        {transposeSteps !== 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setTransposeSteps(0)}
+                            className="h-8 px-2 rounded-lg text-[11px] font-semibold text-muted-foreground hover:text-foreground gap-1"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Restablecer
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Font Size Zoom */}
+                  <div className="flex items-center gap-2 ml-auto">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Tamaño:</span>
+                    <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={decreaseFontSize}
+                        className="h-7 w-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                      >
+                        <ZoomOut className="w-3.5 h-3.5" />
+                      </Button>
+                      <span className="text-xs font-bold text-foreground min-w-[2.5rem] text-center">{fontSize}px</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={increaseFontSize}
+                        className="h-7 w-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Lyrics / Chords */}
-              <div className="bg-muted/40 border border-border p-5 rounded-2xl w-full">
-                {transposedChords ? (
-                  <div className="whitespace-pre-wrap select-text text-foreground" style={{ fontSize: `${fontSize}px` }} dangerouslySetInnerHTML={{ __html: renderHighlightedChords(transposedChords) }} />
-                ) : (
-                  <pre className="text-foreground whitespace-pre-wrap font-sans" style={{ fontSize: `${fontSize}px` }}>{song.lyrics}</pre>
-                )}
+              {/* Main Lyrics / Chords Display Container (Guaranteed no overflow clipping) */}
+              <div className="bg-card/70 border border-border p-5 sm:p-7 rounded-3xl w-full overflow-x-auto shadow-sm transition-all select-text scrollbar-thin">
+                <div
+                  className="select-text text-foreground w-full font-mono transition-all"
+                  style={{ fontSize: `${fontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: renderSongContent(transposedChords || song.lyrics) }}
+                />
               </div>
             </div>
           )}
@@ -493,18 +618,19 @@ const SongDetail = () => {
 
       {showPresentation && (
         <PresentationMode 
-          lyrics={song.lyrics || ""} 
+          lyrics={viewMode === "lyrics_only" ? extractCleanLyrics(transposedChords || song.lyrics || "") : (transposedChords || song.lyrics || "")} 
           title={song.title} 
           onClose={() => setShowPresentation(false)} 
         />
       )}
 
       {showPrintPreview && (
-        <PrintPreviewMode 
+        <PrintPreviewMode
           title={song.title}
           author={song.author}
-          category={song.category}
-          content={transposedChords || song.lyrics}
+          songKey={song.key}
+          bpm={song.bpm}
+          content={viewMode === "lyrics_only" ? extractCleanLyrics(transposedChords || song.lyrics || "") : (transposedChords || song.lyrics || "")}
           onClose={() => setShowPrintPreview(false)}
         />
       )}
