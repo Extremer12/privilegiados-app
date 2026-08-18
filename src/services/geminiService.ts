@@ -44,12 +44,12 @@ export interface SearchSongParams {
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-// Available models in order of priority (flagship high-accuracy models first)
+// Available models in order of stability and accuracy
 const MODELS = [
+  'gemini-3.5-flash-lite',
   'gemini-3.6-flash',
   'gemini-3.7-flash',
   'gemini-flash-latest',
-  'gemini-3.5-flash-lite',
 ];
 
 const SONG_RESULT_SCHEMA = {
@@ -57,7 +57,7 @@ const SONG_RESULT_SCHEMA = {
   properties: {
     found: { type: "boolean", description: "Indica si la canción y acordes reales fueron encontrados con certeza" },
     message: { type: "string", description: "Mensaje explicativo si no se encontró o advertencias" },
-    title: { type: "string", description: "Título oficial de la canción" },
+    title: { type: "string", description: "Título oficial de la canción grabada" },
     author: { type: "string", description: "Artista, autor o ministerio principal" },
     category: { 
       type: "string", 
@@ -83,14 +83,14 @@ const CANDIDATES_SCHEMA = {
     message: { type: "string", description: "Mensaje explicativo o resumen de las opciones" },
     candidates: {
       type: "array",
-      description: "Lista de 1 a 4 versiones o canciones coincidentes",
+      description: "Lista de 1 a 4 versiones o canciones reales coincidentes",
       items: {
         type: "object",
         properties: {
-          title: { type: "string", description: "Título de la canción" },
+          title: { type: "string", description: "Título oficial de la canción" },
           author: { type: "string", description: "Autor, ministerio o intérprete" },
-          versionOrAlbum: { type: "string", description: "Álbum, año o versión distintiva (ej: Álbum Viento Más Fuego, o Álbum Transformados)" },
-          sampleLyric: { type: "string", description: "2 a 3 líneas del coro o estrofa clave para que el usuario reconozca la letra al instante" },
+          versionOrAlbum: { type: "string", description: "Álbum, año o versión distintiva (ej: Álbum Viento Más Fuego, o Álbum Creo En Ti)" },
+          sampleLyric: { type: "string", description: "2 a 3 líneas del coro o estrofa clave LITERAL de la grabación comercial (ej: 'Aunque pase el tiempo sé que tu promesa cumplirás... Tus cuerdas de amor cayeron sobre mí')" },
           category: { type: "string", enum: ["alabanza", "adoracion", "especial", "otro"] },
           originalKey: { type: "string", description: "Tonalidad original estimada (ej: G, Em)" },
           bpm: { type: "string", description: "BPM estimado" },
@@ -210,31 +210,31 @@ async function callGeminiGeneric<T>(
 }
 
 /**
- * Paso 1: Busca candidatos ligeros (título, autor, coro distintivo) para desambiguación rápida y bajo consumo de tokens.
+ * Paso 1: Busca candidatos ligeros (título, autor, coro distintivo) con reglas estrictas anti-alucinación.
  */
 export async function searchSongCandidatesWithGemini(
   params: SearchSongParams
 ): Promise<CandidateSearchResult> {
   const { title, author, youtubeUrl, referenceUrl, lyricsSnippet, signal } = params;
 
-  const prompt = `Identifica las opciones y versiones oficiales de canciones cristianas que coinciden con la búsqueda:
-- Título: "${title.trim()}"
+  const prompt = `Identifica las opciones y versiones oficiales de canciones cristianas grabadas comercialmente que coinciden con la búsqueda:
+- Título buscado: "${title.trim()}"
 ${author?.trim() ? `- Autor / Intérprete sugerido: "${author.trim()}"` : ''}
 ${youtubeUrl?.trim() ? `- Enlace de YouTube: "${youtubeUrl.trim()}"` : ''}
 ${referenceUrl?.trim() ? `- Enlace de Referencia: "${referenceUrl.trim()}"` : ''}
-${lyricsSnippet?.trim() ? `- Frase o fragmento de la letra: "${lyricsSnippet.trim()}"` : ''}
+${lyricsSnippet?.trim() ? `- Frase de la letra: "${lyricsSnippet.trim()}"` : ''}
 
-INSTRUCCIONES CLAVE:
-1. Devuelve entre 1 y 4 opciones distintas y relevantes que el usuario podría estar buscando (incluyendo si existen diferentes canciones con el mismo título de distintos autores o versiones conocidas).
-2. En 'sampleLyric', escribe 2 o 3 líneas del coro o estrofa más famosa para que el músico reconozca de inmediato cuál es su canción.
-3. En 'versionOrAlbum', especifica el álbum, año o versión distintiva.
-4. Si no existe ninguna canción cristiana con este título, responde found: false.`;
+REGLAS ESTRICTAS E INQUEBRANTABLES:
+1. PROHIBIDO INVENTAR O COMPONER VERSOS: No inventes poesía piadosa ni rimas basadas en versículos bíblicos. Solo devuelve letras y canciones reales existentes en CifraClub, LaCuerda o Letras.com.
+2. EN 'sampleLyric': Escribe 2 o 3 líneas del coro o estrofa LITERAL grabada (por ejemplo, para 'Cuerdas de Amor' de Julio Melgar: 'Aunque pase el tiempo sé que tu promesa cumplirás... Tus cuerdas de amor cayeron sobre mí').
+3. Si existen diferentes canciones muy conocidas con el mismo título (ej: Hosanna de Marco Barrientos vs Hosanna de Hillsong), lista cada una por separado para que el usuario elija.
+4. Si no reconoces la canción con certeza absoluta, responde found: false.`;
 
   return callGeminiGeneric<CandidateSearchResult>(
     prompt,
     CANDIDATES_SCHEMA,
-    "Eres un catalogador experto de música y cancioneros cristianos. Tu tarea es listar las diferentes opciones o versiones existentes para que el usuario elija la exacta.",
-    0.1,
+    "Eres una base de datos estricta de cancioneros cristianos y tablaturas de CifraClub y LaCuerda. Tienes terminantemente prohibido inventar letras.",
+    0.0,
     signal
   );
 }
@@ -259,7 +259,7 @@ export async function transcribeCandidateWithGemini({
 - Título: "${candidate.title}"
 - Autor / Intérprete: "${candidate.author}"
 ${candidate.versionOrAlbum ? `- Versión / Álbum: "${candidate.versionOrAlbum}"` : ''}
-- Letra o coro distintivo de referencia: "${candidate.sampleLyric}"
+- Letra o coro de referencia confirmado: "${candidate.sampleLyric}"
 ${finalYoutube ? `- Video de YouTube: "${finalYoutube}"` : ''}
 ${targetKey && targetKey !== "Original" ? `- Tonalidad solicitada: Transportar todos los acordes a ${targetKey}.` : `- Tonalidad: Mantener la tonalidad original (${candidate.originalKey || 'Tono original'}).`}
 
