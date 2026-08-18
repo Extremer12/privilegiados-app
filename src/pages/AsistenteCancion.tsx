@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,9 @@ import {
   SlidersHorizontal,
   RefreshCw,
   Copy,
+  Link,
+  Quote,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +33,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useGroup } from "@/hooks/useGroupContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { searchSongWithGemini, formatRawSongWithGemini, GeminiSongResult } from "@/services/geminiService";
+import { searchSongWithGemini, formatRawSongWithGemini } from "@/services/geminiService";
 
 const MUSICAL_KEYS = [
   "Original",
@@ -46,9 +49,17 @@ export default function AsistenteCancion() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<"search" | "paste">("search");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [rawText, setRawText] = useState("");
+
+  // Search parameters
+  const [songTitle, setSongTitle] = useState("");
+  const [songAuthor, setSongAuthor] = useState("");
+  const [youtubeInput, setYoutubeInput] = useState("");
+  const [lyricsSnippet, setLyricsSnippet] = useState("");
   const [selectedKey, setSelectedKey] = useState("Original");
+
+  // Raw paste state
+  const [rawText, setRawText] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -67,8 +78,8 @@ export default function AsistenteCancion() {
   const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      toast.error("Ingresa el título o artista de la canción");
+    if (!songTitle.trim() && !youtubeInput.trim()) {
+      toast.error("Ingresa el título de la canción o un enlace de YouTube");
       return;
     }
 
@@ -77,30 +88,37 @@ export default function AsistenteCancion() {
 
     try {
       const targetKey = selectedKey !== "Original" ? selectedKey : undefined;
-      const result = await searchSongWithGemini(searchQuery, targetKey);
+      const result = await searchSongWithGemini({
+        title: songTitle.trim() || "Canción",
+        author: songAuthor.trim() || undefined,
+        youtubeUrl: youtubeInput.trim() || undefined,
+        lyricsSnippet: lyricsSnippet.trim() || undefined,
+        targetKey,
+      });
 
       if (!result.found) {
         setSearchFeedback(result.message || "No se encontraron fuentes de acordes confirmadas para este título.");
         toast.warning("Canción no encontrada", {
-          description: result.message || "Verifica el título o prueba pegar la letra manualmente.",
+          description: result.message || "Verifica el título, autor o agrega el enlace de YouTube.",
         });
         return;
       }
 
-      let youtubeUrl = result.youtubeUrl || "";
-      if (!youtubeUrl && result.youtubeVideoId) {
-        youtubeUrl = `https://www.youtube.com/watch?v=${result.youtubeVideoId}`;
+      // Prioritize the user's provided YouTube URL if valid, otherwise AI found URL
+      let finalYoutube = youtubeInput.trim() || result.youtubeUrl || "";
+      if (!finalYoutube && result.youtubeVideoId) {
+        finalYoutube = `https://www.youtube.com/watch?v=${result.youtubeVideoId}`;
       }
 
       setReviewedData({
-        title: result.title || searchQuery,
-        author: result.author || "",
+        title: result.title || songTitle,
+        author: result.author || songAuthor,
         category: result.category || "otro",
         originalKey: result.originalKey || "",
         bpm: result.bpm || "",
         lyrics: result.lyrics || "",
         chords: result.chords || "",
-        youtube_url: youtubeUrl,
+        youtube_url: finalYoutube,
       });
 
       toast.success("Canción encontrada y estructurada");
@@ -242,11 +260,11 @@ export default function AsistenteCancion() {
           Agregar Canción con Asistente
         </h1>
         <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
-          Busca transcripciones oficiales con acordes reales de cancioneros cristianos, Letras.com y LaCuerda, con vista previa y reproductor de video.
+          Especifica los detalles, el artista o el video de YouTube para asegurar la versión exacta de la canción con acordes reales.
         </p>
       </div>
 
-      {/* Step 1: Search Form (When no song is being reviewed) */}
+      {/* Step 1: Input Form (When no song is being reviewed) */}
       {!reviewedData ? (
         <div className="max-w-3xl mx-auto w-full space-y-6">
           <Card className="p-6 md:p-8 bg-card border-border rounded-2xl shadow-sm space-y-6">
@@ -268,32 +286,81 @@ export default function AsistenteCancion() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Tab Search */}
-              <TabsContent value="search" className="space-y-4 pt-5 mt-0">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-foreground">
-                    Título de la canción y autor
-                  </Label>
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              {/* Tab: Search with Disambiguation Fields */}
+              <TabsContent value="search" className="space-y-5 pt-5 mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Field 1: Song Title */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                      Título de la Canción *
+                    </Label>
                     <Input
-                      placeholder="Ej: La Bondad de Dios - Christine D'Clario (o Bethel Music)"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !loading) handleSearch();
-                      }}
-                      className="pl-12 h-13 text-base bg-muted/30 border-border rounded-xl focus-visible:ring-primary/40 font-medium"
+                      placeholder="Ej: Hosanna, Dios Incomparable, Way Maker"
+                      value={songTitle}
+                      onChange={(e) => setSongTitle(e.target.value)}
+                      className="h-11 text-sm bg-muted/40 border-border rounded-xl focus-visible:ring-primary/40 font-semibold"
                       autoFocus
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Fuentes de referencia: Cancioneros oficiales, acordes.lacuerda.net, cifraclub.com y letras.com.
+
+                  {/* Field 2: Author / Ministry */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
+                      Autor o Ministerio (Recomendado)
+                    </Label>
+                    <Input
+                      placeholder="Ej: Marco Barrientos, Miel San Marcos, Hillsong"
+                      value={songAuthor}
+                      onChange={(e) => setSongAuthor(e.target.value)}
+                      className="h-11 text-sm bg-muted/40 border-border rounded-xl focus-visible:ring-primary/40 font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Field 3: YouTube Link */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <Youtube className="w-4 h-4 text-red-500" />
+                      Enlace de Video de YouTube (Opcional)
+                    </Label>
+                    <span className="text-[11px] text-muted-foreground">Identificación exacta</span>
+                  </div>
+                  <Input
+                    placeholder="Pega el enlace de YouTube ej: https://www.youtube.com/watch?v=..."
+                    value={youtubeInput}
+                    onChange={(e) => setYoutubeInput(e.target.value)}
+                    className="h-11 text-xs font-mono bg-muted/40 border-border rounded-xl focus-visible:ring-primary/40"
+                  />
+                  {youtubeInput.trim() && (
+                    <div className="mt-3 p-3 bg-muted/20 border border-border rounded-xl">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">Vista previa del video seleccionado:</p>
+                      <div className="max-w-md mx-auto">
+                        <YouTubePlayer url={youtubeInput.trim()} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Field 4: Lyrics Snippet / Distinctive Phrase */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                    <Quote className="w-3.5 h-3.5 text-muted-foreground" />
+                    Frase de la letra o notas distintivas (Opcional)
+                  </Label>
+                  <Input
+                    placeholder="Ej: Levantamos un clamor por sanidad y redención... / Versión acústica en vivo"
+                    value={lyricsSnippet}
+                    onChange={(e) => setLyricsSnippet(e.target.value)}
+                    className="h-11 text-xs bg-muted/40 border-border rounded-xl focus-visible:ring-primary/40"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Evita confusiones si existen varias canciones con el mismo nombre.
                   </p>
                 </div>
               </TabsContent>
 
-              {/* Tab Paste & Format */}
+              {/* Tab: Paste and Format */}
               <TabsContent value="paste" className="space-y-4 pt-5 mt-0">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-foreground">
@@ -352,7 +419,7 @@ export default function AsistenteCancion() {
               {loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Buscando y verificando transcripción...
+                  Buscando y verificando transcripción oficial...
                 </>
               ) : (
                 <>

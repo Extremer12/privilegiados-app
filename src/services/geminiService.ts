@@ -15,6 +15,14 @@ export interface GeminiSongResult {
   notes?: string;
 }
 
+export interface SearchSongParams {
+  title: string;
+  author?: string;
+  youtubeUrl?: string;
+  lyricsSnippet?: string;
+  targetKey?: string;
+}
+
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 // Available models in order of priority
@@ -26,19 +34,20 @@ const MODELS = [
   'gemini-flash-latest',
 ];
 
-const SYSTEM_INSTRUCTION = `Eres un transcriptor musical y director de alabanza profesional especializado en cancioneros y armonía cristiana. Conoces con total precisión las transcripciones de acordes.lacuerda.net, cifraclub.com, letras.com y cancioneros oficiales de ministerios cristianos.
+const SYSTEM_INSTRUCTION = `Eres un transcriptor musical y director de alabanza profesional especializado en cancioneros y armonía cristiana. Conoces con total precisión las transcripciones de acordes.lacuerda.net, cifraclub.com, letras.com y cancioneros oficiales de ministerios cristianos (Marco Barrientos, Miel San Marcos, Marcos Witt, Christine D'Clario, Hillsong en Español, Bethel, Elevation Worship, etc.).
 
-REGLAS DE PRECISIÓN Y VERACIDAD ESTRICTA:
-1. NO inventes letras ni acordes. Usa las transcripciones oficiales y reales de la canción cantada por el autor o ministerio.
-2. Si la canción no es conocida o no tienes la certeza de los acordes reales, debes responder "found": false y explicar en "message" el motivo.
-3. La letra debe estar COMPLETA de inicio a fin (sin puntos suspensivos "..." ni estrofas omitidas).
-4. El campo "chords" debe tener la letra con los acordes colocados en líneas superiores EXACTAMENTE encima de las sílabas o palabras donde cambia la armonía musical. Incluye etiquetas de sección claras: [Intro], [Verso 1], [Verso 2], [Pre-Coro], [Coro], [Puente], [Final].
-5. El campo "lyrics" debe contener la letra limpia y completa, organizada con las mismas etiquetas de sección [Verso 1], [Coro], etc., sin acordes.
-6. Identifica con precisión:
-   - "originalKey": Tonalidad original exacta (ej: Sol / G, Re / D, Do / C, Mi menor / Em).
+REGLAS DE PRECISIÓN Y DESAMBIGUACIÓN ESTRICTA:
+1. DESAMBIGUACIÓN: Si varias canciones tienen el mismo título (por ejemplo, "Hosanna", "Cuan Grande es Dios", "Santo", "Rey de Reyes"), DEBES basarte en el autor indicado, en el enlace de video o en la frase de la letra provista por el usuario para transcribir EXACTAMENTE la canción deseada y no confundirla con otra de distinto autor.
+2. NO inventes letras ni acordes. Usa la transcripción real y oficial de la versión requerida.
+3. Si la canción no es conocida o no tienes la certeza de los acordes reales, debes responder "found": false y explicar en "message" el motivo.
+4. La letra debe estar COMPLETA de inicio a fin (sin puntos suspensivos "..." ni estrofas omitidas).
+5. El campo "chords" debe tener la letra con los acordes colocados en líneas superiores EXACTAMENTE encima de las sílabas o palabras donde cambia la armonía musical. Incluye etiquetas de sección claras: [Intro], [Verso 1], [Verso 2], [Pre-Coro], [Coro], [Puente], [Final].
+6. El campo "lyrics" debe contener la letra limpia y completa, organizada con las mismas etiquetas de sección [Verso 1], [Coro], etc., sin acordes.
+7. Identifica con precisión:
+   - "originalKey": Tonalidad original exacta (ej: G, Em, D, C, etc.).
    - "bpm": Tempo aproximado (ej: 72 BPM / Balada lenta, 128 BPM / Júbilo).
    - "category": Clasifica entre "alabanza" (júbilo/rápida), "adoracion" (introspectiva/lenta), "especial" (coro/solista), "otro".
-7. Busca el video oficial de la canción en YouTube y provee su URL directa o ID de 11 caracteres en "youtubeUrl" y "youtubeVideoId".`;
+8. Devuelve el enlace o ID de YouTube del video oficial o de referencia.`;
 
 const JSON_SCHEMA = {
   type: "object",
@@ -93,7 +102,7 @@ async function callGemini(prompt: string): Promise<GeminiSongResult> {
           generationConfig: {
             response_mime_type: "application/json",
             response_schema: JSON_SCHEMA,
-            temperature: 0.1, // Very low temperature for strict factual accuracy from known chord charts
+            temperature: 0.1,
           },
         }),
       });
@@ -125,17 +134,39 @@ async function callGemini(prompt: string): Promise<GeminiSongResult> {
 }
 
 /**
- * Busca una canción cristiana con acordes reales de cancioneros/LaCuerda/Letras.com
+ * Busca una canción cristiana con desambiguación precisa por autor, enlace de video o fragmento
  */
 export async function searchSongWithGemini(
-  query: string,
-  targetKey?: string
+  paramsOrQuery: string | SearchSongParams,
+  legacyKey?: string
 ): Promise<GeminiSongResult> {
-  const prompt = `Transcribe la canción cristiana: "${query}".
-Busca en tu base de datos las transcripciones reales de acordes.lacuerda.net, cifraclub.com y cancioneros oficiales.
-${targetKey && targetKey !== "Original" ? `IMPORTANTE: Transporta fielmente todos los acordes a la tonalidad de ${targetKey}.` : 'Mantén la tonalidad original.'}
+  let title = "";
+  let author = "";
+  let youtubeUrl = "";
+  let lyricsSnippet = "";
+  let targetKey = legacyKey;
 
-Asegúrate de que la letra esté completa, sin omitir estrofas y con acordes posicionados exactamente sobre las palabras. Incluye el enlace o ID de YouTube oficial.`;
+  if (typeof paramsOrQuery === "string") {
+    title = paramsOrQuery;
+  } else {
+    title = paramsOrQuery.title;
+    author = paramsOrQuery.author || "";
+    youtubeUrl = paramsOrQuery.youtubeUrl || "";
+    lyricsSnippet = paramsOrQuery.lyricsSnippet || "";
+    targetKey = paramsOrQuery.targetKey || targetKey;
+  }
+
+  const prompt = `Transcribe la siguiente canción cristiana:
+- Título: "${title}"
+${author ? `- Autor / Ministerio / Intérprete: "${author}"` : ''}
+${youtubeUrl ? `- Enlace de Video de YouTube de referencia: "${youtubeUrl}"` : ''}
+${lyricsSnippet ? `- Fragmento o frase distintiva de la letra: "${lyricsSnippet}"` : ''}
+${targetKey && targetKey !== "Original" ? `- Tonalidad destino solicitada: Transportar todos los acordes a la tonalidad de ${targetKey}.` : '- Mantener la tonalidad original de la canción.'}
+
+INSTRUCCIONES CLAVE:
+1. Si hay múltiples canciones con este título, usa el autor, video o fragmento provisto para elegir EXACTAMENTE la canción indicada por el usuario y NO otra.
+2. Consulta las transcripciones reales de cancioneros cristianos, acordes.lacuerda.net y cifraclub.com.
+3. Asegúrate de incluir la letra completa y los acordes reales sobre cada sílaba.`;
 
   return callGemini(prompt);
 }
