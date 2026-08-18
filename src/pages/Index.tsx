@@ -397,16 +397,29 @@ const Index = () => {
                   <GraduationCap className="w-7 h-7" />
                 </div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-purple-300 transition-colors tracking-tight">
-                    MI ACADEMIA
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-purple-300 transition-colors tracking-tight">
+                      MI ACADEMIA
+                    </h3>
+                    {user?.email?.toLowerCase() !== "cristianbordon186@gmail.com" ? (
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                        Próximamente
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Super Admin
+                      </span>
+                    )}
+                  </div>
                   <p className="text-slate-400 text-xs font-medium">
-                    Escuela y lecciones de música
+                    {user?.email?.toLowerCase() === "cristianbordon186@gmail.com"
+                      ? "Gestionar y publicar cursos"
+                      : "Escuela y lecciones de música"}
                   </p>
                 </div>
               </div>
               <Button className="h-10 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/20 shrink-0 group-hover:translate-x-1 transition-transform">
-                Ingresar <ChevronRight className="w-4 h-4 ml-0.5" />
+                {user?.email?.toLowerCase() === "cristianbordon186@gmail.com" ? "Administrar" : "Ver"} <ChevronRight className="w-4 h-4 ml-0.5" />
               </Button>
             </div>
           </motion.div>
