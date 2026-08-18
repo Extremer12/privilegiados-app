@@ -30,6 +30,8 @@ import {
   Sparkles,
   ChevronRight,
   Disc,
+  ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,10 +41,11 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
 import {
-  searchSongCandidatesWithGemini,
+  findSongVersions,
   transcribeCandidateWithGemini,
   formatRawSongWithGemini,
-  SongCandidate,
+  VerifiedSongVersion,
+  isAllowedSource,
 } from "@/services/geminiService";
 import { checkGroupAIQuota } from "@/services/mercadoPagoService";
 
@@ -76,19 +79,24 @@ export default function AsistenteCancion() {
   // Search & Candidates State
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [candidates, setCandidates] = useState<SongCandidate[] | null>(null);
+  const [candidates, setCandidates] = useState<VerifiedSongVersion[] | null>(null);
   const [selectedCandidateIndex, setSelectedCandidateIndex] = useState<number | null>(null);
 
   // Form State for Review
   const [reviewedData, setReviewedData] = useState<{
     title: string;
     author: string;
+    version?: string;
+    album?: string;
+    year?: string;
     category: string;
     originalKey: string;
     bpm: string;
     lyrics: string;
     chords: string;
     youtube_url: string;
+    source?: string;
+    sourceUrl?: string;
   } | null>(null);
 
   const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
@@ -127,7 +135,7 @@ export default function AsistenteCancion() {
     toast.info("Búsqueda cancelada.");
   };
 
-  // Step 1: Search lightweight candidates (~150 tokens)
+  // Step 1: Search and verify song versions with strict external source rules
   const handleSearch = async () => {
     if (!songTitle.trim() && !youtubeInput.trim()) {
       toast.error("Ingresa el título de la canción o un enlace de YouTube");
@@ -161,7 +169,7 @@ export default function AsistenteCancion() {
 
     try {
       const targetKey = selectedKey !== "Original" ? selectedKey : undefined;
-      const result = await searchSongCandidatesWithGemini({
+      const result = await findSongVersions({
         title: songTitle.trim() || "Canción",
         author: songAuthor.trim() || undefined,
         youtubeUrl: youtubeInput.trim() || undefined,
@@ -170,26 +178,26 @@ export default function AsistenteCancion() {
         signal: controller.signal,
       });
 
-      if (!result.found || !result.candidates || result.candidates.length === 0) {
-        setSearchFeedback(result.message || "No se encontraron canciones que coincidan con la búsqueda.");
-        toast.warning("Canción no encontrada", {
-          description: result.message || "Verifica el título o agrega el autor para mayor precisión.",
+      if (!result.found || !result.results || result.results.length === 0) {
+        setSearchFeedback(result.message || "No se encontraron versiones verificadas que coincidan con la búsqueda.");
+        toast.warning("Versión no encontrada", {
+          description: result.message || "Verifica el título o proporciona el autor para una búsqueda exacta.",
         });
         return;
       }
 
-      setCandidates(result.candidates);
+      setCandidates(result.results);
       toast.success(
-        result.candidates.length === 1
-          ? "Se encontró 1 versión"
-          : `Se encontraron ${result.candidates.length} versiones posibles`
+        result.results.length === 1
+          ? "Se identificó 1 versión verificada"
+          : `Se identificaron ${result.results.length} versiones verificables`
       );
     } catch (err: any) {
       if (err.name === "AbortError" || controller.signal.aborted) {
         return;
       }
       console.error(err);
-      toast.error("Error al buscar opciones", {
+      toast.error("Error al buscar opciones verificadas", {
         description: err.message || "Verifica tu conexión y configuración.",
       });
     } finally {
@@ -198,8 +206,8 @@ export default function AsistenteCancion() {
     }
   };
 
-  // Step 2: User selects a candidate card -> Generate chords for that exact song
-  const handleSelectCandidate = async (candidate: SongCandidate, index: number) => {
+  // Step 2: User selects a candidate card -> Generate chords for that exact verified song
+  const handleSelectCandidate = async (candidate: VerifiedSongVersion, index: number) => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -219,29 +227,34 @@ export default function AsistenteCancion() {
       });
 
       if (!result.found) {
-        toast.error("No se pudo obtener la transcripción completa", {
+        toast.error("No se pudo estructurar la versión seleccionada", {
           description: result.message,
         });
         return;
       }
 
-      let finalYoutube = youtubeInput.trim() || result.youtubeUrl || candidate.youtubeUrl || "";
+      let finalYoutube = youtubeInput.trim() || result.youtubeUrl || candidate.sourceUrl || "";
       if (!finalYoutube && result.youtubeVideoId) {
         finalYoutube = `https://www.youtube.com/watch?v=${result.youtubeVideoId}`;
       }
 
       setReviewedData({
-        title: result.title || candidate.title,
-        author: result.author || candidate.author,
-        category: result.category || candidate.category || "otro",
-        originalKey: result.originalKey || candidate.originalKey || "",
-        bpm: result.bpm || candidate.bpm || "",
+        title: candidate.title || result.title,
+        author: candidate.author || result.author,
+        version: candidate.version,
+        album: candidate.album,
+        year: candidate.year,
+        category: candidate.category || result.category || "otro",
+        originalKey: candidate.originalKey || result.originalKey || "",
+        bpm: candidate.bpm ? String(candidate.bpm) : (result.bpm || ""),
         lyrics: result.lyrics || "",
         chords: result.chords || "",
         youtube_url: finalYoutube,
+        source: candidate.source,
+        sourceUrl: candidate.sourceUrl,
       });
 
-      toast.success("Canción estructurada con acordes oficiales");
+      toast.success("Canción estructurada con datos de la fuente oficial");
     } catch (err: any) {
       if (err.name === "AbortError" || controller.signal.aborted) {
         return;
@@ -294,6 +307,7 @@ export default function AsistenteCancion() {
         lyrics: result.lyrics || "",
         chords: result.chords || "",
         youtube_url: result.youtubeUrl || "",
+        source: "Texto provisto por usuario",
       });
 
       toast.success("Texto formateado correctamente");
@@ -415,7 +429,7 @@ export default function AsistenteCancion() {
           Asistente Musical con IA
         </h1>
         <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
-          Encuentra la versión exacta de tu canción con acordes de CifraClub/LaCuerda organizados para tocar en vivo.
+          Verifica versiones y acordes de fuentes musicales reales (CifraClub, LaCuerda, Letras.com) sin letras inventadas.
         </p>
       </div>
 
@@ -549,6 +563,7 @@ export default function AsistenteCancion() {
                                 lyrics: m.lyrics || "",
                                 chords: m.chords || "",
                                 youtube_url: m.youtube_url || "",
+                                source: "Cancionero Interno Privilegiados",
                               });
                               toast.success("Cargada desde el cancionero verificado");
                             }}
@@ -576,7 +591,7 @@ export default function AsistenteCancion() {
                     className="min-h-[220px] text-sm bg-muted/30 border-border rounded-xl font-mono leading-relaxed p-4"
                   />
                   <p className="text-xs text-muted-foreground">
-                    El sistema organizará las estrofas ([Verso 1], [Coro], [Puente]) y alineará los acordes encima de las palabras.
+                    El sistema organizará las estrofas ([Verso 1], [Coro], [Puente]) y alineará los acordes encima de las palabras sin alterar tu letra.
                   </p>
                 </div>
               </TabsContent>
@@ -620,10 +635,10 @@ export default function AsistenteCancion() {
                   <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-foreground">
-                      Buscando versiones disponibles...
+                      Verificando fuentes musicales oficiales...
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Consultando cancioneros y bases cristianas
+                      Consultando CifraClub, LaCuerda y discografía
                     </p>
                   </div>
                 </div>
@@ -644,7 +659,7 @@ export default function AsistenteCancion() {
                 className="w-full h-13 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base shadow-sm transition-all gap-2"
               >
                 <Search className="h-5 w-5" />
-                {activeTab === "search" ? "Buscar Versiones de la Canción" : "Formatear y Estructurar"}
+                {activeTab === "search" ? "Verificar Versiones de la Canción" : "Formatear y Estructurar"}
               </Button>
             )}
           </Card>
@@ -661,7 +676,7 @@ export default function AsistenteCancion() {
                 Selecciona la versión que buscas ({candidates.length})
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Revisa el coro o la frase de la letra para confirmar la versión exacta antes de transcribir.
+                Versiones identificadas en cancioneros y grabaciones oficiales.
               </p>
             </div>
             <Button
@@ -683,6 +698,17 @@ export default function AsistenteCancion() {
             {candidates.map((candidate, idx) => {
               const isSelected = selectedCandidateIndex === idx;
               const isAnySelected = selectedCandidateIndex !== null;
+              const hasValidUrl = candidate.sourceUrl && isAllowedSource(candidate.sourceUrl);
+
+              const albumOrYearText = candidate.album
+                ? `Álbum ${candidate.album}${candidate.year ? ` (${candidate.year})` : ""}`
+                : candidate.year
+                ? `Año ${candidate.year}`
+                : candidate.version || null;
+
+              const toneBpmText = `Tono: ${candidate.originalKey || "Original"} · ${
+                candidate.bpm ? `${candidate.bpm} BPM` : "Tempo variable"
+              }`;
 
               return (
                 <Card
@@ -694,41 +720,33 @@ export default function AsistenteCancion() {
                   }`}
                 >
                   <div className="space-y-3">
-                    {/* Badges Bar */}
+                    {/* Top Badges Bar: Category & Album/Year & Tone/BPM */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <Badge
                           variant="secondary"
-                          className="capitalize text-[11px] font-bold px-2 py-0.5 bg-primary/10 text-primary border border-primary/20"
+                          className="uppercase tracking-wider text-[10px] font-bold px-2 py-0.5 bg-primary/10 text-primary border border-primary/20"
                         >
                           {candidate.category || "Alabanza"}
                         </Badge>
-                        {candidate.versionOrAlbum && (
+                        {albumOrYearText && (
                           <Badge
                             variant="outline"
                             className="text-[10px] font-medium text-muted-foreground border-border flex items-center gap-1"
                           >
-                            <Disc className="w-3 h-3 text-muted-foreground" />
-                            {candidate.versionOrAlbum}
+                            <Disc className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <span className="truncate max-w-[170px]">{albumOrYearText}</span>
                           </Badge>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-                        {candidate.originalKey && (
-                          <span className="px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">
-                            Tono: {candidate.originalKey}
-                          </span>
-                        )}
-                        {candidate.bpm && (
-                          <span className="px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">
-                            {candidate.bpm} BPM
-                          </span>
-                        )}
-                      </div>
+                      {/* Tone and BPM correctly formatted */}
+                      <span className="text-[11px] font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-lg border border-border">
+                        {toneBpmText}
+                      </span>
                     </div>
 
-                    {/* Title and Author */}
+                    {/* Title and Artist */}
                     <div>
                       <h3 className="text-base font-extrabold text-foreground tracking-tight group-hover:text-primary transition-colors">
                         {candidate.title}
@@ -742,13 +760,38 @@ export default function AsistenteCancion() {
                     <div className="p-3 bg-muted/40 border border-border rounded-xl relative">
                       <Quote className="w-4 h-4 text-primary/40 absolute top-2.5 right-2.5" />
                       <p className="text-xs font-mono text-foreground leading-relaxed italic pr-5">
-                        "{candidate.sampleLyric}"
+                        "{candidate.preview || "Fragmento no disponible"}"
                       </p>
+                    </div>
+
+                    {/* Verified Source Badge */}
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
+                      <div className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span>
+                          Fuente:{" "}
+                          <strong className="text-foreground">
+                            {candidate.source || "CifraClub / LaCuerda"}
+                          </strong>
+                        </span>
+                      </div>
+
+                      {hasValidUrl && (
+                        <a
+                          href={candidate.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline flex items-center gap-1 text-[10px] font-semibold"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Ver fuente <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
                     </div>
                   </div>
 
                   {/* Action Button */}
-                  <div className="pt-4 mt-2 border-t border-border/60">
+                  <div className="pt-4 mt-3 border-t border-border/60">
                     <Button
                       onClick={() => handleSelectCandidate(candidate, idx)}
                       disabled={isAnySelected}
@@ -795,7 +838,7 @@ export default function AsistenteCancion() {
         <div className="space-y-6">
           {/* Action Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-card border border-border rounded-2xl w-full">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {candidates && candidates.length > 1 && (
                 <Button
                   variant="ghost"
@@ -847,9 +890,17 @@ export default function AsistenteCancion() {
             <div className="lg:col-span-5 space-y-6">
               {/* Metadata Card */}
               <Card className="p-5 md:p-6 bg-card border-border rounded-2xl space-y-4">
-                <h3 className="text-base font-bold text-foreground pb-2 border-b border-border">
-                  Datos de la Canción
-                </h3>
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <h3 className="text-base font-bold text-foreground">
+                    Datos de la Canción
+                  </h3>
+                  {reviewedData.source && (
+                    <Badge variant="outline" className="text-[10px] text-muted-foreground border-border flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                      {reviewedData.source}
+                    </Badge>
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Título</Label>

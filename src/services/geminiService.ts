@@ -1,35 +1,48 @@
+import {
+  VerifiedSongVersion,
+  SongVerificationResponse,
+  findSongVersions,
+  isAllowedSource,
+  MIN_CONFIDENCE
+} from "./songVerificationService";
+
+export type {
+  VerifiedSongVersion,
+  SongVerificationResponse,
+};
+
+export {
+  findSongVersions,
+  isAllowedSource,
+  MIN_CONFIDENCE
+};
+
+// Aliases for compatibility
+export type SongCandidate = VerifiedSongVersion;
+export type CandidateSearchResult = SongVerificationResponse;
+
 export interface GeminiSongResult {
   found: boolean;
   message?: string;
   title: string;
   author: string;
+  version?: string;
+  album?: string;
+  year?: string;
   category: 'alabanza' | 'adoracion' | 'especial' | 'otro';
   originalKey: string;
   requestedKey?: string;
   bpm?: string;
   lyrics: string;
   chords: string;
+  chordsAvailable?: boolean;
+  source?: string;
+  sourceUrl?: string;
   youtubeUrl?: string;
   youtubeVideoId?: string;
   youtubeQuery?: string;
   notes?: string;
-}
-
-export interface SongCandidate {
-  title: string;
-  author: string;
-  versionOrAlbum?: string;
-  sampleLyric: string;
-  category: 'alabanza' | 'adoracion' | 'especial' | 'otro';
-  originalKey?: string;
-  bpm?: string;
-  youtubeUrl?: string;
-}
-
-export interface CandidateSearchResult {
-  found: boolean;
-  message?: string;
-  candidates: SongCandidate[];
+  confidence?: number;
 }
 
 export interface SearchSongParams {
@@ -44,7 +57,6 @@ export interface SearchSongParams {
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-// Available models in order of stability and accuracy
 const MODELS = [
   'gemini-3.5-flash-lite',
   'gemini-3.6-flash',
@@ -68,39 +80,12 @@ const SONG_RESULT_SCHEMA = {
     bpm: { type: "string", description: "Tempo o BPM estimado (ej: 70 BPM)" },
     lyrics: { type: "string", description: "Letra completa sin acordes, estructurada con [Verso 1], [Coro], etc." },
     chords: { type: "string", description: "Letra con acordes reales alineados en líneas superiores sobre cada sílaba" },
+    chordsAvailable: { type: "boolean", description: "Indica si los acordes fueron obtenidos de una fuente real verificable" },
     youtubeUrl: { type: "string", description: "URL directa de YouTube" },
     youtubeVideoId: { type: "string", description: "ID de 11 caracteres del video de YouTube" },
-    youtubeQuery: { type: "string", description: "Término de búsqueda óptimo en YouTube" },
     notes: { type: "string", description: "Consejos de interpretación musical" }
   },
   required: ["found", "title", "author", "category", "lyrics", "chords"]
-};
-
-const CANDIDATES_SCHEMA = {
-  type: "object",
-  properties: {
-    found: { type: "boolean", description: "Indica si se encontraron opciones coincidentes" },
-    message: { type: "string", description: "Mensaje explicativo o resumen de las opciones" },
-    candidates: {
-      type: "array",
-      description: "Lista de 1 a 4 versiones o canciones reales coincidentes",
-      items: {
-        type: "object",
-        properties: {
-          title: { type: "string", description: "Título oficial de la canción" },
-          author: { type: "string", description: "Autor, ministerio o intérprete" },
-          versionOrAlbum: { type: "string", description: "Álbum, año o versión distintiva (ej: Álbum Viento Más Fuego, o Álbum Creo En Ti)" },
-          sampleLyric: { type: "string", description: "2 a 3 líneas del coro o estrofa clave LITERAL de la grabación comercial (ej: 'Aunque pase el tiempo sé que tu promesa cumplirás... Tus cuerdas de amor cayeron sobre mí')" },
-          category: { type: "string", enum: ["alabanza", "adoracion", "especial", "otro"] },
-          originalKey: { type: "string", description: "Tonalidad original estimada (ej: G, Em)" },
-          bpm: { type: "string", description: "BPM estimado" },
-          youtubeUrl: { type: "string", description: "URL de YouTube si se conoce" }
-        },
-        required: ["title", "author", "sampleLyric", "category"]
-      }
-    }
-  },
-  required: ["found", "candidates"]
 };
 
 async function callGeminiGeneric<T>(
@@ -170,7 +155,7 @@ async function callGeminiGeneric<T>(
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           const message = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
-          console.warn(`Error en modelo ${model}:`, message);
+          console.warn(`[DEBUG] Error en modelo ${model}:`, message);
           lastError = new Error(message);
           continue;
         }
@@ -194,14 +179,14 @@ async function callGeminiGeneric<T>(
           throw new DOMException("Búsqueda cancelada.", "AbortError");
         }
 
-        console.warn(`Intento fallido en ${model}:`, fetchErr.message);
+        console.warn(`[DEBUG] Intento fallido en ${model}:`, fetchErr.message);
         lastError = fetchErr;
       }
     } catch (err: any) {
       if (err.name === "AbortError" || signal?.aborted) {
         throw err;
       }
-      console.warn(`Fallo al consultar ${model}:`, err);
+      console.warn(`[DEBUG] Fallo al consultar ${model}:`, err);
       lastError = err;
     }
   }
@@ -210,37 +195,16 @@ async function callGeminiGeneric<T>(
 }
 
 /**
- * Paso 1: Busca candidatos ligeros (título, autor, coro distintivo) con reglas estrictas anti-alucinación.
+ * Paso 1: Busca candidatos verificados (utiliza la arquitectura de verificación)
  */
 export async function searchSongCandidatesWithGemini(
   params: SearchSongParams
-): Promise<CandidateSearchResult> {
-  const { title, author, youtubeUrl, referenceUrl, lyricsSnippet, signal } = params;
-
-  const prompt = `Identifica las opciones y versiones oficiales de canciones cristianas grabadas comercialmente que coinciden con la búsqueda:
-- Título buscado: "${title.trim()}"
-${author?.trim() ? `- Autor / Intérprete sugerido: "${author.trim()}"` : ''}
-${youtubeUrl?.trim() ? `- Enlace de YouTube: "${youtubeUrl.trim()}"` : ''}
-${referenceUrl?.trim() ? `- Enlace de Referencia: "${referenceUrl.trim()}"` : ''}
-${lyricsSnippet?.trim() ? `- Frase de la letra: "${lyricsSnippet.trim()}"` : ''}
-
-REGLAS ESTRICTAS E INQUEBRANTABLES:
-1. PROHIBIDO INVENTAR O COMPONER VERSOS: No inventes poesía piadosa ni rimas basadas en versículos bíblicos. Solo devuelve letras y canciones reales existentes en CifraClub, LaCuerda o Letras.com.
-2. EN 'sampleLyric': Escribe 2 o 3 líneas del coro o estrofa LITERAL grabada (por ejemplo, para 'Cuerdas de Amor' de Julio Melgar: 'Aunque pase el tiempo sé que tu promesa cumplirás... Tus cuerdas de amor cayeron sobre mí').
-3. Si existen diferentes canciones muy conocidas con el mismo título (ej: Hosanna de Marco Barrientos vs Hosanna de Hillsong), lista cada una por separado para que el usuario elija.
-4. Si no reconoces la canción con certeza absoluta, responde found: false.`;
-
-  return callGeminiGeneric<CandidateSearchResult>(
-    prompt,
-    CANDIDATES_SCHEMA,
-    "Eres una base de datos estricta de cancioneros cristianos y tablaturas de CifraClub y LaCuerda. Tienes terminantemente prohibido inventar letras.",
-    0.0,
-    signal
-  );
+): Promise<SongVerificationResponse> {
+  return findSongVersions(params);
 }
 
 /**
- * Paso 2: Transcribe con acordes completos la versión específica que el usuario eligió de las cards.
+ * Paso 2: Transcribe con acordes completos la versión específica verificada seleccionada por el usuario.
  */
 export async function transcribeCandidateWithGemini({
   candidate,
@@ -248,96 +212,58 @@ export async function transcribeCandidateWithGemini({
   youtubeUrlOverride,
   signal,
 }: {
-  candidate: SongCandidate;
+  candidate: VerifiedSongVersion;
   targetKey?: string;
   youtubeUrlOverride?: string;
   signal?: AbortSignal;
 }): Promise<GeminiSongResult> {
-  const finalYoutube = youtubeUrlOverride?.trim() || candidate.youtubeUrl?.trim() || "";
+  const finalYoutube = youtubeUrlOverride?.trim() || candidate.sourceUrl?.trim() || "";
 
-  const prompt = `Transcribe con máxima fidelidad literal la siguiente canción cristiana seleccionada:
+  const prompt = `Transcribe la siguiente versión VERIFICADA de canción cristiana:
 - Título: "${candidate.title}"
-- Autor / Intérprete: "${candidate.author}"
-${candidate.versionOrAlbum ? `- Versión / Álbum: "${candidate.versionOrAlbum}"` : ''}
-- Letra o coro de referencia confirmado: "${candidate.sampleLyric}"
-${finalYoutube ? `- Video de YouTube: "${finalYoutube}"` : ''}
-${targetKey && targetKey !== "Original" ? `- Tonalidad solicitada: Transportar todos los acordes a ${targetKey}.` : `- Tonalidad: Mantener la tonalidad original (${candidate.originalKey || 'Tono original'}).`}
+- Artista / Intérprete oficial: "${candidate.author}"
+${candidate.version ? `- Versión: "${candidate.version}"` : ''}
+${candidate.album ? `- Álbum: "${candidate.album}"` : ''}
+${candidate.year ? `- Año: "${candidate.year}"` : ''}
+- Fuente de referencia: "${candidate.source || 'CifraClub / LaCuerda'}"
+- Fragmento verificado de referencia: "${candidate.preview}"
+${finalYoutube ? `- Enlace de Video / Fuente: "${finalYoutube}"` : ''}
+${targetKey && targetKey !== "Original" ? `- Tonalidad solicitada: Transportar todos los acordes a ${targetKey}.` : `- Tonalidad original: ${candidate.originalKey || 'Original'}.`}
 
-INSTRUCCIONES CLAVE E INQUEBRANTABLES:
-1. Transcribe la letra COMPLETA de principio a fin correspondiente a esta versión exacta identificada por: "${candidate.sampleLyric}".
-2. PROHIBIDO alterar la letra, inventar estrofas o mezclar con canciones homónimas.
-3. En el campo 'chords', escribe la letra con los acordes reales de cifraclub.com / lacuerda.net colocados en la línea superior exactamente sobre la sílaba donde se tocan.
-4. En el campo 'lyrics', escribe la letra limpia estructurada con [Intro], [Verso 1], [Verso 2], [Coro], [Puente], etc.`;
+REGLAS DE ORO:
+1. Basate estrictamente en la transcripción de CifraClub / LaCuerda para "${candidate.title}" de "${candidate.author}".
+2. PROHIBIDO inventar o cambiar la letra. Escribe la letra completa de esta grabación específica.
+3. Si los acordes reales están documentados, escribe la tablatura en 'chords' con los acordes colocados en la línea superior sobre cada palabra y marca chordsAvailable: true.
+4. Si no están documentados acordes verificables, coloca chordsAvailable: false y entrega la letra limpia en 'lyrics'.`;
 
-  const SYSTEM_INSTRUCTION = `Eres una base de datos estricta y transcriptor musical para cancioneros de alabanza cristiana. Tu función es devolver la transcripción oficial y literal de la canción seleccionada con acordes reales de CifraClub/LaCuerda.`;
+  const SYSTEM_INSTRUCTION = `Eres un asistente de transcripción y estructuración musical que utiliza exclusivamente fuentes de cancioneros verificables (CifraClub, LaCuerda). Nunca inventes acordes ni alteres letras.`;
 
-  return callGeminiGeneric<GeminiSongResult>(
+  const result = await callGeminiGeneric<GeminiSongResult>(
     prompt,
     SONG_RESULT_SCHEMA,
     SYSTEM_INSTRUCTION,
     0.0,
     signal
   );
+
+  // Conservar siempre la metadata verificada seleccionada
+  return {
+    ...result,
+    title: result.title || candidate.title,
+    author: result.author || candidate.author,
+    version: candidate.version,
+    album: candidate.album,
+    year: candidate.year,
+    source: candidate.source,
+    sourceUrl: candidate.sourceUrl,
+    confidence: candidate.confidence,
+    bpm: result.bpm || (candidate.bpm ? String(candidate.bpm) : undefined),
+    originalKey: result.originalKey || candidate.originalKey || "",
+  };
 }
 
 /**
- * Búsqueda directa tradicional (compatibilidad hacia atrás)
- */
-export async function searchSongWithGemini(
-  paramsOrQuery: string | SearchSongParams,
-  legacyKey?: string,
-  legacySignal?: AbortSignal
-): Promise<GeminiSongResult> {
-  let title = "";
-  let author = "";
-  let youtubeUrl = "";
-  let referenceUrl = "";
-  let lyricsSnippet = "";
-  let targetKey = legacyKey;
-  let signal = legacySignal;
-
-  if (typeof paramsOrQuery === "string") {
-    title = paramsOrQuery;
-  } else {
-    title = paramsOrQuery.title;
-    author = paramsOrQuery.author || "";
-    youtubeUrl = paramsOrQuery.youtubeUrl || "";
-    referenceUrl = paramsOrQuery.referenceUrl || "";
-    lyricsSnippet = paramsOrQuery.lyricsSnippet || "";
-    targetKey = paramsOrQuery.targetKey || targetKey;
-    signal = paramsOrQuery.signal || signal;
-  }
-
-  const allUrls = [referenceUrl, youtubeUrl, title].filter(u => u.startsWith("http://") || u.startsWith("https://"));
-  const detectedUrl = allUrls[0] || "";
-
-  const prompt = `Transcribe la siguiente canción cristiana con máxima fidelidad literal:
-- Título: "${title}"
-${author ? `- Autor / Ministerio / Intérprete: "${author}"` : ''}
-${youtubeUrl ? `- Enlace de Video de YouTube: "${youtubeUrl}"` : ''}
-${detectedUrl ? `- Enlace de Referencia Web (CifraClub / LaCuerda / Letras): "${detectedUrl}"` : ''}
-${lyricsSnippet ? `- Fragmento o frase distintiva de la letra: "${lyricsSnippet}"` : ''}
-${targetKey && targetKey !== "Original" ? `- Tonalidad destino solicitada: Transportar todos los acordes a la tonalidad de ${targetKey}.` : '- Mantener la tonalidad original de la canción.'}
-
-INSTRUCCIONES CLAVE:
-1. FUENTES DE REFERENCIA: Basa tu transcripción exactamente en las tablaturas oficiales de cifraclub.com, lacuerda.net y letras.com.
-2. Si se proporcionó un enlace de CifraClub o Letras.com (${detectedUrl}), utiliza exactamente los acordes y la letra de esa versión.
-3. PROHIBIDO alterar la letra o simplificar los acordes. Transcribe con fidelidad 100% literal.
-4. Incluye la letra completa de principio a fin estructurada con etiquetas [Intro], [Verso 1], [Coro], [Puente], etc.`;
-
-  const SYSTEM_INSTRUCTION = `Eres una base de datos estricta y transcriptor musical para cancioneros de alabanza cristiana.`;
-
-  return callGeminiGeneric<GeminiSongResult>(
-    prompt,
-    SONG_RESULT_SCHEMA,
-    SYSTEM_INSTRUCTION,
-    0.0,
-    signal
-  );
-}
-
-/**
- * Limpia y formatea un texto/letra crudo desordenado con acordes
+ * Limpia y formatea un texto/letra crudo desordenado con acordes pegado por el usuario
  */
 export async function formatRawSongWithGemini(
   rawContent: string,
@@ -357,7 +283,7 @@ Estructura las secciones con etiquetas estándar [Intro], [Verso 1], [Coro], [Pu
   return callGeminiGeneric<GeminiSongResult>(
     prompt,
     SONG_RESULT_SCHEMA,
-    "Eres un formateador y estructurador de acordes y partituras de canciones cristianas.",
+    "Eres un formateador y estructurador de acordes y partituras de canciones cristianas. No inventes versos que no estén en el texto proporcionado.",
     0.0,
     signal
   );
