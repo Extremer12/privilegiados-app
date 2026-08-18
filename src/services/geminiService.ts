@@ -1,25 +1,10 @@
 import {
-  VerifiedSongVersion,
-  SongVerificationResponse,
-  findSongVersions,
-  isAllowedSource,
-  MIN_CONFIDENCE
-} from "./songVerificationService";
+  RealSongMatch,
+  searchRealSongs
+} from "./lyricsApiService";
 
-export type {
-  VerifiedSongVersion,
-  SongVerificationResponse,
-};
-
-export {
-  findSongVersions,
-  isAllowedSource,
-  MIN_CONFIDENCE
-};
-
-// Aliases for compatibility
-export type SongCandidate = VerifiedSongVersion;
-export type CandidateSearchResult = SongVerificationResponse;
+export type { RealSongMatch };
+export { searchRealSongs };
 
 export interface GeminiSongResult {
   found: boolean;
@@ -67,10 +52,10 @@ const MODELS = [
 const SONG_RESULT_SCHEMA = {
   type: "object",
   properties: {
-    found: { type: "boolean", description: "Indica si la canción y acordes reales fueron encontrados con certeza" },
-    message: { type: "string", description: "Mensaje explicativo si no se encontró o advertencias" },
-    title: { type: "string", description: "Título oficial de la canción grabada" },
-    author: { type: "string", description: "Artista, autor o ministerio principal" },
+    found: { type: "boolean", description: "Indica si la estructuración fue exitosa" },
+    message: { type: "string", description: "Mensaje explicativo o advertencias" },
+    title: { type: "string", description: "Título oficial de la canción" },
+    author: { type: "string", description: "Artista o ministerio" },
     category: { 
       type: "string", 
       enum: ["alabanza", "adoracion", "especial", "otro"],
@@ -78,9 +63,9 @@ const SONG_RESULT_SCHEMA = {
     },
     originalKey: { type: "string", description: "Tonalidad original de la canción (ej: G, D, C, Em)" },
     bpm: { type: "string", description: "Tempo o BPM estimado (ej: 70 BPM)" },
-    lyrics: { type: "string", description: "Letra completa sin acordes, estructurada con [Verso 1], [Coro], etc." },
+    lyrics: { type: "string", description: "Letra estructurada con [Verso 1], [Coro], [Puente], etc. SIN cambiar palabras" },
     chords: { type: "string", description: "Letra con acordes reales alineados en líneas superiores sobre cada sílaba" },
-    chordsAvailable: { type: "boolean", description: "Indica si los acordes fueron obtenidos de una fuente real verificable" },
+    chordsAvailable: { type: "boolean", description: "Indica si se colocaron acordes reales" },
     youtubeUrl: { type: "string", description: "URL directa de YouTube" },
     youtubeVideoId: { type: "string", description: "ID de 11 caracteres del video de YouTube" },
     notes: { type: "string", description: "Consejos de interpretación musical" }
@@ -103,7 +88,7 @@ async function callGeminiGeneric<T>(
 
   for (const model of MODELS) {
     if (signal?.aborted) {
-      throw new DOMException("Búsqueda cancelada por el usuario.", "AbortError");
+      throw new DOMException("Operación cancelada por el usuario.", "AbortError");
     }
 
     try {
@@ -117,126 +102,104 @@ async function callGeminiGeneric<T>(
         signal.addEventListener('abort', handleUserAbort, { once: true });
       }
 
-      try {
-        const bodyPayload: any = {
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            response_mime_type: "application/json",
-            response_schema: schema,
-            temperature,
+      const bodyPayload: any = {
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }],
           },
+        ],
+        generationConfig: {
+          response_mime_type: "application/json",
+          response_schema: schema,
+          temperature,
+        },
+      };
+
+      if (systemInstruction) {
+        bodyPayload.system_instruction = {
+          parts: [{ text: systemInstruction }],
         };
-
-        if (systemInstruction) {
-          bodyPayload.system_instruction = {
-            parts: [{ text: systemInstruction }],
-          };
-        }
-
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          signal: timeoutController.signal,
-          body: JSON.stringify(bodyPayload),
-        });
-
-        clearTimeout(timeoutId);
-        if (signal) {
-          signal.removeEventListener('abort', handleUserAbort);
-        }
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const message = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
-          console.warn(`[DEBUG] Error en modelo ${model}:`, message);
-          lastError = new Error(message);
-          continue;
-        }
-
-        const result = await response.json();
-        const textOutput = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!textOutput) {
-          throw new Error("Gemini no devolvió texto de respuesta.");
-        }
-
-        const parsed: T = JSON.parse(textOutput);
-        return parsed;
-      } catch (fetchErr: any) {
-        clearTimeout(timeoutId);
-        if (signal) {
-          signal.removeEventListener('abort', handleUserAbort);
-        }
-
-        if (signal?.aborted) {
-          throw new DOMException("Búsqueda cancelada.", "AbortError");
-        }
-
-        console.warn(`[DEBUG] Intento fallido en ${model}:`, fetchErr.message);
-        lastError = fetchErr;
       }
-    } catch (err: any) {
-      if (err.name === "AbortError" || signal?.aborted) {
-        throw err;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: timeoutController.signal,
+        body: JSON.stringify(bodyPayload),
+      });
+
+      clearTimeout(timeoutId);
+      if (signal) {
+        signal.removeEventListener('abort', handleUserAbort);
       }
-      console.warn(`[DEBUG] Fallo al consultar ${model}:`, err);
-      lastError = err;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const message = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+        console.warn(`[DEBUG] Error en modelo ${model}:`, message);
+        lastError = new Error(message);
+        continue;
+      }
+
+      const result = await response.json();
+      const textOutput = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!textOutput) {
+        throw new Error("Gemini no devolvió texto de respuesta.");
+      }
+
+      const parsed: T = JSON.parse(textOutput);
+      return parsed;
+    } catch (fetchErr: any) {
+      if (signal?.aborted) {
+        throw new DOMException("Operación cancelada.", "AbortError");
+      }
+      console.warn(`[DEBUG] Intento fallido en ${model}:`, fetchErr.message);
+      lastError = fetchErr;
     }
   }
 
-  throw lastError || new Error("No se pudo obtener respuesta de los servidores de Gemini. Intenta nuevamente.");
+  throw lastError || new Error("No se pudo conectar con el asistente. Intenta nuevamente.");
 }
 
 /**
- * Paso 1: Busca candidatos verificados (utiliza la arquitectura de verificación)
+ * Estructura la letra real descargada de la API musical y le agrega acordes y etiquetas sin modificar el texto
  */
-export async function searchSongCandidatesWithGemini(
-  params: SearchSongParams
-): Promise<SongVerificationResponse> {
-  return findSongVersions(params);
-}
-
-/**
- * Paso 2: Transcribe con acordes completos la versión específica verificada seleccionada por el usuario.
- */
-export async function transcribeCandidateWithGemini({
-  candidate,
+export async function structureRealSongWithChords({
+  songMatch,
   targetKey,
   youtubeUrlOverride,
   signal,
 }: {
-  candidate: VerifiedSongVersion;
+  songMatch: RealSongMatch;
   targetKey?: string;
   youtubeUrlOverride?: string;
   signal?: AbortSignal;
 }): Promise<GeminiSongResult> {
-  const finalYoutube = youtubeUrlOverride?.trim() || candidate.sourceUrl?.trim() || "";
+  const finalYoutube = youtubeUrlOverride?.trim() || songMatch.sourceUrl?.trim() || "";
 
-  const prompt = `Transcribe la siguiente versión VERIFICADA de canción cristiana:
-- Título: "${candidate.title}"
-- Artista / Intérprete oficial: "${candidate.author}"
-${candidate.version ? `- Versión: "${candidate.version}"` : ''}
-${candidate.album ? `- Álbum: "${candidate.album}"` : ''}
-${candidate.year ? `- Año: "${candidate.year}"` : ''}
-- Fuente de referencia: "${candidate.source || 'CifraClub / LaCuerda'}"
-- Fragmento verificado de referencia: "${candidate.preview}"
-${finalYoutube ? `- Enlace de Video / Fuente: "${finalYoutube}"` : ''}
-${targetKey && targetKey !== "Original" ? `- Tonalidad solicitada: Transportar todos los acordes a ${targetKey}.` : `- Tonalidad original: ${candidate.originalKey || 'Original'}.`}
+  const prompt = `Tienes la letra OFICIAL Y REAL obtenida de la base musical para la canción:
+- Título: "${songMatch.title}"
+- Artista: "${songMatch.author}"
+${songMatch.album ? `- Álbum: "${songMatch.album}"` : ''}
+
+LETRA REAL PROPORCIONADA:
+---
+${songMatch.lyrics}
+---
+
+${targetKey && targetKey !== "Original" ? `- Tonalidad solicitada: Transportar todos los acordes a la tonalidad de ${targetKey}.` : '- Tonalidad: Usar la tonalidad original oficial.'}
 
 REGLAS DE ORO:
-1. Basate estrictamente en la transcripción de CifraClub / LaCuerda para "${candidate.title}" de "${candidate.author}".
-2. PROHIBIDO inventar o cambiar la letra. Escribe la letra completa de esta grabación específica.
-3. Si los acordes reales están documentados, escribe la tablatura en 'chords' con los acordes colocados en la línea superior sobre cada palabra y marca chordsAvailable: true.
-4. Si no están documentados acordes verificables, coloca chordsAvailable: false y entrega la letra limpia en 'lyrics'.`;
+1. CONSERVA LA LETRA EXACTA: NO inventes estrofas, no sustituyas palabras ni modifiques el texto de la letra proporcionada.
+2. ESTRUCTURA: Agrega etiquetas limpias [Intro], [Verso 1], [Verso 2], [Pre-Coro], [Coro], [Puente], [Final].
+3. ACORDES: En el campo 'chords', coloca los acordes reales de cifraclub/lacuerda en la línea superior alineados exactamente sobre las sílabas donde se tocan.
+4. Identifica la tonalidad original y tempo (BPM) aproximado.`;
 
-  const SYSTEM_INSTRUCTION = `Eres un asistente de transcripción y estructuración musical que utiliza exclusivamente fuentes de cancioneros verificables (CifraClub, LaCuerda). Nunca inventes acordes ni alteres letras.`;
+  const SYSTEM_INSTRUCTION = `Eres un formateador y transcriptor musical experto para cancioneros de alabanza cristiana. Tu trabajo es estructurar la letra dada y agregar los acordes reales de CifraClub/LaCuerda sin alterar ninguna palabra del texto original.`;
 
   const result = await callGeminiGeneric<GeminiSongResult>(
     prompt,
@@ -246,19 +209,13 @@ REGLAS DE ORO:
     signal
   );
 
-  // Conservar siempre la metadata verificada seleccionada
   return {
     ...result,
-    title: result.title || candidate.title,
-    author: result.author || candidate.author,
-    version: candidate.version,
-    album: candidate.album,
-    year: candidate.year,
-    source: candidate.source,
-    sourceUrl: candidate.sourceUrl,
-    confidence: candidate.confidence,
-    bpm: result.bpm || (candidate.bpm ? String(candidate.bpm) : undefined),
-    originalKey: result.originalKey || candidate.originalKey || "",
+    title: result.title || songMatch.title,
+    author: result.author || songMatch.author,
+    album: songMatch.album,
+    source: songMatch.source,
+    youtubeUrl: finalYoutube || result.youtubeUrl,
   };
 }
 
