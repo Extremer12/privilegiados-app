@@ -1,0 +1,566 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
+import {
+  ArrowLeft,
+  Search,
+  FileText,
+  Music,
+  Check,
+  AlertCircle,
+  Loader2,
+  Youtube,
+  Save,
+  PenSquare,
+  SlidersHorizontal,
+  RefreshCw,
+  Copy,
+} from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useGroup } from "@/hooks/useGroupContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { YouTubePlayer } from "@/components/YouTubePlayer";
+import { searchSongWithGemini, formatRawSongWithGemini, GeminiSongResult } from "@/services/geminiService";
+
+const MUSICAL_KEYS = [
+  "Original",
+  "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+  "Cm", "C#m", "Dm", "D#m", "Em", "Fm", "F#m", "Gm", "G#m", "Am", "A#m", "Bm",
+];
+
+export default function AsistenteCancion() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { activeGroup, isGroupAdmin, isGroupLeader } = useGroup();
+  const { isAdmin, isLeader, isModerator } = useUserRole();
+  const queryClient = useQueryClient();
+
+  const [activeTab, setActiveTab] = useState<"search" | "paste">("search");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [rawText, setRawText] = useState("");
+  const [selectedKey, setSelectedKey] = useState("Original");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form State for Review
+  const [reviewedData, setReviewedData] = useState<{
+    title: string;
+    author: string;
+    category: string;
+    originalKey: string;
+    bpm: string;
+    lyrics: string;
+    chords: string;
+    youtube_url: string;
+  } | null>(null);
+
+  const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast.error("Ingresa el título o artista de la canción");
+      return;
+    }
+
+    setLoading(true);
+    setSearchFeedback(null);
+
+    try {
+      const targetKey = selectedKey !== "Original" ? selectedKey : undefined;
+      const result = await searchSongWithGemini(searchQuery, targetKey);
+
+      if (!result.found) {
+        setSearchFeedback(result.message || "No se encontraron fuentes de acordes confirmadas para este título.");
+        toast.warning("Canción no encontrada", {
+          description: result.message || "Verifica el título o prueba pegar la letra manualmente.",
+        });
+        return;
+      }
+
+      let youtubeUrl = result.youtubeUrl || "";
+      if (!youtubeUrl && result.youtubeVideoId) {
+        youtubeUrl = `https://www.youtube.com/watch?v=${result.youtubeVideoId}`;
+      }
+
+      setReviewedData({
+        title: result.title || searchQuery,
+        author: result.author || "",
+        category: result.category || "otro",
+        originalKey: result.originalKey || "",
+        bpm: result.bpm || "",
+        lyrics: result.lyrics || "",
+        chords: result.chords || "",
+        youtube_url: youtubeUrl,
+      });
+
+      toast.success("Canción encontrada y estructurada");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Error al buscar la canción", {
+        description: err.message || "Verifica tu conexión y configuración.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormatRaw = async () => {
+    if (!rawText.trim()) {
+      toast.error("Pega el texto de la canción con acordes");
+      return;
+    }
+
+    setLoading(true);
+    setSearchFeedback(null);
+
+    try {
+      const targetKey = selectedKey !== "Original" ? selectedKey : undefined;
+      const result = await formatRawSongWithGemini(rawText, targetKey);
+
+      if (!result.found) {
+        setSearchFeedback(result.message || "El texto no parece contener una estructura musical válida.");
+        toast.warning("No se pudo estructurar", {
+          description: result.message,
+        });
+        return;
+      }
+
+      setReviewedData({
+        title: result.title || "Canción",
+        author: result.author || "",
+        category: result.category || "otro",
+        originalKey: result.originalKey || "",
+        bpm: result.bpm || "",
+        lyrics: result.lyrics || "",
+        chords: result.chords || "",
+        youtube_url: result.youtubeUrl || "",
+      });
+
+      toast.success("Texto formateado correctamente");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Error al formatear", {
+        description: err.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveDirectly = async () => {
+    if (!reviewedData || !user) return;
+    if (!reviewedData.title.trim()) {
+      toast.error("El título es obligatorio");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const isAuthorized = isAdmin || isLeader || isModerator || isGroupAdmin || isGroupLeader;
+      const initialStatus = isAuthorized ? "approved" : "pending";
+
+      const { data: newSong, error } = await supabase
+        .from("songs")
+        .insert({
+          title: reviewedData.title.trim(),
+          author: reviewedData.author.trim() || null,
+          category: reviewedData.category as any,
+          lyrics: reviewedData.lyrics,
+          chords: reviewedData.chords,
+          youtube_url: reviewedData.youtube_url.trim() || null,
+          created_by: user.id,
+          status: initialStatus,
+          group_id: activeGroup?.id,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["songs", activeGroup?.id] });
+      toast.success("Canción guardada correctamente");
+      navigate(`/canciones/${newSong.id}`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Error al guardar la canción", {
+        description: err.message,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleOpenInManualEditor = () => {
+    if (!reviewedData) return;
+    navigate("/canciones/nueva", {
+      state: {
+        prefilledSong: reviewedData,
+      },
+    });
+  };
+
+  const handleCopyChords = () => {
+    if (reviewedData?.chords) {
+      navigator.clipboard.writeText(reviewedData.chords);
+      toast.success("Acordes copiados al portapapeles");
+    }
+  };
+
+  return (
+    <main className="min-h-screen flex flex-col pt-20 pb-24 px-4 md:px-8 safe-top safe-bottom max-w-7xl mx-auto w-full">
+      {/* Top Bar Navigation */}
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/canciones")}
+          className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all h-10 px-4 font-semibold text-sm gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Volver a Canciones
+        </Button>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs font-semibold px-3 py-1 bg-muted/60 border-border text-foreground">
+            Buscador Musical
+          </Badge>
+        </div>
+      </div>
+
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tight">
+          Agregar Canción con Asistente
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
+          Busca transcripciones oficiales con acordes reales de cancioneros cristianos, Letras.com y LaCuerda, con vista previa y reproductor de video.
+        </p>
+      </div>
+
+      {/* Step 1: Search Form (When no song is being reviewed) */}
+      {!reviewedData ? (
+        <div className="max-w-3xl mx-auto w-full space-y-6">
+          <Card className="p-6 md:p-8 bg-card border-border rounded-2xl shadow-sm space-y-6">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+              <TabsList className="grid grid-cols-2 w-full p-1 bg-muted/70 rounded-xl border border-border h-12">
+                <TabsTrigger
+                  value="search"
+                  className="rounded-lg text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center gap-2"
+                >
+                  <Search className="h-4 w-4" />
+                  Buscar Canción
+                </TabsTrigger>
+                <TabsTrigger
+                  value="paste"
+                  className="rounded-lg text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Pegar y Formatear
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Tab Search */}
+              <TabsContent value="search" className="space-y-4 pt-5 mt-0">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-foreground">
+                    Título de la canción y autor
+                  </Label>
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      placeholder="Ej: La Bondad de Dios - Christine D'Clario (o Bethel Music)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !loading) handleSearch();
+                      }}
+                      className="pl-12 h-13 text-base bg-muted/30 border-border rounded-xl focus-visible:ring-primary/40 font-medium"
+                      autoFocus
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Fuentes de referencia: Cancioneros oficiales, acordes.lacuerda.net, cifraclub.com y letras.com.
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* Tab Paste & Format */}
+              <TabsContent value="paste" className="space-y-4 pt-5 mt-0">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-foreground">
+                    Texto con acordes sin estructurar
+                  </Label>
+                  <Textarea
+                    placeholder="Pega aquí la letra y acordes copiados de cualquier sitio o documento..."
+                    value={rawText}
+                    onChange={(e) => setRawText(e.target.value)}
+                    className="min-h-[220px] text-sm bg-muted/30 border-border rounded-xl font-mono leading-relaxed p-4"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    El sistema organizará las estrofas ([Verso 1], [Coro], [Puente]) y alineará los acordes encima de las palabras.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {/* Target Musical Key */}
+            <div className="p-4 rounded-xl bg-muted/40 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-bold text-foreground">Tono de acordes</p>
+                  <p className="text-xs text-muted-foreground">Transporta la canción a tu tonalidad preferida</p>
+                </div>
+              </div>
+              <Select value={selectedKey} onValueChange={setSelectedKey}>
+                <SelectTrigger className="w-full sm:w-[160px] bg-card border-border rounded-lg h-10 font-semibold">
+                  <SelectValue placeholder="Tono" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[240px]">
+                  {MUSICAL_KEYS.map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {k === "Original" ? "Tono Original" : `Tono: ${k}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Search Feedback Message */}
+            {searchFeedback && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-foreground">{searchFeedback}</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              onClick={activeTab === "search" ? handleSearch : handleFormatRaw}
+              disabled={loading}
+              className="w-full h-13 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base shadow-sm transition-all gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Buscando y verificando transcripción...
+                </>
+              ) : (
+                <>
+                  <Search className="h-5 w-5" />
+                  {activeTab === "search" ? "Buscar Canción" : "Formatear y Estructurar"}
+                </>
+              )}
+            </Button>
+          </Card>
+        </div>
+      ) : (
+        /* Step 2: Review Screen with Inline YouTube Player and Dual-Column Layout */
+        <div className="space-y-6">
+          {/* Action Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-card border border-border rounded-2xl">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReviewedData(null);
+                setSearchFeedback(null);
+              }}
+              className="rounded-xl border-border text-foreground hover:bg-muted font-semibold text-sm gap-2 h-11"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Nueva Búsqueda
+            </Button>
+
+            <div className="flex items-center gap-2.5">
+              <Button
+                variant="outline"
+                onClick={handleOpenInManualEditor}
+                className="rounded-xl border-border text-foreground hover:bg-muted font-semibold text-sm gap-2 h-11"
+              >
+                <PenSquare className="w-4 h-4" />
+                Editar en Formulario
+              </Button>
+
+              <Button
+                onClick={handleSaveDirectly}
+                disabled={saving}
+                className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-sm px-6 h-11 gap-2 shadow-sm"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Guardar Canción
+              </Button>
+            </div>
+          </div>
+
+          {/* Dual Column: Metadata & Video (Left) vs Chords & Lyrics (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column: Metadata & Video Player */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Metadata Card */}
+              <Card className="p-5 md:p-6 bg-card border-border rounded-2xl space-y-4">
+                <h3 className="text-base font-bold text-foreground pb-2 border-b border-border">
+                  Datos de la Canción
+                </h3>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Título</Label>
+                  <Input
+                    value={reviewedData.title}
+                    onChange={(e) => setReviewedData({ ...reviewedData, title: e.target.value })}
+                    className="h-11 bg-muted/40 border-border rounded-xl font-bold text-foreground"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Autor / Ministerio</Label>
+                  <Input
+                    value={reviewedData.author}
+                    onChange={(e) => setReviewedData({ ...reviewedData, author: e.target.value })}
+                    className="h-11 bg-muted/40 border-border rounded-xl font-medium text-foreground"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Categoría</Label>
+                    <Select
+                      value={reviewedData.category}
+                      onValueChange={(val) => setReviewedData({ ...reviewedData, category: val })}
+                    >
+                      <SelectTrigger className="h-11 bg-muted/40 border-border rounded-xl font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alabanza">Alabanza</SelectItem>
+                        <SelectItem value="adoracion">Adoración</SelectItem>
+                        <SelectItem value="especial">Especial</SelectItem>
+                        <SelectItem value="otro">Otro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tono Original</Label>
+                    <Input
+                      value={reviewedData.originalKey}
+                      onChange={(e) => setReviewedData({ ...reviewedData, originalKey: e.target.value })}
+                      placeholder="Ej: G"
+                      className="h-11 bg-muted/40 border-border rounded-xl font-bold text-foreground"
+                    />
+                  </div>
+                </div>
+
+                {reviewedData.bpm && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tempo / BPM</Label>
+                    <Input
+                      value={reviewedData.bpm}
+                      onChange={(e) => setReviewedData({ ...reviewedData, bpm: e.target.value })}
+                      className="h-11 bg-muted/40 border-border rounded-xl text-xs font-medium text-muted-foreground"
+                    />
+                  </div>
+                )}
+              </Card>
+
+              {/* YouTube Video Player Card */}
+              <Card className="p-5 md:p-6 bg-card border-border rounded-2xl space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Youtube className="w-5 h-5 text-red-500" />
+                    Video de YouTube
+                  </h3>
+                  <span className="text-xs text-muted-foreground">Reproductor integrado</span>
+                </div>
+
+                {/* Inline YouTube Player */}
+                {reviewedData.youtube_url ? (
+                  <div className="space-y-3">
+                    <YouTubePlayer url={reviewedData.youtube_url} />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Reproduce el video para comprobar que coincida con la letra y los acordes.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-muted/40 rounded-xl text-center text-xs text-muted-foreground">
+                    No se detectó enlace de video. Puedes ingresar uno debajo.
+                  </div>
+                )}
+
+                <div className="space-y-2 pt-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">URL del Video</Label>
+                  <Input
+                    value={reviewedData.youtube_url}
+                    onChange={(e) => setReviewedData({ ...reviewedData, youtube_url: e.target.value })}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="h-10 bg-muted/40 border-border rounded-xl text-xs font-mono"
+                  />
+                </div>
+              </Card>
+            </div>
+
+            {/* Right Column: Chords & Lyrics Editor */}
+            <div className="lg:col-span-7 space-y-4">
+              <Card className="p-5 md:p-6 bg-card border-border rounded-2xl space-y-4">
+                <Tabs defaultValue="chords" className="w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-3">
+                    <TabsList className="grid grid-cols-2 w-full sm:w-[280px] p-1 bg-muted/60 rounded-xl border border-border h-10">
+                      <TabsTrigger value="chords" className="rounded-lg text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground">
+                        Acordes y Letra
+                      </TabsTrigger>
+                      <TabsTrigger value="lyrics" className="rounded-lg text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground">
+                        Solo Letra
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyChords}
+                      className="rounded-lg text-xs text-muted-foreground hover:text-foreground h-9 gap-1.5 self-end sm:self-auto"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      Copiar
+                    </Button>
+                  </div>
+
+                  {/* Tab Chords */}
+                  <TabsContent value="chords" className="space-y-2 pt-2">
+                    <Label className="text-xs text-muted-foreground">
+                      Puedes ajustar los acordes o la tabulación directamente en el recuadro:
+                    </Label>
+                    <Textarea
+                      value={reviewedData.chords}
+                      onChange={(e) => setReviewedData({ ...reviewedData, chords: e.target.value })}
+                      className="min-h-[500px] font-mono text-xs md:text-sm bg-muted/30 border-border rounded-xl p-4 leading-relaxed whitespace-pre"
+                    />
+                  </TabsContent>
+
+                  {/* Tab Lyrics Only */}
+                  <TabsContent value="lyrics" className="space-y-2 pt-2">
+                    <Label className="text-xs text-muted-foreground">
+                      Texto limpio para proyección en vivo:
+                    </Label>
+                    <Textarea
+                      value={reviewedData.lyrics}
+                      onChange={(e) => setReviewedData({ ...reviewedData, lyrics: e.target.value })}
+                      className="min-h-[500px] text-xs md:text-sm bg-muted/30 border-border rounded-xl p-4 leading-relaxed whitespace-pre"
+                    />
+                  </TabsContent>
+                </Tabs>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

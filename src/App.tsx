@@ -26,6 +26,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ManageSong = lazy(() => import("./pages/ManageSong"));
+const AsistenteCancion = lazy(() => import("./pages/AsistenteCancion"));
 const Estadisticas = lazy(() => import("./pages/Estadisticas"));
 const Grupos = lazy(() => import("./pages/Grupos"));
 const CrearGrupo = lazy(() => import("./pages/CrearGrupo"));
@@ -107,6 +108,7 @@ const App = () => {
                         <Route path="/grupos/crear" element={<ProtectedRoute><CrearGrupo /></ProtectedRoute>} />
                         <Route path="/grupos/:id/config" element={<ProtectedRoute><GrupoConfig /></ProtectedRoute>} />
                         <Route path="/canciones" element={<ProtectedRoute><Canciones /></ProtectedRoute>} />
+                        <Route path="/canciones/asistente-ia" element={<ProtectedRoute><AsistenteCancion /></ProtectedRoute>} />
                         <Route path="/canciones/nueva" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
                         <Route path="/canciones/:id/editar" element={<ProtectedRoute><ManageSong /></ProtectedRoute>} />
                         <Route path="/canciones/:id" element={<ProtectedRoute><SongDetail /></ProtectedRoute>} />

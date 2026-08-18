@@ -11,7 +11,7 @@ import { useGroup } from "@/hooks/useGroupContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSongsWithProfiles } from "@/services/songService";
 
-import { Plus, Music, Search, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp, AlertCircle, ListMusic, Sparkles } from "lucide-react";
+import { Plus, Music, Search, FileText, Headphones, Youtube, FileMusic, ChevronRight, Star, Disc3, ArrowUp, AlertCircle, ListMusic } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -444,29 +444,29 @@ const Canciones = () => {
           </DialogHeader>
 
           <div className="grid grid-cols-1 gap-3.5 pt-2">
-            {/* Option 1: AI Assistant (Featured) */}
+            {/* Option 1: Assistant Full Screen */}
             <button
               onClick={() => {
                 vibrateLight();
                 setAddChoiceOpen(false);
-                navigate('/canciones/nueva?ai=true');
+                navigate('/canciones/asistente-ia');
               }}
-              className="group flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 border border-indigo-500/30 hover:border-indigo-500/50 transition-all text-left shadow-sm"
+              className="group flex items-start gap-4 p-4 rounded-2xl bg-secondary/10 hover:bg-secondary/20 border border-secondary/30 hover:border-secondary/50 transition-all text-left shadow-sm"
             >
-              <div className="p-3.5 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 text-white shadow-md shadow-indigo-500/25 group-hover:scale-105 transition-transform shrink-0">
-                <Sparkles className="w-6 h-6 animate-pulse" />
+              <div className="p-3.5 rounded-xl bg-secondary/20 text-secondary group-hover:scale-105 transition-transform shrink-0">
+                <Search className="w-6 h-6" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-bold text-base text-foreground group-hover:text-indigo-400 transition-colors">
-                    Autocompletar con IA
+                  <h3 className="font-bold text-base text-foreground group-hover:text-secondary transition-colors">
+                    Buscador de Canciones (Asistente)
                   </h3>
-                  <Badge variant="outline" className="text-[10px] uppercase font-extrabold border-indigo-500/30 text-indigo-400 bg-indigo-500/10">
-                    Gemini Flash
+                  <Badge variant="outline" className="text-[10px] uppercase font-extrabold border-secondary/30 text-secondary bg-secondary/10">
+                    Automático
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Escribe el título y Gemini buscará acordes verificados, ordenará las secciones y el video por ti.
+                  Busca la letra y acordes oficiales de cancioneros, LaCuerda y Letras.com con reproductor de video integrado.
                 </p>
               </div>
             </button>
