@@ -267,9 +267,9 @@ export default function AsistenteCancion() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col pt-20 pb-24 px-4 md:px-8 safe-top safe-bottom max-w-7xl mx-auto w-full">
+    <main className="flex-1 pt-20 pb-24 px-3 sm:px-6 lg:px-8 safe-top safe-bottom max-w-6xl mx-auto w-full overflow-x-hidden">
       {/* Top Bar Navigation */}
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
         <Button
           variant="ghost"
           onClick={() => navigate("/canciones")}
@@ -482,35 +482,35 @@ export default function AsistenteCancion() {
         /* Step 2: Review Screen with Inline YouTube Player and Dual-Column Layout */
         <div className="space-y-6">
           {/* Action Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-card border border-border rounded-2xl">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-card border border-border rounded-2xl w-full">
             <Button
               variant="outline"
               onClick={() => {
                 setReviewedData(null);
                 setSearchFeedback(null);
               }}
-              className="rounded-xl border-border text-foreground hover:bg-muted font-semibold text-sm gap-2 h-11"
+              className="w-full sm:w-auto rounded-xl border-border text-foreground hover:bg-muted font-semibold text-xs sm:text-sm gap-2 h-10 sm:h-11 justify-center"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4 shrink-0" />
               Nueva Búsqueda
             </Button>
 
-            <div className="flex items-center gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full sm:w-auto">
               <Button
                 variant="outline"
                 onClick={handleOpenInManualEditor}
-                className="rounded-xl border-border text-foreground hover:bg-muted font-semibold text-sm gap-2 h-11"
+                className="w-full sm:w-auto rounded-xl border-border text-foreground hover:bg-muted font-semibold text-xs sm:text-sm gap-2 h-10 sm:h-11 justify-center"
               >
-                <PenSquare className="w-4 h-4" />
+                <PenSquare className="w-4 h-4 shrink-0" />
                 Editar en Formulario
               </Button>
 
               <Button
                 onClick={handleSaveDirectly}
                 disabled={saving}
-                className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-sm px-6 h-11 gap-2 shadow-sm"
+                className="w-full sm:w-auto rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs sm:text-sm px-4 sm:px-6 h-10 sm:h-11 gap-2 shadow-sm justify-center"
               >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Save className="w-4 h-4 shrink-0" />}
                 Guardar Canción
               </Button>
             </div>

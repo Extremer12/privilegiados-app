@@ -26,13 +26,12 @@ export interface SearchSongParams {
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-// Available models in order of priority (fastest first)
+// Available models in order of priority (flagship high-accuracy models first)
 const MODELS = [
-  'gemini-flash-lite-latest',
   'gemini-3.6-flash',
   'gemini-3.7-flash',
-  'gemini-3.5-flash-lite',
   'gemini-flash-latest',
+  'gemini-3.5-flash-lite',
 ];
 
 const SYSTEM_INSTRUCTION = `Eres un transcriptor musical y director de alabanza profesional especializado en cancioneros y armonía cristiana. Conoces con total precisión las transcripciones de acordes.lacuerda.net, cifraclub.com, letras.com y cancioneros oficiales de ministerios cristianos (Marco Barrientos, Miel San Marcos, Marcos Witt, Christine D'Clario, Hillsong en Español, Bethel, Elevation Worship, etc.).

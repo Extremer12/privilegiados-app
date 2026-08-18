@@ -22,9 +22,24 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ErrorBoundary caught:", error, errorInfo);
+
+    // Auto-recover from stale chunks after a new Vercel deployment
+    if (
+      error?.message &&
+      (error.message.includes("Failed to fetch dynamically imported module") ||
+       error.message.includes("dynamically imported module"))
+    ) {
+      const hasReloaded = sessionStorage.getItem("chunk_reload_attempted");
+      if (!hasReloaded) {
+        sessionStorage.setItem("chunk_reload_attempted", "true");
+        window.location.reload();
+        return;
+      }
+    }
   }
 
   handleReload = () => {
+    sessionStorage.removeItem("chunk_reload_attempted");
     window.location.reload();
   };
 
