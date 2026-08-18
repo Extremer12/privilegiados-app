@@ -23,11 +23,13 @@ import {
   SlidersHorizontal,
   RefreshCw,
   Copy,
-  Link,
   Quote,
   X,
   Crown,
   Zap,
+  Sparkles,
+  ChevronRight,
+  Disc,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +38,12 @@ import { useGroup } from "@/hooks/useGroupContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { searchSongWithGemini, formatRawSongWithGemini } from "@/services/geminiService";
+import {
+  searchSongCandidatesWithGemini,
+  transcribeCandidateWithGemini,
+  formatRawSongWithGemini,
+  SongCandidate,
+} from "@/services/geminiService";
 import { checkGroupAIQuota } from "@/services/mercadoPagoService";
 
 const MUSICAL_KEYS = [
@@ -66,8 +73,11 @@ export default function AsistenteCancion() {
   // Raw paste state
   const [rawText, setRawText] = useState("");
 
+  // Search & Candidates State
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [candidates, setCandidates] = useState<SongCandidate[] | null>(null);
+  const [selectedCandidateIndex, setSelectedCandidateIndex] = useState<number | null>(null);
 
   // Form State for Review
   const [reviewedData, setReviewedData] = useState<{
@@ -113,9 +123,11 @@ export default function AsistenteCancion() {
       abortControllerRef.current = null;
     }
     setLoading(false);
+    setSelectedCandidateIndex(null);
     toast.info("Búsqueda cancelada.");
   };
 
+  // Step 1: Search lightweight candidates (~150 tokens)
   const handleSearch = async () => {
     if (!songTitle.trim() && !youtubeInput.trim()) {
       toast.error("Ingresa el título de la canción o un enlace de YouTube");
@@ -136,7 +148,6 @@ export default function AsistenteCancion() {
       }
     }
 
-    // Initialize AbortController
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -145,10 +156,12 @@ export default function AsistenteCancion() {
 
     setLoading(true);
     setSearchFeedback(null);
+    setCandidates(null);
+    setReviewedData(null);
 
     try {
       const targetKey = selectedKey !== "Original" ? selectedKey : undefined;
-      const result = await searchSongWithGemini({
+      const result = await searchSongCandidatesWithGemini({
         title: songTitle.trim() || "Canción",
         author: songAuthor.trim() || undefined,
         youtubeUrl: youtubeInput.trim() || undefined,
@@ -157,38 +170,26 @@ export default function AsistenteCancion() {
         signal: controller.signal,
       });
 
-      if (!result.found) {
-        setSearchFeedback(result.message || "No se encontraron fuentes de acordes confirmadas para este título.");
+      if (!result.found || !result.candidates || result.candidates.length === 0) {
+        setSearchFeedback(result.message || "No se encontraron canciones que coincidan con la búsqueda.");
         toast.warning("Canción no encontrada", {
-          description: result.message || "Verifica el título, autor o agrega el enlace de YouTube.",
+          description: result.message || "Verifica el título o agrega el autor para mayor precisión.",
         });
         return;
       }
 
-      // Prioritize the user's provided YouTube URL if valid, otherwise AI found URL
-      let finalYoutube = youtubeInput.trim() || result.youtubeUrl || "";
-      if (!finalYoutube && result.youtubeVideoId) {
-        finalYoutube = `https://www.youtube.com/watch?v=${result.youtubeVideoId}`;
-      }
-
-      setReviewedData({
-        title: result.title || songTitle,
-        author: result.author || songAuthor,
-        category: result.category || "otro",
-        originalKey: result.originalKey || "",
-        bpm: result.bpm || "",
-        lyrics: result.lyrics || "",
-        chords: result.chords || "",
-        youtube_url: finalYoutube,
-      });
-
-      toast.success("Canción encontrada y estructurada");
+      setCandidates(result.candidates);
+      toast.success(
+        result.candidates.length === 1
+          ? "Se encontró 1 versión"
+          : `Se encontraron ${result.candidates.length} versiones posibles`
+      );
     } catch (err: any) {
       if (err.name === "AbortError" || controller.signal.aborted) {
-        return; // User cancelled
+        return;
       }
       console.error(err);
-      toast.error("Error al buscar la canción", {
+      toast.error("Error al buscar opciones", {
         description: err.message || "Verifica tu conexión y configuración.",
       });
     } finally {
@@ -197,6 +198,66 @@ export default function AsistenteCancion() {
     }
   };
 
+  // Step 2: User selects a candidate card -> Generate chords for that exact song
+  const handleSelectCandidate = async (candidate: SongCandidate, index: number) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setSelectedCandidateIndex(index);
+    setLoading(true);
+
+    try {
+      const targetKey = selectedKey !== "Original" ? selectedKey : undefined;
+      const result = await transcribeCandidateWithGemini({
+        candidate,
+        targetKey,
+        youtubeUrlOverride: youtubeInput.trim() || undefined,
+        signal: controller.signal,
+      });
+
+      if (!result.found) {
+        toast.error("No se pudo obtener la transcripción completa", {
+          description: result.message,
+        });
+        return;
+      }
+
+      let finalYoutube = youtubeInput.trim() || result.youtubeUrl || candidate.youtubeUrl || "";
+      if (!finalYoutube && result.youtubeVideoId) {
+        finalYoutube = `https://www.youtube.com/watch?v=${result.youtubeVideoId}`;
+      }
+
+      setReviewedData({
+        title: result.title || candidate.title,
+        author: result.author || candidate.author,
+        category: result.category || candidate.category || "otro",
+        originalKey: result.originalKey || candidate.originalKey || "",
+        bpm: result.bpm || candidate.bpm || "",
+        lyrics: result.lyrics || "",
+        chords: result.chords || "",
+        youtube_url: finalYoutube,
+      });
+
+      toast.success("Canción estructurada con acordes oficiales");
+    } catch (err: any) {
+      if (err.name === "AbortError" || controller.signal.aborted) {
+        return;
+      }
+      console.error(err);
+      toast.error("Error al transcribir la versión seleccionada", {
+        description: err.message,
+      });
+    } finally {
+      setLoading(false);
+      setSelectedCandidateIndex(null);
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Format pasted raw text
   const handleFormatRaw = async () => {
     if (!rawText.trim()) {
       toast.error("Pega el texto de la canción con acordes");
@@ -349,16 +410,17 @@ export default function AsistenteCancion() {
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tight">
-          Agregar Canción con Asistente
+        <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tight flex items-center gap-2.5">
+          <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-primary" />
+          Asistente Musical con IA
         </h1>
         <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
-          Especifica los detalles, el artista o el video de YouTube para asegurar la versión exacta de la canción con acordes reales.
+          Encuentra la versión exacta de tu canción con acordes de CifraClub/LaCuerda organizados para tocar en vivo.
         </p>
       </div>
 
-      {/* Step 1: Input Form (When no song is being reviewed) */}
-      {!reviewedData ? (
+      {/* STEP 1: Search Form (When neither candidates nor reviewed song are ready) */}
+      {!candidates && !reviewedData && (
         <div className="max-w-3xl mx-auto w-full space-y-6">
           <Card className="p-6 md:p-8 bg-card border-border rounded-2xl shadow-sm space-y-6">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
@@ -379,16 +441,16 @@ export default function AsistenteCancion() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Tab: Search with Disambiguation Fields */}
+              {/* Tab: Search */}
               <TabsContent value="search" className="space-y-5 pt-5 mt-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Field 1: Song Title */}
+                  {/* Title */}
                   <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Título de la Canción *
                     </Label>
                     <Input
-                      placeholder="Ej: Hosanna, Dios Incomparable, Way Maker"
+                      placeholder="Ej: Hosanna, Dios Incomparable, Cuan Grande es Dios"
                       value={songTitle}
                       onChange={(e) => setSongTitle(e.target.value)}
                       className="h-11 text-sm bg-muted/40 border-border rounded-xl focus-visible:ring-primary/40 font-semibold"
@@ -396,13 +458,13 @@ export default function AsistenteCancion() {
                     />
                   </div>
 
-                  {/* Field 2: Author / Ministry */}
+                  {/* Author */}
                   <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase tracking-wider text-foreground">
-                      Autor o Ministerio (Recomendado)
+                      Autor / Intérprete (Opcional)
                     </Label>
                     <Input
-                      placeholder="Ej: Marco Barrientos, Miel San Marcos, Hillsong"
+                      placeholder="Ej: Marco Barrientos, Hillsong, Miel San Marcos"
                       value={songAuthor}
                       onChange={(e) => setSongAuthor(e.target.value)}
                       className="h-11 text-sm bg-muted/40 border-border rounded-xl focus-visible:ring-primary/40 font-medium"
@@ -410,17 +472,17 @@ export default function AsistenteCancion() {
                   </div>
                 </div>
 
-                {/* Field 3: YouTube Link */}
+                {/* YouTube Link */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                       <Youtube className="w-4 h-4 text-red-500" />
                       Enlace de Video de YouTube (Opcional)
                     </Label>
-                    <span className="text-[11px] text-muted-foreground">Identificación exacta</span>
+                    <span className="text-[11px] text-muted-foreground">Para reproducir en paralelo</span>
                   </div>
                   <Input
-                    placeholder="Pega el enlace de YouTube ej: https://www.youtube.com/watch?v=..."
+                    placeholder="https://www.youtube.com/watch?v=..."
                     value={youtubeInput}
                     onChange={(e) => setYoutubeInput(e.target.value)}
                     className="h-11 text-xs font-mono bg-muted/40 border-border rounded-xl focus-visible:ring-primary/40"
@@ -435,20 +497,20 @@ export default function AsistenteCancion() {
                   )}
                 </div>
 
-                {/* Field 4: Lyrics Snippet / Distinctive Phrase */}
+                {/* Lyrics Snippet */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                     <Quote className="w-3.5 h-3.5 text-muted-foreground" />
-                    Frase de la letra o notas distintivas (Opcional)
+                    Frase o Coro distintivo (Opcional)
                   </Label>
                   <Input
-                    placeholder="Ej: Levantamos un clamor por sanidad y redención... / Versión acústica en vivo"
+                    placeholder="Ej: Levantamos un clamor por sanidad y redención... / Veo al Rey de gloria"
                     value={lyricsSnippet}
                     onChange={(e) => setLyricsSnippet(e.target.value)}
                     className="h-11 text-xs bg-muted/40 border-border rounded-xl focus-visible:ring-primary/40"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Evita confusiones si existen varias canciones con el mismo nombre.
+                    Ayuda a identificar la versión exacta si hay varias canciones con el mismo título.
                   </p>
                 </div>
 
@@ -458,10 +520,10 @@ export default function AsistenteCancion() {
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
                         <Check className="w-4 h-4 text-primary" />
-                        Canciones verificadas ya existentes en Privilegiados:
+                        Canciones verificadas ya existentes en tu cancionero:
                       </p>
                       <Badge variant="outline" className="text-[10px] bg-background border-primary/30 text-primary font-bold">
-                        100% Exactas
+                        Guardadas en BD
                       </Badge>
                     </div>
                     <div className="space-y-1.5">
@@ -488,7 +550,7 @@ export default function AsistenteCancion() {
                                 chords: m.chords || "",
                                 youtube_url: m.youtube_url || "",
                               });
-                              toast.success("Cargada desde el cancionero verificado de Privilegiados");
+                              toast.success("Cargada desde el cancionero verificado");
                             }}
                             className="h-8 text-xs font-bold px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 gap-1"
                           >
@@ -526,7 +588,7 @@ export default function AsistenteCancion() {
                 <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-bold text-foreground">Tono de acordes</p>
-                  <p className="text-xs text-muted-foreground">Transporta la canción a tu tonalidad preferida</p>
+                  <p className="text-xs text-muted-foreground">Transporta automáticamente a tu tonalidad preferida</p>
                 </div>
               </div>
               <Select value={selectedKey} onValueChange={setSelectedKey}>
@@ -558,10 +620,10 @@ export default function AsistenteCancion() {
                   <Loader2 className="h-5 w-5 animate-spin text-primary shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-foreground">
-                      Buscando y verificando transcripción oficial...
+                      Buscando versiones disponibles...
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Consultando bases de acordes y cancioneros
+                      Consultando cancioneros y bases cristianas
                     </p>
                   </div>
                 </div>
@@ -582,27 +644,181 @@ export default function AsistenteCancion() {
                 className="w-full h-13 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base shadow-sm transition-all gap-2"
               >
                 <Search className="h-5 w-5" />
-                {activeTab === "search" ? "Buscar Canción" : "Formatear y Estructurar"}
+                {activeTab === "search" ? "Buscar Versiones de la Canción" : "Formatear y Estructurar"}
               </Button>
             )}
           </Card>
         </div>
-      ) : (
-        /* Step 2: Review Screen with Inline YouTube Player and Dual-Column Layout */
+      )}
+
+      {/* STEP 2: Candidate Selection Cards (Disambiguation) */}
+      {candidates && !reviewedData && (
+        <div className="max-w-4xl mx-auto w-full space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border">
+            <div>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Music className="w-5 h-5 text-primary" />
+                Selecciona la versión que buscas ({candidates.length})
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Revisa el coro o la frase de la letra para confirmar la versión exacta antes de transcribir.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCandidates(null);
+                setSearchFeedback(null);
+              }}
+              className="rounded-xl border-border text-foreground hover:bg-muted font-semibold text-xs gap-1.5 h-9 shrink-0 self-start sm:self-auto"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Nueva Búsqueda
+            </Button>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {candidates.map((candidate, idx) => {
+              const isSelected = selectedCandidateIndex === idx;
+              const isAnySelected = selectedCandidateIndex !== null;
+
+              return (
+                <Card
+                  key={idx}
+                  className={`p-5 rounded-2xl bg-card border transition-all relative flex flex-col justify-between overflow-hidden group ${
+                    isSelected
+                      ? "border-primary ring-2 ring-primary/30 shadow-lg"
+                      : "border-border hover:border-primary/50 hover:shadow-md"
+                  }`}
+                >
+                  <div className="space-y-3">
+                    {/* Badges Bar */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant="secondary"
+                          className="capitalize text-[11px] font-bold px-2 py-0.5 bg-primary/10 text-primary border border-primary/20"
+                        >
+                          {candidate.category || "Alabanza"}
+                        </Badge>
+                        {candidate.versionOrAlbum && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-medium text-muted-foreground border-border flex items-center gap-1"
+                          >
+                            <Disc className="w-3 h-3 text-muted-foreground" />
+                            {candidate.versionOrAlbum}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                        {candidate.originalKey && (
+                          <span className="px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">
+                            Tono: {candidate.originalKey}
+                          </span>
+                        )}
+                        {candidate.bpm && (
+                          <span className="px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">
+                            {candidate.bpm} BPM
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Title and Author */}
+                    <div>
+                      <h3 className="text-base font-extrabold text-foreground tracking-tight group-hover:text-primary transition-colors">
+                        {candidate.title}
+                      </h3>
+                      <p className="text-xs font-semibold text-muted-foreground mt-0.5">
+                        {candidate.author || "Autor no especificado"}
+                      </p>
+                    </div>
+
+                    {/* Sample Lyrics Quote Box */}
+                    <div className="p-3 bg-muted/40 border border-border rounded-xl relative">
+                      <Quote className="w-4 h-4 text-primary/40 absolute top-2.5 right-2.5" />
+                      <p className="text-xs font-mono text-foreground leading-relaxed italic pr-5">
+                        "{candidate.sampleLyric}"
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="pt-4 mt-2 border-t border-border/60">
+                    <Button
+                      onClick={() => handleSelectCandidate(candidate, idx)}
+                      disabled={isAnySelected}
+                      className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs sm:text-sm gap-2 shadow-sm transition-all"
+                    >
+                      {isSelected ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Obteniendo acordes y letra...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Elegir esta versión</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Cancel button if transcribing */}
+          {loading && selectedCandidateIndex !== null && (
+            <div className="flex justify-center pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCancel}
+                className="rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10 font-semibold text-xs gap-1.5"
+              >
+                <X className="w-4 h-4" />
+                Cancelar Transcripción
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* STEP 3: Review Screen with Inline YouTube Player and Dual-Column Layout */}
+      {reviewedData && (
         <div className="space-y-6">
           {/* Action Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-card border border-border rounded-2xl w-full">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setReviewedData(null);
-                setSearchFeedback(null);
-              }}
-              className="w-full sm:w-auto rounded-xl border-border text-foreground hover:bg-muted font-semibold text-xs sm:text-sm gap-2 h-10 sm:h-11 justify-center"
-            >
-              <RefreshCw className="w-4 h-4 shrink-0" />
-              Nueva Búsqueda
-            </Button>
+            <div className="flex items-center gap-2">
+              {candidates && candidates.length > 1 && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setReviewedData(null)}
+                  className="rounded-xl border-border text-foreground hover:bg-muted font-semibold text-xs sm:text-sm gap-1.5 h-10 sm:h-11"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Cambiar versión
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReviewedData(null);
+                  setCandidates(null);
+                  setSearchFeedback(null);
+                }}
+                className="rounded-xl border-border text-foreground hover:bg-muted font-semibold text-xs sm:text-sm gap-2 h-10 sm:h-11 justify-center"
+              >
+                <RefreshCw className="w-4 h-4 shrink-0" />
+                Nueva Búsqueda
+              </Button>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full sm:w-auto">
               <Button
